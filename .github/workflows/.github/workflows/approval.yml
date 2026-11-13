@@ -1,0 +1,57 @@
+name: 텔레그램 승인 확인
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"   # 30분마다 버튼/명령 확인
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reels-state
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRAND_NAME: ${{ vars.BRAND_NAME }}
+      TTS_VOICE: ${{ vars.TTS_VOICE }}
+      TTS_RATE: ${{ vars.TTS_RATE }}
+      GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 버튼·명령 확인
+        id: chk
+        run: |
+          pip install -q requests
+          python -m reels.approval
+      # "다시 만들기"를 눌렀을 때만 아래 단계 실행
+      - name: 프로그램 설치
+        if: steps.chk.outputs.redo == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          pip install -q -r requirements.txt
+      - name: 다시 만들기
+        if: steps.chk.outputs.redo == 'true'
+        run: python -m reels.generate
+      - name: 상태 저장
+        if: always()
+        run: |
+          git config user.name "reels-bot"
+          git config user.email "reels-bot@users.noreply.github.com"
+          git add state
+          git diff --cached --quiet || (git commit -q -m "state: approval $(date -u +%FT%H%M)" && git pull -q --rebase && git push -q)
