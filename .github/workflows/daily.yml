@@ -1,0 +1,50 @@
+name: 매일 릴스 만들기
+
+on:
+  schedule:
+    - cron: "40 21 * * *"   # 매일 한국시간 06:40 (미국 장 마감 직후)
+  workflow_dispatch:         # Actions 탭에서 수동 실행 가능
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reels-state
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRAND_NAME: ${{ vars.BRAND_NAME }}
+      TTS_VOICE: ${{ vars.TTS_VOICE }}
+      TTS_RATE: ${{ vars.TTS_RATE }}
+      GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          pip install -q -r requirements.txt
+      - name: 릴스 생성 → 텔레그램 전송
+        run: python -m reels.generate
+      - name: 상태 저장
+        if: always()
+        run: |
+          git config user.name "reels-bot"
+          git config user.email "reels-bot@users.noreply.github.com"
+          git add state
+          git diff --cached --quiet || (git commit -q -m "state: daily $(date -u +%F)" && git pull -q --rebase && git push -q)
