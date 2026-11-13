@@ -1,4 +1,5 @@
-"""Google Gemini 무료 API 호출 (JSON 응답)."""
+"""Google Gemini 무료 API 호출 (JSON 응답).
+쓸 수 있는 모델 목록을 구글에서 직접 받아와 최신 flash 모델을 자동으로 고릅니다."""
 import json
 import re
 import time
@@ -7,7 +8,53 @@ import requests
 
 from . import config
 
-URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+BASE = "https://generativelanguage.googleapis.com/v1beta"
+SKIP = ("image", "tts", "audio", "live", "embedding", "vision", "robotics", "computer-use", "native")
+_cache = None
+
+
+def _headers():
+    return {"x-goog-api-key": config.GEMINI_API_KEY}
+
+
+def available_models():
+    """내 API 키로 쓸 수 있는 모델 중 텍스트 생성용 flash 모델을 최신 순으로."""
+    r = requests.get(f"{BASE}/models", params={"pageSize": 1000}, headers=_headers(), timeout=30)
+    if r.status_code in (400, 401, 403):
+        raise RuntimeError(f"Gemini API 키 오류 (HTTP {r.status_code}): GEMINI_API_KEY 값을 확인하세요. {r.text[:200]}")
+    r.raise_for_status()
+    names = []
+    for m in r.json().get("models", []):
+        name = m.get("name", "").split("/")[-1]
+        if "generateContent" not in m.get("supportedGenerationMethods", []):
+            continue
+        if "flash" not in name or any(s in name for s in SKIP):
+            continue
+        names.append(name)
+
+    def rank(n):
+        v = re.search(r"gemini-(\d+(?:\.\d+)?)", n)
+        ver = float(v.group(1)) if v else 0
+        stable = not any(s in n for s in ("preview", "exp"))
+        return (stable, "lite" not in n, ver, n.endswith("latest"))
+
+    names.sort(key=rank, reverse=True)
+    return names
+
+
+def model_order():
+    global _cache
+    if _cache is None:
+        try:
+            found = available_models()
+            print(f"  [AI] 사용 가능한 모델: {', '.join(found[:6]) or '(없음)'}")
+        except RuntimeError:
+            raise
+        except Exception as e:
+            print(f"  [AI] 모델 목록 조회 실패(설정값 사용): {e}")
+            found = []
+        _cache = list(dict.fromkeys(found[:3] + config.GEMINI_MODELS))
+    return _cache
 
 
 def _extract_json(text):
@@ -29,26 +76,32 @@ def ask_json(prompt, temperature=0.6):
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
     }
-    last_err = None
-    for model in config.GEMINI_MODELS:
+    errors = []
+    for model in model_order():
         for attempt in range(3):
             try:
-                r = requests.post(URL.format(model=model), json=body, timeout=120,
-                                  headers={"x-goog-api-key": config.GEMINI_API_KEY})
+                r = requests.post(f"{BASE}/models/{model}:generateContent", json=body,
+                                  headers=_headers(), timeout=180)
                 if r.status_code in (429, 500, 503):
-                    last_err = f"{model}: HTTP {r.status_code} {r.text[:200]}"
-                    time.sleep(10 * (attempt + 1))
+                    msg = f"{model}: HTTP {r.status_code} {r.text[:150]}"
+                    print(f"  [AI] {msg}")
+                    errors.append(msg)
+                    time.sleep(15 * (attempt + 1))
                     continue
-                if r.status_code == 404:          # 모델 이름이 없어진 경우 다음 모델로
-                    last_err = f"{model}: 모델을 찾을 수 없음"
+                if r.status_code in (400, 403, 404):   # 없는 모델/권한 없음 → 다음 모델
+                    msg = f"{model}: HTTP {r.status_code} {r.text[:150]}"
+                    print(f"  [AI] {msg}")
+                    errors.append(msg)
                     break
                 r.raise_for_status()
                 data = r.json()
                 parts = data["candidates"][0]["content"]["parts"]
-                text = "".join(p.get("text", "") for p in parts)
+                text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
                 print(f"  [AI] {model} 응답 받음")
                 return _extract_json(text)
-            except (requests.RequestException, KeyError, ValueError) as e:
-                last_err = f"{model}: {e}"
+            except (requests.RequestException, KeyError, IndexError, ValueError) as e:
+                msg = f"{model}: {type(e).__name__} {e}"
+                print(f"  [AI] {msg}")
+                errors.append(msg)
                 time.sleep(5)
-    raise RuntimeError(f"Gemini 호출 실패: {last_err}")
+    raise RuntimeError("Gemini 호출 실패\n" + "\n".join(errors[-6:]))
