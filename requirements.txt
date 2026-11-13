@@ -1,0 +1,7 @@
+requests>=2.31
+edge-tts>=6.1
+gTTS>=2.5
+yfinance>=0.2.40
+matplotlib>=3.8
+numpy>=1.26
+pillow>=10.0
