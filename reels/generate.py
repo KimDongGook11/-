@@ -10,8 +10,8 @@ import shutil
 import sys
 import traceback
 
-from . import chart, config, news, render, script, stock, storage, telegram, tts
-from .utils import load_state, save_state
+from . import approval, chart, config, news, render, script, stock, storage, telegram, tts
+from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
 
@@ -117,31 +117,49 @@ def deliver(res, offline=False):
             "\n\n■ 원문 링크\n" + "\n".join(res.get("links", [])[:4]) +
             "\n\n■ 캡션\n" + res["caption"])
         res["tg_message_id"] = telegram.send_video(
-            res["video"], f"{sc['hook_title']}\n\n아래 버튼을 눌러 주세요. (반영까지 최대 30분)",
+            res["video"], f"{sc['hook_title']}\n\n아래 버튼을 눌러 주세요. 2시간 안에 누르면 바로 처리돼요.",
             buttons=[("✅ 승인 → 인스타 게시", f"approve:{rid}"),
                      ("🔁 다른 뉴스로 다시 만들기", f"redo:{rid}"),
                      ("❌ 폐기", f"reject:{rid}")])
     save_state("pending", {k: v for k, v in res.items() if k != "script"} | {"hook_title": res["script"]["hook_title"]})
 
 
+def _today():
+    return dt.datetime.now(KST).strftime("%Y%m%d")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
+    ap.add_argument("--wait", type=int, default=0, help="영상 전송 후 버튼을 실시간으로 기다릴 시간(분)")
+    ap.add_argument("--once-per-day", action="store_true", help="오늘 자동 제작을 이미 했으면 건너뜀")
     a = ap.parse_args()
     if a.offline:
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
+    if a.once_per_day:
+        if load_state("last_daily", {}).get("date") == _today():
+            print("오늘 아침 영상은 이미 만들었어요. 건너뜁니다.")
+            return
+        save_state("last_daily", {"date": _today()})
+        git_push_state("state: daily start")   # 다른 예약 실행과 중복 방지
     try:
-        res = make_reel(offline=a.offline)
-        if not a.no_deliver:
+        while True:
+            res = make_reel(offline=a.offline)
+            if a.no_deliver:
+                break
             deliver(res, offline=a.offline)
-        print("완료:", res["video"])
+            print("완료:", res["video"])
+            if not a.wait or not telegram.enabled():
+                break
+            if approval.wait_for_decision(a.wait) != "redo":
+                break
     except Exception as e:
         traceback.print_exc()
         if telegram.enabled() and not a.offline:
             try:
-                telegram.send_message(f"❌ 오늘 릴스 생성 실패\n{type(e).__name__}: {str(e)[:600]}\n\n"
-                                      "GitHub Actions 로그를 확인하거나 텔레그램에 /new 를 보내 다시 시도하세요.")
+                telegram.send_message(f"❌ 릴스 생성 실패\n{type(e).__name__}: {str(e)[:600]}\n\n"
+                                      "텔레그램에 /new 를 보내 다시 시도하거나, 이 메시지를 Claude에게 보여주세요.")
             except Exception:
                 pass
         sys.exit(1)

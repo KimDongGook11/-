@@ -55,10 +55,11 @@ def answer_callback(cb_id, text):
         pass
 
 
-def get_updates(offset=None):
-    params = {"timeout": 0, "allowed_updates": json.dumps(["message", "callback_query"])}
+def get_updates(offset=None, timeout=0):
+    """timeout>0 이면 새 메시지가 올 때까지 최대 timeout초 기다림(롱폴링)."""
+    params = {"timeout": timeout, "allowed_updates": json.dumps(["message", "callback_query"])}
     if offset:
         params["offset"] = offset
-    r = requests.get(_api("getUpdates"), params=params, timeout=30)
+    r = requests.get(_api("getUpdates"), params=params, timeout=timeout + 20)
     r.raise_for_status()
     return r.json().get("result", [])

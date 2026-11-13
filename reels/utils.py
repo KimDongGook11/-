@@ -58,3 +58,21 @@ def save_state(name, data):
             p.unlink()
         return
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def git_push_state(msg):
+    """GitHub Actions 안에서만: state 폴더를 바로 커밋·푸시 (실패해도 계속 진행)."""
+    import os
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return
+    try:
+        subprocess.run(["git", "add", "state"], check=True, cwd=config.ROOT)
+        if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=config.ROOT).returncode == 0:
+            return
+        subprocess.run(["git", "commit", "-q", "-m", msg], check=True, cwd=config.ROOT)
+        for _ in range(3):
+            subprocess.run(["git", "pull", "-q", "--rebase"], cwd=config.ROOT)
+            if subprocess.run(["git", "push", "-q"], cwd=config.ROOT).returncode == 0:
+                return
+    except Exception as e:
+        print(f"  [상태] 푸시 실패(무시): {e}")
