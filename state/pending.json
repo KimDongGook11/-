@@ -1,28 +1,26 @@
 {
-  "id": "20261113-1127",
-  "created_at": "2026-11-13T11:27:42.355352+09:00",
-  "video": "/home/runner/work/-/-/output/reel_20261113-1127.mp4",
+  "id": "20261113-1323",
+  "created_at": "2026-11-13T13:23:26.215413+09:00",
+  "video": "/home/runner/work/-/-/output/reel_20261113-1323.mp4",
   "sources": [
-    "Financial Times",
-    "CNBC",
-    "BBC",
-    "Yahoo Finance",
-    "Reuters"
+    "Axios",
+    "WSJ",
+    "Reuters",
+    "Bloomberg.com"
   ],
-  "caption": "글로벌 AI 반도체 1위 기업 엔비디아의 젠슨 황 CEO가 사생활 스캔들 논란 끝에 전격 사임했습니다.\n수장이 자리를 비우면서 주가 변동성도 매우 커지고 있는데요.\n임시 대표 체제로 전환된 엔비디아의 앞날, 여러분은 어떻게 생각하시나요? 👇\n\n📰 출처: Financial Times, CNBC, BBC\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#오늘의글로벌경제 #엔비디아 #젠슨황 #미국주식 #글로벌증시",
-  "duration": 42.0,
-  "title_en": "Nvidia shares slide as Jensen Huang resigns as chief executive",
-  "link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOYTZoZmc3ckl1Vi1WM3ZfcnVUdjNCQUR0T2xKM2lIMnI0NFdQRG5EQ0Q5NEdmMFdLSnUwRDhaWU9uWDVoNXVnT3FLOF9ucUwwam94eUdoT05ZMVktRTZ2QjZZVXkzRndQOW91UnFKQjFZTFNKbFJObzNUSEtSU09UNHlTZjM?oc=5",
-  "topic": "Jensen Huang resigns as Nvidia CEO following extramarital affair scandal, causing shares to slide",
+  "caption": "미 연준을 비롯한 글로벌 중앙은행들의 금리 인상 압박이 다시 거세지고 있습니다. 📈\n인도는 물가상승률이 제한선 6%를 넘어섰고, 연준 내부에서도 물가를 잡기 위한 추가 인상 목소리가 나오는데요.\n고금리 기조 장기화 우려 속에 대출 이자와 환율 등 우리 지갑에 미칠 여파를 꼼꼼히 챙겨봐야겠습니다.\n\n📰 출처: Axios, WSJ, Reuters\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #금리인상 #인플레이션 #연준",
+  "duration": 41.7,
+  "title_en": "Fed faces tougher inflation fight as pressure builds for more rate hikes",
+  "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTFBDR2FBVnZjdTZUR1ZQSjRQLXBkamFfVVZiQjFxb016UE1oWS1qTl9Ha0ZPeEpaMGs3TXJMbV9sRGtickN1YkxzSTc0QVR2X2NnWGRMSXNrVG0wSWEyMktzVWRkWmhidzZMNXZzZkZNN3dXTms?oc=5",
+  "topic": "Fed faces tougher inflation fight as pressure builds for more rate hikes",
   "links": [
-    "https://news.google.com/rss/articles/CBMihAFBVV95cUxOYTZoZmc3ckl1Vi1WM3ZfcnVUdjNCQUR0T2xKM2lIMnI0NFdQRG5EQ0Q5NEdmMFdLSnUwRDhaWU9uWDVoNXVnT3FLOF9ucUwwam94eUdoT05ZMVktRTZ2QjZZVXkzRndQOW91UnFKQjFZTFNKbFJObzNUSEtSU09UNHlTZjM?oc=5",
-    "https://www.cnbc.com/2026/11/12/nvidia-nvda-jensen-huang-second-affair.html",
-    "https://www.bbc.co.uk/news/articles/ckgel338xql3o?at_medium=RSS&at_campaign=rss",
-    "https://www.bbc.co.uk/news/videos/c6wy9l859r94o?at_medium=RSS&at_campaign=rss",
-    "https://news.google.com/rss/articles/CBMi6AFBVV95cUxPRTdaUlg2V3piUHIxNjk4WThLdUFhWC1jWU00SmthMTZUemtCV3MtOWhOM0Q0TE8tanFYSG55akJORFA3MVd5SFM0b3luLWNiQ0ZTQjB1NDlKWGVQUTdsWXFHQ08tYW1vX2s0dkdEeFlWN084WU9FRlVNWXpfMDF3U2RJNTk2T3J1SDZVUHR2MUxwaUJZdTJzM3FlRXZ1ajItVGc5ZEo0am44Smo0OTh3MEZBVlluM3dzang4ajhPbDhaMl9HTE8zaGpjMkRUOVdKVUVzaGZkQ21tdzFYaU14Ync2VjB1dmZP?oc=5",
-    "https://news.google.com/rss/articles/CBMijAFBVV95cUxNZC1uZTVNUkdPM3M1UzkxWjJDbmNFa1RwZm9iVmFuZ0FUMW1Sa1p4NlYxY3AxbE91d3VyN0J6aHM4UWpqTHpPZkdWbS04OEFyM3JqSzdoUUxhVWlTMlBReUZvQnRQbVhxdXhFMG8yenFBeUw1aVNxR0tzMWdMSzNlME80eW1ZZWlGcXJFUg?oc=5"
+    "https://news.google.com/rss/articles/CBMic0FVX3lxTFBDR2FBVnZjdTZUR1ZQSjRQLXBkamFfVVZiQjFxb016UE1oWS1qTl9Ha0ZPeEpaMGs3TXJMbV9sRGtickN1YkxzSTc0QVR2X2NnWGRMSXNrVG0wSWEyMktzVWRkWmhidzZMNXZzZkZNN3dXTms?oc=5",
+    "https://news.google.com/rss/articles/CBMimwFBVV95cUxQM0taZlpLMjZNSHV5LVZIWktScXlHVHB3Ri1SMElOR3UycjRibjRfTUM1Y05nQW1SYkljelpjVkdkaGFXRVQyeHVpZTB1T1h1SWQwNHRPTUlTTUJFS0tFVHR1R0c5M1ZLWWlxYmN0aEVqSzZRYkROWlhqTEo2Q2daZEZ2S1lwaDAwRV9lU1lGcEgyM00yOTZBVW9MYw?oc=5",
+    "https://news.google.com/rss/articles/CBMikgFBVV95cUxQVUQyM3Nob1JwMmZBS1JHN1FtZ2h5eTZFWlpZWkJ1Tm9XRlByR2lJWEZkdjJKcVVYbklvMW9GekZ5RDZDQU5KRkVaVHZzN2d6cm5NQTEzWlNtQkNGWmw2dXNJN2hvMFBwenUzdFZDLURfM2JsRVBmckhzY2FZRVJPemM5S0ZIX1BqQzFrbW1wN3lxdw?oc=5",
+    "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNSlE4RjR5cTc2cVI3bWZZWHJxcGdTTXA4UjBQNUEtbVdfeXJwdXZ1b21ZejRTaERGWmlXa0JDZ2ZKWHdBaUx3cVFwRnlTSzVzci1FakptNjVUWVZZYXZ2WEEwVy1LMktOWFlUdE5GNHpLbTBMNTR2VFFwRHUtSDFqUkNnUkFNUDBBR2Z0Zm84YjZraTJnaV9uUEU1NVZGN0xnaHVIMWVxRFNiOEsyelNQdWI0R1Y3UVpZ?oc=5",
+    "https://news.google.com/rss/articles/CBMitAFBVV95cUxQVjJpUnJYdWk0dzZkcGp0cG54WTc3Sk84VWtmdmpCNGl1Z1pXZm1rYmowRnU4d2NSWmNXUFgtUFdQZDZ6SWswZDFsanZrODFEb1hfSWM3YTA3OC1qa09ZaTZkQXVGUW8xTmRKRnRURW04dWpPR0xxMXZURUNJVXdXdmRCNi1VeTBTRG0tZmN5cVVsVGZ3Mml2am8weXMxLWthNXVKY2Q2UDZhd2lZaXFlaURuaFU?oc=5"
   ],
-  "release_tag": "reel-20261113-1127",
-  "tg_message_id": 6,
-  "hook_title": "젠슨 황 사임! 주가 폭락"
+  "release_tag": "reel-20261113-1323",
+  "tg_message_id": 13,
+  "hook_title": "연준 [금리 인상] 압박, 물가 싸움"
 }
