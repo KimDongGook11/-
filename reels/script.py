@@ -79,7 +79,8 @@ def write_script(mats, topic, brand):
 
 JSON으로만 답해:
 {{
- "hook_title": "화면 위에 고정할 제목, 16자 이내, 숫자나 강한 단어 포함",
+ "tag": "제목 위 빨간 꼬리표 2~4자 (예: 속보, 긴급, 금리, 환율, 증시, 유가, 반도체, 코인). 큰 사건일 때만 '속보'",
+ "hook_title": "화면 위에 고정할 제목, 18자 이내. 가장 중요한 단어 하나를 [ ]로 감싸 강조 (예: 젠슨 황 [전격 사임], 엔비디아 4% 급락)",
  "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false}}],
  "chart": {{"ticker": "^GSPC", "label": "S&P 500 · 최근 1개월"}},
  "key_facts": ["대본에 쓴 숫자와 그 출처 매체 (검수용)"],
@@ -105,7 +106,8 @@ def normalize(data):
         chart = None
     tags = [t if str(t).startswith("#") else "#" + str(t) for t in data.get("hashtags", [])][:10]
     return {
-        "hook_title": str(data.get("hook_title") or segs[0]["text"])[:24],
+        "tag": str(data.get("tag") or "").strip()[:6],
+        "hook_title": str(data.get("hook_title") or segs[0]["text"])[:30],
         "segments": segs[:9],
         "chart": chart,
         "key_facts": data.get("key_facts", []),

@@ -2,7 +2,7 @@
 import datetime as dt
 import re
 
-from . import config
+from . import config, header
 from .utils import font_file, run
 
 W, H, FPS = config.W, config.H, config.FPS
@@ -26,7 +26,7 @@ def _highlight(t):
     return NUM.sub(r"{\\c&H00D7FF&}\1{\\c&HFFFFFF&}", t)
 
 
-def chunk_text(text, max_len=13):
+def chunk_text(text, max_len=11):
     words, chunks, cur = text.split(), [], ""
     for w in words:
         if cur and len(cur) + 1 + len(w) > max_len:
@@ -42,8 +42,6 @@ def chunk_text(text, max_len=13):
 def build_ass(script, durs, sources, out, pad=0.25):
     f = config.FONT_NAME
     total = sum(durs)
-    kst = dt.datetime.now(dt.timezone(dt.timedelta(hours=9)))
-    date = f"{kst.month}월 {kst.day}일"
     head = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -53,18 +51,13 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Brand,{f},40,&H0000D7FF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,1,0,1,2,0,8,80,80,150,1
-Style: Title,{f},74,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,4,0,8,70,70,215,1
-Style: Sub,{f},72,&H00FFFFFF,&H000000FF,&H00000000,&H96000000,-1,0,0,0,100,100,0,0,1,7,2,2,70,70,520,1
-Style: Source,{f},32,&H00D0D0D0,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,80,80,440,1
+Style: Sub,{f},88,&H00FFFFFF,&H000000FF,&H00000000,&H96000000,-1,0,0,0,100,100,0,0,1,8,3,2,50,50,470,1
+Style: Source,{f},32,&H00D0D0D0,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,80,80,400,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-    ev = [
-        f"Dialogue: 0,{_ts(0)},{_ts(total)},Brand,,0,0,0,,{_esc(config.BRAND_NAME)} · {date}",
-        f"Dialogue: 0,{_ts(0)},{_ts(total)},Title,,0,0,0,,{{\\fad(200,0)}}{_highlight(_esc(script['hook_title']))}",
-    ]
+    ev = []
     if sources:
         ev.append(f"Dialogue: 0,{_ts(0)},{_ts(total)},Source,,0,0,0,,{_esc('출처: ' + ', '.join(sources[:3]))}")
     t = 0.0
@@ -87,8 +80,8 @@ def make_gradient(out):
     import numpy as np
     from PIL import Image
     a = np.zeros(H, dtype=np.float32)
-    top = 560
-    a[:top] = np.linspace(0.78, 0.0, top)
+    top = 760
+    a[:top] = np.linspace(0.8, 0.0, top)
     bs = 1080
     a[bs:] = np.linspace(0.0, 0.72, H - bs)
     alpha = (np.tile(a[:, None], (1, W)) * 255).astype("uint8")
@@ -128,17 +121,21 @@ def render(script, durs, clips, narration, chart_png, sources, workdir, out_path
     grad = make_gradient(workdir / "gradient.png")
     ass = build_ass(script, durs, sources, workdir / "subs.ass")
 
-    inputs = ["-i", bg, "-i", narration, "-loop", "1", "-i", grad]
-    fc = ["[0:v][2:v]overlay=0:0:shortest=1[v1]"]
+    head_png, head_bottom = header.make_header(script, workdir / "header.png")
+    inputs = ["-i", bg, "-i", narration, "-loop", "1", "-i", grad, "-loop", "1", "-i", head_png]
+    fc = ["[0:v][2:v]overlay=0:0:shortest=1[v0]",
+          "[3:v]format=rgba,fade=t=in:st=0:d=0.35:alpha=1[hd]",
+          "[v0][hd]overlay=0:0:shortest=1[v1]"]
     last = "v1"
-    idx = 3
+    idx = 4
     if chart_png:
         # 차트를 보여줄 구간 계산 (지정 없으면 3번째 문장)
         starts = [sum(durs[:i]) for i in range(len(durs))]
         on = [i for i, s in enumerate(script["segments"]) if s.get("show_chart")] or [min(2, len(durs) - 1)]
         cond = "+".join(f"between(t,{starts[i]:.2f},{starts[i] + durs[i]:.2f})" for i in on[:2])
         inputs += ["-loop", "1", "-i", chart_png]
-        fc.append(f"[{last}][{idx}:v]overlay=x=(W-w)/2:y=470:enable='{cond}':shortest=1[v2]")
+        chart_y = max(head_bottom + 10, 560)
+        fc.append(f"[{last}][{idx}:v]overlay=x=(W-w)/2:y={chart_y}:enable='{cond}':shortest=1[v2]")
         last, idx = "v2", idx + 1
     fc.append(f"color=c=0xFFD700:s={W}x12:r={FPS}:d={total:.3f}[pb]")
     fc.append(f"[{last}][pb]overlay=x='-w+w*t/{total:.3f}':y=0:shortest=1[v3]")

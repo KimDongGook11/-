@@ -16,7 +16,8 @@ from .utils import load_state, save_state
 KST = dt.timezone(dt.timedelta(hours=9))
 
 SAMPLE = {
-    "hook_title": "미국 금리 0.25%p 인하, 내 대출은?",
+    "tag": "금리",
+    "hook_title": "미국 금리 [0.25%p 인하], 내 대출은?",
     "segments": [
         {"text": "미국이 또 금리를 내렸어요. 이번엔 0.25%p예요.", "keywords": "federal reserve", "show_chart": False},
         {"text": "연준은 물가보다 일자리 둔화를 더 걱정하고 있다는 뜻이죠.", "keywords": "office workers city", "show_chart": False},
@@ -110,7 +111,7 @@ def deliver(res, offline=False):
         rid = res["id"]
         telegram.send_message(
             f"🎬 오늘의 릴스 초안 ({res['duration']}초)\n\n"
-            f"■ 제목: {sc['hook_title']}\n\n■ 대본\n" +
+            f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 숫자 검수용 (원문 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +
             "\n\n■ 원문 링크\n" + "\n".join(res.get("links", [])[:4]) +

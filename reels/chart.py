@@ -38,7 +38,7 @@ def _fmt(v):
     return f"{v:,.3f}"
 
 
-def draw(dates, closes, label, out, w=960, h=700):
+def draw(dates, closes, label, out, w=960, h=580):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
