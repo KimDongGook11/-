@@ -2,20 +2,20 @@ name: 텔레그램 승인 확인
 
 on:
   schedule:
-    - cron: "7,37 * * * *"   # 30분마다 버튼/명령 확인
+    - cron: "7,37 * * * *"   # 30분마다 (GitHub 예약은 빠질 수 있어 cron-job.org로도 실행)
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: reels-state
+  group: reels-check
   cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 150
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -28,6 +28,7 @@ jobs:
       TTS_VOICE: ${{ vars.TTS_VOICE }}
       TTS_RATE: ${{ vars.TTS_RATE }}
       GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+      TITLE_STYLE: ${{ vars.TITLE_STYLE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,6 +37,8 @@ jobs:
       - name: 버튼·명령 확인
         id: chk
         run: |
+          git config user.name "reels-bot"
+          git config user.email "reels-bot@users.noreply.github.com"
           pip install -q requests
           python -m reels.approval
       - name: 프로그램 설치
@@ -44,13 +47,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
           pip install -q -r requirements.txt
-      - name: 다시 만들기
+      - name: 다시 만들기 → 90분 버튼 대기
         if: steps.chk.outputs.redo == 'true'
-        run: python -m reels.generate
+        run: python -m reels.generate --wait 90
       - name: 상태 저장
         if: always()
         run: |
-          git config user.name "reels-bot"
-          git config user.email "reels-bot@users.noreply.github.com"
           git add state
-          git diff --cached --quiet || (git commit -q -m "state: approval $(date -u +%FT%H%M)" && git pull -q --rebase && git push -q)
+          git diff --cached --quiet && exit 0
+          git commit -q -m "state: approval $(date -u +%FT%H%M)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
