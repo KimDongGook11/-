@@ -1,0 +1,62 @@
+{
+  "id": "n20261115-062132",
+  "series": "news",
+  "created_at": "2026-11-15T06:21:32.067139+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261115-062132.mp4",
+  "sources": [
+    "CNBC",
+    "Reuters",
+    "Bloomberg.com",
+    "Financial Times"
+  ],
+  "caption": "미국이 우크라이나의 동부 돈바스 양보와 나토 가입을 바꾸는 안을 제안했습니다. 🇺🇸🇺🇦\n\n젤렌스키 대통령은 안보 보장과 재건 자금이 전제된다면 국민투표를 실시하겠다고 밝혔는데요.\n지정학적 리스크 완화 여부에 따라 유가와 물가 흐름도 큰 영향을 받을 것으로 보입니다.\n\n과연 이번 제안으로 평화 협정이 물꼬를 틀 수 있을까요?\n\n📰 출처: CNBC, Reuters, Bloomberg.com\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#글로벌경제 #우크라이나 #나토 #국제유가 #세계뉴스",
+  "duration": 42.9,
+  "qc": {
+    "ok": true,
+    "items": [
+      [
+        "길이",
+        true,
+        "43초"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 93%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 70개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "U.S. floated idea of Ukraine ceding Donbas for NATO membership, Zelenskyy says",
+  "link": "https://www.cnbc.com/2026/11/14/zelenskyy-us-ukraine-donbas-nato-membership.html",
+  "topic": "US floats NATO membership for Ukraine in exchange for ceding Donbas region",
+  "links": [
+    "https://www.cnbc.com/2026/11/14/zelenskyy-us-ukraine-donbas-nato-membership.html",
+    "https://news.google.com/rss/articles/CBMiuAFBVV95cUxOUy1QYS1aemtYbV8xczk0cmRVeHl2ZGNLTlFwVE1SUUZ3OHctZGRnZlpTMi1DRTFkbWlXMWRaVGliVk8xU1N1MGZ6dVdNTTJHd1BMaTVnT2JQaTAwdm1QWWh4aElDM1JlMVJvcjJNQ2pIUWlHd09qUXNuc2Q1Qnd6ZVJGTlIta3dkaHlMcWRYZC1KX0tneTJKVkNSaVdZQXlFX2Y2Z0Vwa1VmNGRzZjZYVDRRdDBNLTNF?oc=5",
+    "https://news.google.com/rss/articles/CBMitgFBVV95cUxNZnU2bWVzWEppMldUY3MzMlhnMVhZb24tZzYzc2sxQ0VRUDV2dVlfM2taWnJXOXF6bHpOTXVXUGQ1QXI1TjRFWDhTeUFkTEJWMU5EbHFzeE5fX19OWmZKakRsdDhfdjZraFdxWjlHSUdaSzRPNVFjV1dkYTYteXRTd0hpM0tYeGl3cVgyWm16allXZjR0bG41YkE4M1dGckoyUUxLWTAzY3diRzQxSHF5OVctVEtpdw?oc=5",
+    "https://news.google.com/rss/articles/CBMihAFBVV95cUxQNi1IdTRFRXk4dnlyWE9ycGhxcHVNVjNSU1VBendhRjdFSHNYcVM5d0wwUGN3VUktaTM2b2R2UVIxZ3NMbjcybDlsa3llTGNUOFgzOVllMjg5UW9Db2FmQzB4QUJEcS1RODdNU3JhTy04QlJwY0duelNBTTdROEJMQTcyaTQ?oc=5"
+  ],
+  "release_tag": "reel-n20261115-062132",
+  "tg_message_id": 66,
+  "hook_title": "우크라 [나토 가입], 영토 양보안?",
+  "waiting_until": "2026-11-14T23:27:24.987264+00:00"
+}
