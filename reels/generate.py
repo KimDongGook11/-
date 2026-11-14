@@ -11,7 +11,7 @@ import shutil
 import sys
 import traceback
 
-from . import approval, config, history, news, pending, produce, render, script, storage, telegram
+from . import approval, config, history, news, pending, produce, qc, render, script, storage, telegram
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -39,26 +39,27 @@ SAMPLE = {
 }
 
 SAMPLE_LONG = {
-    "hook_title": "파산 직전 애플, [90일]의 기적", "thumb_title": "파산 90일 전, 애플을 살린 [한 번의 선택]",
+    "hook_title": "파산 직전 애플, [90일]의 기적", "thumb_title": "[90일] 남은 애플",
     "youtube_title": "(샘플) 파산 90일 전 애플은 무엇을 버렸나", "description": "테스트용 샘플입니다.",
     "tags": ["애플", "스티브잡스"],
     "intro": [_seg("1997년 여름, 애플에는 90일을 버틸 돈밖에 없었습니다.", "empty office night"),
               _seg("이 회사는 어떻게 세계에서 가장 비싼 기업이 됐을까요?", "city skyline")],
     "chapters": [
-        {"title": "무너지는 애플", "year": 1996, "segments": [
+        {"title": "무너지는 애플", "year": 1996, "summary": "제품만 늘고 손실은 커졌다", "segments": [
             _seg("1990년대 중반, 애플은 매년 큰 손실을 냈어요.", "old computer"),
             _seg("제품은 수십 종류로 늘었지만 팔리는 건 없었죠.", "warehouse boxes",
                  number={"value": "10억 달러", "label": "누적 손실(샘플)", "dir": "down"})]},
-        {"title": "돌아온 창업자", "year": 1997, "segments": [
+        {"title": "돌아온 창업자", "year": 1997, "summary": "제품 라인을 4개로 줄이다", "segments": [
             _seg("그리고 쫓겨났던 창업자가 회사로 돌아옵니다.", "man walking city"),
             _seg("첫 결정은 제품을 4개로 줄이는 것이었어요.", "minimal desk",
                  number={"value": "4개", "label": "남긴 제품 라인", "dir": "none"})]},
-        {"title": "그 후", "year": 2001, "segments": [
+        {"title": "그 후", "year": 2001, "summary": "빼기가 만든 반전", "segments": [
             _seg("그 결정 이후 주가는 어떻게 됐을까요?", "stock market screen", show_chart=True),
             _seg("위기에서 필요한 건 더하기가 아니라 빼기였던 거죠.", "sunrise city")]},
     ],
     "chart": {"ticker": "AAPL", "label": "애플 주가 · 1994년~현재"},
     "key_facts": ["(샘플 데이터 - 검수 전)"],
+    "company": {"name_ko": "애플", "country_ko": "미국", "industry_ko": "IT·전자"},
 }
 
 
@@ -131,9 +132,10 @@ def make_reel(series="news", offline=False):
         else:
             sc, sources, meta = _news_script()
         print("영상 제작 (세로 릴스)")
-        dur = produce.short(sc, work / "short", out, sources, offline=offline)
+        dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
-                "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1), **meta}
+                "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
+                "qc": qc.check(out, info, sc, offline=offline), **meta}
 
     # ---- 그때 그 결정: 장편(가로 5분) + 60초 릴스 ----
     if offline:
@@ -154,14 +156,15 @@ def make_reel(series="news", offline=False):
 
     print("영상 제작 ① 장편 (가로 약 5분)")
     long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
-    ldur, chapters, thumb = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
+    ldur, chapters, thumb, linfo = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
     print("영상 제작 ② 60초 릴스 (세로)")
-    sdur = produce.short(ssc, work / "short", out, sources, offline=offline, chart_opts=copt)
+    sdur, sinfo = produce.short(ssc, work / "short", out, sources, offline=offline, chart_opts=copt)
     return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": ssc,
             "sources": sources, "caption": build_caption(ssc, sources, series), "duration": round(sdur, 1),
             "title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep,
+            "qc": qc.check(out, sinfo, ssc, offline=offline),
             "long": {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
-                     "script": lsc}}
+                     "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}}
 
 
 def _mmss(t):
@@ -188,7 +191,7 @@ def deliver_long(res, offline=False):
     telegram.send_photo(lg["thumb"], f"🖼 [그때 그 결정] 유튜브 썸네일 · {ep.get('company_ko', '')} {ep.get('year', '')}년")
     pv = str(lg["video"]).replace(".mp4", "_preview.mp4")
     render.preview(lg["video"], pv)
-    telegram.send_video(pv, f"🎬 [유튜브 장편 미리보기 · 저화질] {_mmss(lg['duration'])}")
+    telegram.send_video(pv, f"🎬 [유튜브 장편 미리보기 · 저화질] {_mmss(lg['duration'])}\n{qc.summary(lg.get('qc'))}")
     telegram.send_message(
         "📺 유튜브 업로드용 (직접 올리기)\n\n"
         + (f"■ 원본 영상 다운로드 (1080p)\n{url}\n\n" if url else "")
@@ -231,7 +234,7 @@ def deliver(res, offline=False):
     if telegram.enabled():
         sc, rid, label = res["script"], res["id"], pending.LABEL[series]
         telegram.send_message(
-            f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n\n"
+            f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n{qc.summary(res.get('qc'))}\n\n"
             f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +

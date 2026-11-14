@@ -6,7 +6,8 @@
 import wave
 
 from . import config
-from .utils import font_file, run
+from . import fonts
+from .utils import run
 
 FPS = config.FPS
 
@@ -24,6 +25,18 @@ YT_AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
 def make_ig_safe(src, dst):
     run(["ffmpeg", "-y", "-i", src, *IG_VIDEO, *IG_AUDIO, "-movflags", "+faststart", dst])
     return dst
+
+
+# 모든 배경 영상을 같은 톤으로: 채도 낮춤 + 남색 계열 + 가장자리 어둡게
+GRADE_BASE = ("eq=saturation=0.8:contrast=1.05:brightness=-0.03,"
+              "colorbalance=rs=-0.03:bs=0.05:rm=-0.02:bm=0.03")
+GRADE = GRADE_BASE + ",vignette=PI/5"          # 화면 가득 채울 때만 가장자리 어둡게
+NAVY = "0x0A1020"
+
+# 레이아웃별 영상 자리
+CARD = {"x": 80, "y": 600, "w": 920, "h": 860}        # 세로 A: 가운데 둥근 카드
+WINDOW = {"x": 70, "y": 110, "w": 1180, "h": 780}     # 가로 B: 왼쪽 영상 창
+
 
 
 # ---------------- 자막 (단어별 카라오케) ----------------
@@ -51,12 +64,15 @@ def _chunks(words, max_len):
     return out
 
 
-def build_ass(words, total, out, vertical=True, sources=None, source_until=None):
-    f = config.FONT_NAME
-    if vertical:
-        W, H, size, ol, mv, max_len = 1080, 1920, 88, 8, 470, 11
+def build_ass(words, total, out, layout="A", sources=None, source_until=None):
+    """layout A: 세로 카드 아래 자막 / B: 가로 영상 창 아래 자막"""
+    f = fonts.family()
+    if layout == "A":
+        W, H, size, ol, ml, mr, mv, max_len = 1080, 1920, 70, 4, 60, 60, 1920 - CARD["y"] - CARD["h"] - 150, 13
+        src = (26, 3, 100, 1920 - CARD["y"] - CARD["h"] + 18)
     else:
-        W, H, size, ol, mv, max_len = 1920, 1080, 66, 6, 64, 24
+        W, H, size, ol, ml, mr, mv, max_len = 1920, 1080, 50, 2, WINDOW["x"], 1920 - WINDOW["x"] - WINDOW["w"], 74, 21
+        src = (22, 3, 1920 - WINDOW["x"] - WINDOW["w"] + 18, 1080 - WINDOW["y"] - WINDOW["h"] + 14)
     head = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -66,15 +82,15 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Sub,{f},{size},&H00FFFFFF,&H000000FF,&H00000000,&H96000000,-1,0,0,0,100,100,0,0,1,{ol},3,2,50,50,{mv},1
-Style: Source,{f},{30 if vertical else 26},&H00D0D0D0,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,{2 if vertical else 3},60,60,{400 if vertical else 24},1
+Style: Sub,{f},{size},&H00FFFFFF,&H000000FF,&H00101010,&H80000000,-1,0,0,0,100,100,0,0,1,{ol},2,2,{ml},{mr},{mv},1
+Style: Source,{f},{src[0]},&H00B8B8B8,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,1,0,{src[1]},40,{src[2]},{src[3]},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     ev = []
     if sources:
-        label = "참고: " if not vertical else "출처: "
+        label = "참고: " if layout == "B" else "출처: "
         ev.append(f"Dialogue: 0,{_ts(0)},{_ts(source_until or total)},Source,,0,0,0,,"
                   f"{_esc(label + ', '.join(sources[:3]))}")
     chunks = _chunks(words, max_len)
@@ -115,21 +131,51 @@ def make_gradient(out, W, H):
     return out
 
 
-def build_background(shots, W, H, workdir):
-    """샷 목록 → 하나의 배경 영상. 좌우 이동 없이 가운데를 잘라 고정, 원본 움직임은 BG_SPEED 배속."""
+def rounded_mask(w, h, r, out):
+    from PIL import Image, ImageDraw
+    m = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, w - 1, h - 1], radius=r, fill=255)
+    m.save(out)
+    return out
+
+
+def build_background(shots, W, H, workdir, layout="full"):
+    """샷 목록 → 하나의 배경 영상.
+    layout: full(화면 가득) | card(세로 A: 흐린 배경 + 둥근 카드) | window(가로 B: 남색 바탕 + 왼쪽 창)
+    좌우 이동 없음, 원본 움직임은 BG_SPEED 배속(기본 0.8), 모든 클립 같은 색감."""
     speed = float(config.env("BG_SPEED", "0.8"))
+    box = CARD if layout == "card" else WINDOW if layout == "window" else None
+    mask = rounded_mask(box["w"], box["h"], 36 if layout == "card" else 26, workdir / "mask.png") if box else None
     parts = []
     for i, (clip, ss, L) in enumerate(shots):
         p = workdir / f"shot_{i:03d}.mp4"
-        vf = (f"setpts=PTS/{speed:.3f},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
-              f"setsar=1,fps={FPS},eq=brightness=-0.07:saturation=0.92,format=yuv420p")
         if clip:
             inp = ["-ss", f"{ss:.2f}", "-stream_loop", "-1", "-i", clip]
         else:
-            inp = ["-f", "lavfi", "-i", f"gradients=s={W}x{H}:c0=0x0B1D33:c1=0x1B3A6B:x0=0:y0=0:x1={W}:y1={H}"
+            inp = ["-f", "lavfi", "-i", f"gradients=s=1920x1920:c0=0x0B1D33:c1=0x1B3A6B:x0=0:y0=0:x1=1920:y1=1920"
                                         f":speed=0.01:r={FPS}:seed={i}"]
-        run(["ffmpeg", "-y", *inp, "-t", f"{L:.3f}", "-vf", vf, "-an",
-             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", p])
+        base = f"[0:v]setpts=PTS/{speed:.3f},fps={FPS}"
+        if layout == "card":
+            fc = (f"{base},split=2[a][b];"
+                  f"[a]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=28:2,"
+                  f"eq=brightness=-0.24:saturation=0.55[bg];"
+                  f"[b]scale={box['w']}:{box['h']}:force_original_aspect_ratio=increase,crop={box['w']}:{box['h']},"
+                  f"{GRADE_BASE},format=rgba[f0];[1:v]format=gray[m];[f0][m]alphamerge[fg];"
+                  f"[bg][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p[v]")
+            extra = ["-loop", "1", "-i", mask]
+        elif layout == "window":
+            fd = min(0.18, L / 4)
+            fc = (f"{base},scale={box['w']}:{box['h']}:force_original_aspect_ratio=increase,crop={box['w']}:{box['h']},"
+                  f"{GRADE_BASE},format=rgba[f0];[1:v]format=gray[m];[f0][m]alphamerge,"
+                  f"fade=t=in:st=0:d={fd:.2f}:alpha=1,fade=t=out:st={max(0, L - fd):.2f}:d={fd:.2f}:alpha=1[fg];"
+                  f"[2:v][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p[v]")
+            extra = ["-loop", "1", "-i", mask, "-f", "lavfi", "-i", f"color=c={NAVY}:s={W}x{H}:r={FPS}"]
+        else:
+            fc = (f"{base},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
+                  f"{GRADE},setsar=1,format=yuv420p[v]")
+            extra = []
+        run(["ffmpeg", "-y", *inp, *extra, "-filter_complex", fc, "-map", "[v]", "-t", f"{L:.3f}", "-an",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-r", str(FPS), p])
         parts.append(p)
     lst = workdir / "shots.txt"
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
@@ -215,8 +261,8 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
         fc.append(f"color=c=0xFFD700:s={W}x12:r={FPS}:d={total:.3f}[pb]")
         fc.append(f"[{last}][pb]overlay=x='-w+w*t/{total:.3f}':y=0:shortest=1[vp]")
         last = "vp"
-    fd = font_file(True)
-    fontsdir = f":fontsdir={fd.rsplit('/', 1)[0]}" if fd else ""
+    fd = fonts.fonts_dir()
+    fontsdir = f":fontsdir={fd}" if fd else ""
     fc.append(f"[{last}]ass={ass}{fontsdir}[vout]")
 
     fc.append(f"[1:a]apad=whole_dur={total:.3f},aresample=48000,asplit=2[n1][n2]")
@@ -235,7 +281,7 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
     else:
         fc.append("[n2]anullsink")
     fc.append(f"{''.join(mix)}amix=inputs={len(mix)}:duration=first:dropout_transition=0:normalize=0,"
-              f"alimiter=limit=0.95[aout]")
+              f"loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[aout]")
     v, a = (YT_VIDEO, YT_AUDIO) if youtube else (IG_VIDEO, IG_AUDIO)
     run(["ffmpeg", "-y", *inputs, "-filter_complex", ";".join(fc), "-map", "[vout]", "-map", "[aout]",
          "-t", f"{total:.3f}", *v, *a, "-movflags", "+faststart", out])

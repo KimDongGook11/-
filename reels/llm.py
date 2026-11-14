@@ -11,6 +11,7 @@ from . import config
 BASE = "https://generativelanguage.googleapis.com/v1beta"
 SKIP = ("image", "tts", "audio", "live", "embedding", "vision", "robotics", "computer-use", "native")
 _cache = None
+_bad = set()          # 이번 실행에서 한도 초과·시간 초과가 난 모델은 다시 시도하지 않음
 
 
 def _headers():
@@ -77,7 +78,7 @@ def ask_json(prompt, temperature=0.6):
         "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
     }
     errors = []
-    for model in model_order():
+    for model in [m for m in model_order() if m not in _bad] or model_order():
         for attempt in range(2):
             try:
                 r = requests.post(f"{BASE}/models/{model}:generateContent", json=body,
@@ -86,6 +87,7 @@ def ask_json(prompt, temperature=0.6):
                     msg = f"{model}: HTTP 429 (무료 한도 초과)"
                     print(f"  [AI] {msg}")
                     errors.append(msg)
+                    _bad.add(model)
                     break
                 if r.status_code in (500, 503):        # 일시적 혼잡 → 잠깐 쉬고 한 번만 다시
                     msg = f"{model}: HTTP {r.status_code} (일시적 오류)"
@@ -108,6 +110,7 @@ def ask_json(prompt, temperature=0.6):
                 msg = f"{model}: 응답 시간 초과 → 다음 모델"
                 print(f"  [AI] {msg}")
                 errors.append(msg)
+                _bad.add(model)
                 break
             except (requests.RequestException, KeyError, IndexError, ValueError) as e:
                 msg = f"{model}: {type(e).__name__} {e}"

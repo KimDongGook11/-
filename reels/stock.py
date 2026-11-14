@@ -8,7 +8,12 @@ import requests
 from . import config
 
 API = "https://pixabay.com/api/videos/"
-FALLBACK_QUERIES = ["stock market", "finance business", "city skyline night", "office building", "global trade"]
+FALLBACK_QUERIES = ["business meeting", "stock market screen", "city skyline", "office building", "container port"]
+# 실사 경제 영상과 어울리지 않는 클립(만화·이모지·추상 그래픽 등)은 제외
+BLOCK_TAGS = {"cartoon", "animation", "animated", "emoji", "emoticon", "smiley", "anime", "illustration", "3d",
+              "render", "rendering", "abstract", "fractal", "kaleidoscope", "tunnel", "particles", "particle",
+              "neon", "loop", "pattern", "motion graphics", "background", "wallpaper", "halloween", "spider",
+              "monster", "zombie", "horror", "fantasy", "magic", "cgi", "vj", "glitch", "hologram"}
 MAX_MB = 70
 
 
@@ -16,10 +21,10 @@ def _search(q, cache):
     if q in cache:
         return cache[q]
     try:
-        r = requests.get(API, params={"key": config.PIXABAY_API_KEY, "q": q[:100],
-                                      "per_page": 30, "safesearch": "true"}, timeout=20)
+        r = requests.get(API, params={"key": config.PIXABAY_API_KEY, "q": q[:100], "video_type": "film",
+                                      "per_page": 40, "safesearch": "true"}, timeout=20)
         r.raise_for_status()
-        hits = r.json().get("hits", [])
+        hits = [h for h in r.json().get("hits", []) if not _blocked(h)]
     except Exception as e:
         print(f"  [영상] '{q}' 검색 실패: {e}")
         hits = []
@@ -27,7 +32,7 @@ def _search(q, cache):
     return hits
 
 
-def _rendition(hit, vertical):
+def _rendition(hit, vertical, card=False):
     """해당 클립에서 쓸 파일: 화질 기준을 넘는 것 중 가장 가벼운 것, 없으면 가장 큰 것."""
     vids = hit.get("videos", {})
     cands = [vids[k] for k in ("large", "medium", "small")
@@ -37,6 +42,8 @@ def _rendition(hit, vertical):
 
     def ok(v):
         w, h = v.get("width", 0), v.get("height", 0)
+        if card:       # 가운데 카드/창에 넣는 경우: 짧은 변이 720 이상이면 충분
+            return min(w, h) >= 720
         if vertical:   # 세로 클립(폭 1080 이상) 또는 4K 가로(가운데를 잘라도 폭 1215)
             return (h > w and w >= 1080) or h >= 2160
         return w >= 1920
@@ -46,12 +53,31 @@ def _rendition(hit, vertical):
     return max(cands, key=lambda v: v.get("width", 0) * v.get("height", 0))
 
 
-def _score(hit, vertical):
+def _tags(hit):
+    return {t.strip().lower() for t in str(hit.get("tags", "")).split(",") if t.strip()}
+
+
+def _blocked(hit):
+    tags = _tags(hit)
+    words = {w for t in tags for w in t.split()}
+    return bool(tags & BLOCK_TAGS or words & BLOCK_TAGS)
+
+
+def _relevance(hit, query):
+    """검색어 단어가 클립 태그에 얼마나 들어 있는지 (0~1)."""
+    q = {w for w in query.lower().split() if len(w) > 2}
+    if not q:
+        return 0.0
+    words = {w for t in _tags(hit) for w in t.split()}
+    return len(q & words) / len(q)
+
+
+def _score(hit, vertical, query=""):
     v = hit.get("videos", {}).get("large") or {}
     w, h = v.get("width", 0), v.get("height", 0)
-    s = 0
+    s = 4 * _relevance(hit, query)
     if vertical and h > w:
-        s += 3                      # 세로 클립 최우선
+        s += 1                      # 세로 클립 약간 우선
     if max(w, h) >= 3840:
         s += 2                      # 4K
     elif max(w, h) >= 1920:
@@ -68,7 +94,7 @@ def _download(url, out):
     return out
 
 
-def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=40):
+def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=40, card=False):
     """반환: [(클립경로 또는 None, 클립 안 시작초, 샷 길이초)] — 전체 길이 = sum(durs)."""
     workdir.mkdir(parents=True, exist_ok=True)
     cuts = []
@@ -82,12 +108,18 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
     cache, files, used_ids, plan = {}, {}, set(), []
     clip_count = 0
     for i, (seg, lens) in enumerate(zip(segments, cuts)):
-        kw = seg.get("keywords") or "stock market"
-        queries = [kw, " ".join(kw.split()[:2]), kw.split()[0]] + FALLBACK_QUERIES
-        pool = []
-        for q in dict.fromkeys(queries):
-            pool = sorted(_search(q, cache), key=lambda h: -_score(h, vertical))
-            if pool:
+        kw = (seg.get("keywords") or "business meeting").strip()
+        ws = kw.split()
+        queries = [kw, " ".join(ws[-2:]), " ".join(ws[:2])] + FALLBACK_QUERIES
+        pool, best = [], -1.0
+        for q in dict.fromkeys(q for q in queries if q):
+            cand = sorted(_search(q, cache), key=lambda h: -_score(h, vertical, q))
+            if not cand:
+                continue
+            rel = max(_relevance(h, q) for h in cand[:8])
+            if rel > best:
+                pool, best = cand, rel
+            if rel >= 0.5:          # 태그가 검색어와 충분히 맞으면 그 결과 사용
                 break
         got = []
         for L in lens:
@@ -101,7 +133,7 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 got.append((None, 0.0, L))
                 continue
             used_ids.add(hit["id"])
-            v = _rendition(hit, vertical)
+            v = _rendition(hit, vertical, card)
             if not v:
                 got.append((None, 0.0, L))
                 continue

@@ -1,15 +1,23 @@
-"""영상에 얹는 그래픽 (PIL로 그린 투명 PNG).
-후킹 카드, 숫자 카드(카운트업 프레임), 챕터 카드, 장편 배지, 아웃트로, 유튜브 썸네일."""
+"""영상에 얹는 그래픽 (PIL 투명 PNG). 글꼴은 Pretendard(없으면 Noto).
+
+세로 A(에디토리얼 카드): title_a, hook_a
+가로 B(인포그래픽 분할): panel_b, chapter_card, open_b
+공통: number_frames(숫자 카드 카운트업), outro_card, thumbnail(유튜브)"""
+import datetime as dt
 import re
 
 from PIL import Image, ImageDraw, ImageFilter
 
 from . import config
-from .header import _font, _wtext, _wrap, parse_title
+from .fonts import pil as F
+from .header import _wrap, parse_title
+from .render import CARD, WINDOW
 
-YELLOW, RED, WHITE, BLACK = (255, 212, 0), (230, 30, 40), (255, 255, 255), (0, 0, 0)
-UP, DOWN = (255, 77, 79), (59, 130, 246)
-PANEL = (10, 14, 24, 225)
+YELLOW, RED, WHITE, BLACK = (255, 212, 0), (232, 52, 52), (255, 255, 255), (0, 0, 0)
+UP, DOWN = (255, 92, 92), (84, 150, 255)
+NAVY = (10, 16, 32)
+PANEL = (16, 24, 44, 235)
+WEEK = "월화수목금토일"
 
 
 def _canvas(w, h):
@@ -17,86 +25,111 @@ def _canvas(w, h):
     return img, ImageDraw.Draw(img)
 
 
-def _title_block(d, title, cx, y, max_w, sizes, fg=WHITE, hl=YELLOW, stroke=0, max_lines=2):
-    """[ ]로 감싼 단어를 강조색으로, 가운데 정렬해 그림. 반환: 끝난 y"""
+def _wtext(word):
+    return "".join(t for t, _ in word)
+
+
+def _fit(d, title, max_w, sizes, max_lines, weight="Black"):
     words = parse_title(title)
     for size in sizes:
-        f = _font(size)
+        f = F(weight, size)
         lines = _wrap(d, words, f, max_w)
         if len(lines) <= max_lines:
-            break
+            return f, lines
+    return f, lines
+
+
+def _draw_lines(d, lines, f, x, y, align="left", width=None, fg=WHITE, hl=YELLOW, lh_ratio=1.3,
+                stroke=0, block=False):
+    """block=True: 강조 단어 뒤에 노란 블록(글자는 검정) — 썸네일용."""
     asc, desc = f.getmetrics()
-    lh = int((asc + desc) * 1.1)
+    lh = int(f.size * lh_ratio)              # 글꼴마다 여백이 달라 글자 크기 기준으로 줄 간격 계산
     sp = d.textlength(" ", font=f)
     for ln in lines:
         lw = d.textlength(" ".join(_wtext(w) for w in ln), font=f)
-        x = cx - lw / 2
+        xx = x if align == "left" else x + (width - lw) / 2
         for word in ln:
             for t, is_hl in word:
-                d.text((x, y), t, font=f, fill=hl if is_hl else fg, stroke_width=stroke, stroke_fill=BLACK)
-                x += d.textlength(t, font=f)
-            x += sp
+                tw = d.textlength(t, font=f)
+                if block and is_hl:
+                    top = d.textbbox((xx, y), t, font=f)
+                    d.rectangle([xx - 10, top[1] - 12, xx + tw + 10, top[3] + 12], fill=hl)
+                    d.text((xx, y), t, font=f, fill=BLACK)
+                else:
+                    d.text((xx, y), t, font=f, fill=hl if (is_hl and not block) else fg,
+                           stroke_width=stroke, stroke_fill=BLACK)
+                xx += tw
+            xx += sp
         y += lh
-    return y, lines, f, lh
+    return y
 
 
-def _pill(d, x, y, text, f, bg, fg, pad=(24, 10)):
-    w = d.textlength(text, font=f)
-    asc, desc = f.getmetrics()
-    h = asc + desc + pad[1] * 2
-    d.rounded_rectangle([x, y, x + w + pad[0] * 2, y + h], radius=h // 2, fill=bg)
-    d.text((x + pad[0], y + pad[1]), text, font=f, fill=fg)
-    return w + pad[0] * 2, h
+def meta_text(sc):
+    if sc.get("pill") and sc.get("brand"):        # 그때 그 결정
+        return f"{sc.get('tag', '')}  ·  {sc['brand'].split(' · ')[0]}  ·  {sc['pill']}"
+    k = dt.datetime.now(dt.timezone(dt.timedelta(hours=9)))
+    tag = sc.get("tag") or "오늘의 경제"
+    return f"{tag}  ·  {k.month}월 {k.day}일 ({WEEK[k.weekday()]})"
 
 
-def _pills_centered(d, items, cx, y, f, gap=14):
-    widths = [d.textlength(t, font=f) + 48 for t, _, _ in items]
-    x = cx - (sum(widths) + gap * (len(items) - 1)) / 2
-    h = 0
-    for (t, bg, fg), w in zip(items, widths):
-        _, h = _pill(d, x, y, t, f, bg, fg)
-        x += w + gap
-    return h
-
-
-# ---------- 후킹/오프닝 카드 ----------
-def hook_card(title, W, H, out, tag=None, pill=None):
-    """영상 첫 1~3초: 화면 가운데 큰 제목 (스크롤을 멈추게)."""
+# ---------------- 세로 A ----------------
+def title_a(sc, out, W=1080, H=1920):
+    """위쪽: 작은 메타 줄 + 노란 막대 + 왼쪽 정렬 큰 제목(최대 2줄). 반환: (경로, 제목 끝 y)"""
     img, d = _canvas(W, H)
-    vertical = H > W
-    max_w = W - (120 if vertical else 360)
-    sizes = (132, 120, 108, 96, 84) if vertical else (120, 108, 96, 84)
-    # 크기를 먼저 재서 패널 높이 계산
-    tmp, td = _canvas(W, H)
-    y_end, lines, f, lh = _title_block(td, title, W / 2, 0, max_w, sizes, max_lines=3)
-    block = lh * len(lines)
-    pill_h = 70 if (tag or pill) else 0
-    top = (H - block - pill_h) / 2 - (60 if vertical else 0)
-    pad = 56
-    d.rounded_rectangle([60 if vertical else 160, top - pad - pill_h, W - (60 if vertical else 160), top + block + pad],
-                        radius=40, fill=PANEL)
-    if tag or pill:
-        items = ([(tag, RED, WHITE)] if tag else []) + ([(pill, YELLOW, BLACK)] if pill else [])
-        _pills_centered(d, items, W / 2, top - pill_h - 10, _font(48 if vertical else 44))
-    _title_block(d, title, W / 2, top, max_w, sizes, max_lines=3)
+    x, max_w = 80, W - 160
+    d.text((x, 205), meta_text(sc), font=F("Medium", 34), fill=(255, 255, 255, 200))
+    d.rectangle([x, 262, x + 70, 270], fill=YELLOW)
+    f, lines = _fit(d, sc["hook_title"], max_w, (92, 84, 76, 68), 2)
+    y = _draw_lines(d, lines, f, x, 292)
+    img.save(out)
+    return out, int(y)
+
+
+def hook_a(sc, out, W=1080, H=1920):
+    """첫 1.2초: 어두운 화면 가운데 아주 큰 제목."""
+    img, d = _canvas(W, H)
+    d.rectangle([0, 0, W, H], fill=(6, 9, 18, 200))
+    f, lines = _fit(d, sc["hook_title"], W - 140, (132, 120, 108, 96), 3)
+    block = int(f.size * 1.3) * len(lines)
+    y0 = (H - block) / 2 - 60
+    mt = meta_text(sc)
+    mf = F("Bold", 40)
+    d.text(((W - d.textlength(mt, font=mf)) / 2, y0 - 90), mt, font=mf, fill=YELLOW)
+    _draw_lines(d, lines, f, 0, y0, align="center", width=W)
     img.save(out)
     return out
 
 
-# ---------- 숫자 카드 (카운트업) ----------
+def card_frame(out, W=1080, H=1920):
+    """영상 카드 테두리(얇은 밝은 선 + 아래 그림자)로 카드 모양을 또렷하게."""
+    img, d = _canvas(W, H)
+    x, y, w, h = CARD["x"], CARD["y"], CARD["w"], CARD["h"]
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([x, y + 14, x + w, y + h + 14], radius=36, fill=(0, 0, 0, 120))
+    sh = sh.filter(ImageFilter.GaussianBlur(18))
+    hole = Image.new("L", (W, H), 255)
+    ImageDraw.Draw(hole).rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=36, fill=0)
+    img = Image.composite(sh, img, hole)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=36, outline=(255, 255, 255, 46), width=2)
+    img.save(out)
+    return out
+
+
+# ---------------- 숫자 카드 ----------------
 NUM_RE = re.compile(r"^([^\d\-+]*)([\-+]?\d[\d,]*\.?\d*)(.*)$")
 
 
-def number_frames(value, label, direction, out_dir, vertical=True, frames=16):
+def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16):
     """숫자가 0에서 목표값까지 올라가는 프레임들. 반환: (파일 패턴, 프레임 수, 폭, 높이)"""
     out_dir.mkdir(parents=True, exist_ok=True)
-    w, h = (900, 520) if vertical else (1000, 460)
     col = UP if direction == "up" else DOWN if direction == "down" else YELLOW
     arrow = "▲ " if direction == "up" else "▼ " if direction == "down" else ""
     m = NUM_RE.match(str(value).strip())
-    big, small = _font(170 if vertical else 160), _font(52 if vertical else 50)
+    big = F("Black", int(h * 0.34))
+    small = F("SemiBold", int(h * 0.1))
     for i in range(frames):
-        k = 1 - (1 - (i + 1) / frames) ** 3          # 끝으로 갈수록 천천히 (ease-out)
+        k = 1 - (1 - (i + 1) / frames) ** 3
         if m:
             pre, num, suf = m.groups()
             dec = len(num.split(".")[1]) if "." in num else 0
@@ -107,57 +140,112 @@ def number_frames(value, label, direction, out_dir, vertical=True, frames=16):
             txt = str(value)
         txt = arrow + txt
         img, d = _canvas(w, h)
-        d.rounded_rectangle([0, 0, w - 1, h - 1], radius=44, fill=PANEL, outline=col + (255,), width=5)
-        tw = d.textlength(txt, font=big)
-        d.text(((w - tw) / 2, 70), txt, font=big, fill=col)
+        d.rounded_rectangle([0, 0, w - 1, h - 1], radius=int(h * 0.09), fill=(12, 18, 34, 255),
+                            outline=(255, 255, 255, 40), width=2)
+        d.rectangle([0, int(h * 0.12), 8, int(h * 0.88)], fill=col)
         lw = d.textlength(label, font=small)
-        d.text(((w - lw) / 2, h - 140), label, font=small, fill=(225, 230, 240))
-        sc = 0.86 + 0.14 * min(1.0, (i + 1) / (frames * 0.5))   # 살짝 커지며 등장
+        d.text(((w - lw) / 2, h * 0.14), label, font=small, fill=(205, 212, 228))
+        tw = d.textlength(txt, font=big)
+        d.text(((w - tw) / 2, h * 0.36), txt, font=big, fill=col)
+        sc = 0.9 + 0.1 * min(1.0, (i + 1) / (frames * 0.5))
         if sc < 1:
             canvas, _ = _canvas(w, h)
-            small_img = img.resize((int(w * sc), int(h * sc)), Image.LANCZOS)
-            canvas.paste(small_img, ((w - small_img.width) // 2, (h - small_img.height) // 2), small_img)
+            s_img = img.resize((int(w * sc), int(h * sc)), Image.LANCZOS)
+            canvas.paste(s_img, ((w - s_img.width) // 2, (h - s_img.height) // 2), s_img)
             img = canvas
         img.save(out_dir / f"{i:04d}.png")
     return str(out_dir / "%04d.png"), frames, w, h
 
 
-# ---------- 장편: 챕터 카드 / 왼쪽 위 배지 ----------
+# ---------------- 가로 B ----------------
+PX, PW = 1320, 530        # 오른쪽 패널 x, 폭
+KEY_BOX = (PX, 500, PW, 250)   # 핵심 카드 자리 (x, y, w, h)
+
+
+def panel_b(lsc, ci, out, W=1920, H=1080):
+    """챕터 ci(1부터)의 오른쪽 패널 + 위쪽 브랜드 줄. 핵심 카드 자리에는 챕터 요약을 넣어 둠
+    (숫자 카드가 나오는 동안엔 그 위를 덮음)."""
+    img, d = _canvas(W, H)
+    ch = lsc["chapters"][ci - 1]
+    ep, year = lsc.get("ep", ""), lsc.get("year")
+    d.text((70, 42), f"경제 [원픽]   ·   그때 그 결정 {ep}", font=F("SemiBold", 30), fill=(255, 255, 255, 170))
+    d.text((PX, 112), f"CHAPTER {ci}", font=F("Bold", 30), fill=YELLOW)
+    tf, lines = _fit(d, ch["title"], PW, (64, 56, 50), 2)
+    y = _draw_lines(d, lines, tf, PX, 156)
+    d.rectangle([PX, y + 14, PX + 64, y + 21], fill=YELLOW)
+    cy = ch.get("year") or year
+    if cy:
+        yf = F("Black", 150)
+        d.text((PX - 6, 300), str(cy), font=yf, fill=(255, 255, 255, 46))
+    # 핵심 카드 기본 내용: 챕터 요약
+    x, yb, w, h = KEY_BOX
+    d.rounded_rectangle([x, yb, x + w, yb + h], radius=22, fill=(255, 255, 255, 16),
+                        outline=(255, 212, 0, 150), width=3)
+    d.text((x + 28, yb + 24), "핵심", font=F("Bold", 28), fill=YELLOW)
+    summ = ch.get("summary") or ch["title"]
+    sf, sl = _fit(d, summ, w - 56, (40, 36, 32), 3, weight="Bold")
+    _draw_lines(d, sl, sf, x + 28, yb + 72, lh_ratio=1.35)
+    # 미니 타임라인
+    chs = lsc["chapters"]
+    ty = 820
+    x0, x1 = PX + 10, PX + PW - 10
+    d.line([(x0, ty), (x1, ty)], fill=(255, 255, 255, 70), width=3)
+    n = len(chs)
+    for k, c in enumerate(chs, start=1):
+        cx = x0 + (x1 - x0) * (k - 1) / max(1, n - 1)
+        cur = k == ci
+        r = 11 if cur else 7
+        d.ellipse([cx - r, ty - r, cx + r, ty + r], fill=YELLOW if cur else (150, 160, 180))
+        lab = str(c.get("year") or "")
+        if lab:
+            lf = F("Bold" if cur else "Medium", 24)
+            d.text((cx - d.textlength(lab, font=lf) / 2, ty + 18), lab, font=lf,
+                   fill=YELLOW if cur else (170, 178, 196))
+    comp = lsc.get("company") or {}
+    info = "  ·  ".join(v for v in (comp.get("name_ko"), comp.get("country_ko"), comp.get("industry_ko")) if v)
+    if info:
+        d.text((PX, 905), info, font=F("Medium", 28), fill=(190, 198, 214))
+    img.save(out)
+    return out
+
+
 def chapter_card(no, title, year, W, H, out):
     img, d = _canvas(W, H)
-    d.rectangle([0, 0, W, H], fill=(6, 9, 16, 215))
+    d.rectangle([0, 0, W, H], fill=(8, 12, 24, 240))
     cy = H / 2
-    f1, f2 = _font(44), _font(110)
     lab = f"CHAPTER {no}"
+    f1, f2 = F("Bold", 40), F("Black", 116)
     d.text(((W - d.textlength(lab, font=f1)) / 2, cy - 170), lab, font=f1, fill=YELLOW)
-    tw = d.textlength(title, font=f2)
-    d.text(((W - tw) / 2, cy - 100), title, font=f2, fill=WHITE)
+    d.text(((W - d.textlength(title, font=f2)) / 2, cy - 105), title, font=f2, fill=WHITE)
     if year:
-        _pills_centered(d, [(f"{year}년", YELLOW, BLACK)], W / 2, cy + 60, _font(46))
-    d.line([(W / 2 - 60, cy - 190), (W / 2 + 60, cy - 190)], fill=YELLOW, width=4)
+        yf = F("SemiBold", 44)
+        t = f"{year}"
+        d.text(((W - d.textlength(t, font=yf)) / 2, cy + 70), t, font=yf, fill=(200, 208, 224))
+    d.rectangle([W / 2 - 40, cy - 196, W / 2 + 40, cy - 190], fill=YELLOW)
     img.save(out)
     return out
 
 
-def long_badge(series, ep, year, chapter, W, H, out):
+def open_b(lsc, W, H, out):
+    """장편 오프닝 타이틀."""
     img, d = _canvas(W, H)
-    f = _font(36)
-    x, y = 56, 48
-    for t, bg, fg in [(series, RED, WHITE), (ep, (255, 255, 255, 235), BLACK)] + \
-                     ([(f"{year}년", YELLOW, BLACK)] if year else []):
-        w, h = _pill(d, x, y, t, f, bg, fg, pad=(22, 8))
-        x += w + 12
-    if chapter:
-        d.text((60, y + 78), chapter, font=_font(34), fill=WHITE, stroke_width=3, stroke_fill=BLACK)
+    d.rectangle([0, 0, W, H], fill=(8, 12, 24, 225))
+    mt = f"그때 그 결정  ·  {lsc.get('ep', '')}  ·  {lsc.get('year', '')}"
+    mf = F("Bold", 40)
+    f, lines = _fit(d, lsc["hook_title"], W - 400, (124, 112, 100), 2)
+    block = int(f.size * 1.3) * len(lines)
+    y0 = (H - block) / 2 + 20
+    d.text(((W - d.textlength(mt, font=mf)) / 2, y0 - 90), mt, font=mf, fill=YELLOW)
+    _draw_lines(d, lines, f, 0, y0, align="center", width=W)
     img.save(out)
     return out
 
 
-# ---------- 아웃트로 ----------
+# ---------------- 아웃트로 ----------------
 def outro_card(W, H, out, vertical=True):
     img, d = _canvas(W, H)
-    d.rectangle([0, 0, W, H], fill=(8, 8, 10, 235))
-    f = _font(170 if vertical else 150)
+    d.rectangle([0, 0, W, H], fill=(8, 10, 16, 240))
+    f = F("Black", 170 if vertical else 150)
     cy = H / 2 - (120 if vertical else 80)
     parts = [("경제 ", WHITE), ("[", RED), ("원픽", YELLOW), ("]", RED)]
     tw = sum(d.textlength(t, font=f) for t, _ in parts)
@@ -166,52 +254,49 @@ def outro_card(W, H, out, vertical=True):
         d.text((x, cy - 90), t, font=f, fill=c)
         x += d.textlength(t, font=f)
     sub = "팔로우하고 매일 경제 한 개씩 받아보세요" if vertical else "구독하고 다음 이야기도 받아보세요"
-    fs = _font(50 if vertical else 46)
-    d.text(((W - d.textlength(sub, font=fs)) / 2, cy + 130), sub, font=fs, fill=(230, 230, 230))
+    fs = F("Medium", 48 if vertical else 44)
+    d.text(((W - d.textlength(sub, font=fs)) / 2, cy + 130), sub, font=fs, fill=(225, 228, 236))
     handle = config.env("BRAND_HANDLE", "@econonepick")
-    fh = _font(44)
-    _pills_centered(d, [(handle, (255, 255, 255, 235), BLACK)], W / 2, cy + 230, fh)
+    fh = F("Bold", 40)
+    hw = d.textlength(handle, font=fh)
+    d.rounded_rectangle([(W - hw) / 2 - 26, cy + 220, (W + hw) / 2 + 26, cy + 290], radius=35, fill=WHITE)
+    d.text(((W - hw) / 2, cy + 232), handle, font=fh, fill=BLACK)
     img.save(out)
     return out
 
 
-# ---------- 유튜브 썸네일 ----------
+# ---------------- 유튜브 썸네일 ----------------
 def thumbnail(frame_png, title, year, ep, out, w=1280, h=720):
+    """왼쪽: 남색 바탕 큰 두 줄 문구(강조 단어는 노란 블록) / 오른쪽: 장면 이미지가 사선으로 이어짐."""
+    base = Image.new("RGB", (w, h), NAVY)
     if frame_png:
-        bg = Image.open(frame_png).convert("RGB").resize((w, h), Image.LANCZOS)
-        bg = bg.filter(ImageFilter.GaussianBlur(2))
-    else:
-        bg = Image.new("RGB", (w, h), (11, 18, 32))
-    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shade)
-    for i in range(w):                                  # 왼쪽이 어두운 그라데이션
-        a = int(225 * max(0.0, 1 - i / (w * 0.85)))
-        sd.line([(i, 0), (i, h)], fill=(0, 0, 0, a))
-    img = Image.alpha_composite(bg.convert("RGBA"), shade)
+        ph = Image.open(frame_png).convert("RGB")
+        PWID = 700
+        r = max(PWID / ph.width, h / ph.height)
+        ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS)
+        ph = ph.crop(((ph.width - PWID) // 2, (ph.height - h) // 2, (ph.width - PWID) // 2 + PWID, (ph.height - h) // 2 + h))
+        from PIL import ImageEnhance
+        ph = ImageEnhance.Color(ph).enhance(0.85)
+        ph = ImageEnhance.Contrast(ph).enhance(1.08)
+        m = Image.new("L", (PWID, h), 0)
+        md = ImageDraw.Draw(m)
+        md.polygon([(150, 0), (PWID, 0), (PWID, h), (0, h)], fill=255)
+        m = m.filter(ImageFilter.GaussianBlur(2))
+        base.paste(ph, (w - PWID, 0), m)
+    img = base.convert("RGBA")
     d = ImageDraw.Draw(img)
-    f = _font(40)
-    x = 54
-    for t, b, c in [("그때 그 결정", RED, WHITE)] + ([(f"{year}년", YELLOW, BLACK)] if year else []) + \
-                   ([(ep, (255, 255, 255, 235), BLACK)] if ep else []):
-        wdt, _ = _pill(d, x, 50, t, f, b, c, pad=(22, 8))
-        x += wdt + 12
-    words = parse_title(title)
-    for size in (118, 106, 96, 86, 76):
-        tf = _font(size)
-        lines = _wrap(d, words, tf, w * 0.66)
-        if len(lines) <= 3:
-            break
-    asc, desc = tf.getmetrics()
-    lh = int((asc + desc) * 1.06)
-    y = h - 60 - lh * len(lines)
-    sp = d.textlength(" ", font=tf)
-    for ln in lines:
-        xx = 54
-        for word in ln:
-            for t, is_hl in word:
-                d.text((xx, y), t, font=tf, fill=YELLOW if is_hl else WHITE, stroke_width=6, stroke_fill=BLACK)
-                xx += d.textlength(t, font=tf)
-            xx += sp
-        y += lh
-    img.convert("RGB").save(out, quality=92)
+    x = 60
+    lab = "그때 그 결정"
+    lf = F("Black", 40)
+    lw = d.textlength(lab, font=lf)
+    d.rounded_rectangle([x, 52, x + lw + 40, 112], radius=10, fill=RED)
+    d.text((x + 20, 58), lab, font=lf, fill=WHITE)
+    sub = "  ·  ".join(str(v) for v in (ep, year) if v)
+    if sub:
+        d.text((x + lw + 62, 62), sub, font=F("Bold", 36), fill=(220, 226, 238))
+    f, lines = _fit(d, title, 600, (128, 116, 104, 92, 84), 2)
+    lh = int(f.size * 1.22)
+    y = h - 70 - lh * len(lines)
+    _draw_lines(d, lines, f, x, y, lh_ratio=1.22, block=True, stroke=0)
+    img.convert("RGB").save(out, quality=93)
     return out

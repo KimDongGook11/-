@@ -69,7 +69,9 @@ def write_script(mats, topic, brand):
 4. 구성: 1번 문장은 3초 안에 멈추게 하는 후킹 → 무슨 일이 있었나 → 왜 중요한가 → 한국/내 지갑에 미치는 영향 → 마지막은 시청자에게 던지는 질문.
 5. segments는 6~8개, 각 문장은 25~45자. 전체 합계 220~320자.
 6. 투자 권유(사라/팔아라)는 하지 마.
-7. 각 segment의 keywords는 배경 스톡 영상 검색어로, 영어 1~3단어(예: "stock market", "oil refinery", "federal reserve building", "shipping containers"). 사람 얼굴 클로즈업이나 특정 인물 이름은 피해.
+7. 각 segment의 keywords는 배경 스톡 영상 검색어야. 그 문장 내용을 **눈으로 보이는 구체적인 장면**으로 바꾼 영어 2~3단어.
+   좋은 예: "stock exchange screen", "oil refinery", "shipping containers port", "semiconductor factory", "tokyo street night", "bank building", "gas station price", "supermarket shopping".
+   나쁜 예(금지): 감정·추상어("tension", "shock", "betrayal", "crisis drama", "success"), 특정 인물 이름, 로고·브랜드명.
 8. chart는 이 뉴스와 가장 관련 있는 시세 1개. 아래 목록 중에서 고르고, 맞는 게 없으면 null:
 {TICKERS}
 9. show_chart는 차트를 보여주기 좋은 segment 1개에만 true.

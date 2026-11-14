@@ -6,7 +6,7 @@ import datetime as dt
 import requests
 
 from . import config
-from .utils import font_file
+from . import fonts
 
 UP, DOWN = "#FF4D4F", "#3B82F6"   # 한국식: 상승 빨강, 하락 파랑
 MARK = "#FFD400"
@@ -54,11 +54,11 @@ def draw(dates, closes, label, out, w=960, h=580, mark_year=None, upto=1.0):
     from matplotlib.font_manager import FontProperties
     from matplotlib.patches import FancyBboxPatch
 
-    ff = font_file(True)
+    ff = fonts.path("Bold")
     fp = (lambda s: FontProperties(fname=ff, size=s)) if ff else (lambda s: FontProperties(size=s))
     mi = None
-    if mark_year:
-        mi = next((i for i, d in enumerate(dates) if d.year >= mark_year), 0)
+    if mark_year and dates[0].year <= mark_year:      # 데이터가 그 해를 포함할 때만 '그때' 표시
+        mi = next((i for i, d in enumerate(dates) if d.year >= mark_year), None)
     base = closes[mi] if mi is not None else closes[0]
     ratio = closes[-1] / base
     chg = (ratio - 1) * 100

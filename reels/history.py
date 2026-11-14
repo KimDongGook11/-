@@ -100,12 +100,16 @@ def write_long(ep, material, brand):
 2. 자료 문장을 그대로 번역하지 말고 이야기처럼 새로 풀어 써. 말투는 친근한 존댓말, 다큐 내레이션처럼.
 3. 구성: intro(2~3문장, 결과를 살짝 보여주는 후킹) + chapters 5개
    (① 그때 상황 ② 위기·갈림길 ③ 그 결정 ④ 그 후 어떻게 됐나 ⑤ 오늘 우리에게 주는 교훈).
-   챕터 제목은 8자 이내, year는 그 챕터의 대표 연도(모르면 null).
+   챕터 제목은 8자 이내, year는 그 챕터의 대표 연도(모르면 null), summary는 그 챕터 핵심을 담은 한 줄(20자 이내).
 4. 각 segment는 한 문장 30~60자. 챕터마다 7~10문장. 전체 글자 수 2,000~2,400자 (읽으면 약 5분). 짧게 끝내지 말고 배경·인물·숫자·결과를 충분히 풀어 써.
-5. keywords: 배경 스톡 영상 검색용 영어 1~3단어. 로고·제품명·인물 이름은 피하고 분위기 위주.
+5. keywords: 배경 스톡 영상 검색어. 그 문장을 **눈으로 보이는 구체적인 장면**으로 바꾼 영어 2~3단어.
+   좋은 예: "video game console", "1990s office computer", "business handshake", "tokyo skyline", "factory assembly line", "newspaper printing", "boardroom meeting", "stock exchange screen".
+   나쁜 예(금지): 감정·추상어("betrayal", "tension", "shock", "drama", "secret plan"), 인물 이름, 로고·브랜드명.
 6. 핵심 숫자가 나오는 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
 7. 주가 흐름을 보여주기 좋은 문장 1~2개에 show_chart: true (상장사일 때만).
-8. hook_title: 18자 이내, 핵심 단어 하나를 [ ]로. thumb_title: 썸네일용 20자 이내, 핵심 단어 하나를 [ ]로.
+8. hook_title: 18자 이내, 핵심 단어 하나를 [ ]로.
+   thumb_title: 유튜브 썸네일 문구. 두 줄로 읽히게 띄어쓰기 포함 14자 이내, 강한 단어, 핵심 단어 하나를 [ ]로 (예: "소니를 버린 [닌텐도]", "[90일] 남은 애플").
+   company: 회사 이름·나라·업종을 한국어로 짧게.
 9. youtube_title: 40자 이내, 호기심을 끄는 제목. description: 3~5줄 소개. tags: 10개 이내.
 
 [자료]
@@ -115,7 +119,8 @@ JSON으로만 답해:
 {{
  "hook_title": "...", "thumb_title": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
  "intro": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
- "chapters": [{{"title": "...", "year": 1997, "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
+ "company": {{"name_ko": "닌텐도", "country_ko": "일본", "industry_ko": "게임"}},
+ "chapters": [{{"title": "...", "year": 1997, "summary": "핵심 한 줄", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
  "chart": {{"ticker": "{ep.get('ticker') or ''}", "label": "기업명 주가 · 연도~현재"}},
  "key_facts": ["대본에 쓴 연도·숫자 + 자료의 근거 문장 일부(영어 원문 짧게)"]
 }}"""
@@ -126,7 +131,8 @@ JSON으로만 답해:
         segs = norm_segments(c.get("segments"))
         if segs:
             y = re.sub(r"\D", "", str(c.get("year") or ""))
-            chapters.append({"title": str(c.get("title", ""))[:12], "year": int(y) if y else None, "segments": segs})
+            chapters.append({"title": str(c.get("title", ""))[:12], "year": int(y) if y else None,
+                             "summary": str(c.get("summary") or "")[:30], "segments": segs})
     if len(chapters) < 3:
         raise ValueError("장편 대본 챕터가 부족합니다")
     chart = d.get("chart") if isinstance(d.get("chart"), dict) and d["chart"].get("ticker") else None
@@ -134,6 +140,7 @@ JSON으로만 답해:
             "youtube_title": str(d.get("youtube_title", ""))[:90], "description": str(d.get("description", "")),
             "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
             "intro": norm_segments(d.get("intro")), "chapters": chapters, "chart": chart,
+            "company": d.get("company") if isinstance(d.get("company"), dict) else {},
             "key_facts": d.get("key_facts", [])}
 
 
@@ -148,7 +155,7 @@ def condense_short(long_sc, ep):
 - 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지.
 - segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
 - 마지막 문장은 반드시 "전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요." 같은 안내.
-- keywords는 영어 1~3단어 분위기 위주. 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
+- keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
 - hook_title 18자 이내, 핵심 단어 하나를 [ ]로.
 
 [장편 대본]

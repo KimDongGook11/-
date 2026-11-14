@@ -6,7 +6,6 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 
 from . import config
-from .utils import font_file
 
 W, H = config.W, config.H
 TOP = 230            # 인스타 상단 UI(릴스 글자 등)를 피하는 여백
@@ -21,17 +20,9 @@ STYLES = {
 }
 
 
-def _font(size):
-    path = font_file(True)
-    if not path:
-        return ImageFont.load_default()
-    if path.endswith(".ttc"):
-        for idx in (1, 0):   # Noto CJK: 1번이 한국어(KR) 글꼴
-            try:
-                return ImageFont.truetype(path, size, index=idx)
-            except Exception:
-                pass
-    return ImageFont.truetype(path, size)
+def _font(size, weight="Bold"):
+    from .fonts import pil
+    return pil(weight, size)
 
 
 def parse_title(title):
