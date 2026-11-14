@@ -1,0 +1,31 @@
+name: 썸네일 시험
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra
+          sudo apt-get install -y -qq fonts-pretendard 2>/dev/null || true
+          if ! fc-list | grep -qi pretendard; then npm i --no-save --prefix /tmp/pf pretendard@1.3.9 >/dev/null 2>&1 && mkdir -p ~/.fonts && find /tmp/pf/node_modules/pretendard -path '*static*' -name 'Pretendard-*.otf' -exec cp {} ~/.fonts/ \; && fc-cache -f >/dev/null; fi
+          fc-list | grep -qi pretendard && echo "글꼴: Pretendard" || echo "글꼴: Noto (Pretendard 설치 실패)"
+          pip install -q -r requirements.txt "rembg[cpu]"
+      - name: 썸네일 시험 제작
+        run: python -m reels.thumblab

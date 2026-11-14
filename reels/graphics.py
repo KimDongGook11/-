@@ -266,37 +266,67 @@ def outro_card(W, H, out, vertical=True):
 
 
 # ---------------- 유튜브 썸네일 ----------------
-def thumbnail(frame_png, title, year, ep, out, w=1280, h=720):
-    """왼쪽: 남색 바탕 큰 두 줄 문구(강조 단어는 노란 블록) / 오른쪽: 장면 이미지가 사선으로 이어짐."""
-    base = Image.new("RGB", (w, h), NAVY)
+THUMB_YEL = (255, 204, 0)
+
+
+def thumbnail(frame_png, line1, line2, sub, ep, out, figure=None, w=1280, h=720):
+    """노란 배경 + 쌓인 제목 상자(검정/노랑, 흰/검정) + EP 빨간 상자 + 오른쪽 이중 노출 인물 + 채널 로고."""
+    base = Image.new("RGB", (w, h), THUMB_YEL)
     if frame_png:
         ph = Image.open(frame_png).convert("RGB")
-        PWID = 700
-        r = max(PWID / ph.width, h / ph.height)
-        ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS)
-        ph = ph.crop(((ph.width - PWID) // 2, (ph.height - h) // 2, (ph.width - PWID) // 2 + PWID, (ph.height - h) // 2 + h))
-        from PIL import ImageEnhance
-        ph = ImageEnhance.Color(ph).enhance(0.85)
-        ph = ImageEnhance.Contrast(ph).enhance(1.08)
-        m = Image.new("L", (PWID, h), 0)
-        md = ImageDraw.Draw(m)
-        md.polygon([(150, 0), (PWID, 0), (PWID, h), (0, h)], fill=255)
-        m = m.filter(ImageFilter.GaussianBlur(2))
-        base.paste(ph, (w - PWID, 0), m)
+        r = max(w / ph.width, h / ph.height)
+        ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS).crop((0, 0, w, h))
+        from PIL import ImageOps
+        ph = ImageOps.colorize(ImageOps.grayscale(ph), (120, 70, 0), (255, 214, 60))
+        base = Image.blend(base, ph.filter(ImageFilter.GaussianBlur(3)), 0.32)
     img = base.convert("RGBA")
+    if figure:
+        fig = Image.open(figure).convert("RGBA")
+        fh = int(h * 1.08)
+        fig = fig.resize((int(fig.width * fh / fig.height), fh), Image.LANCZOS)
+        sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        sh.paste((0, 0, 0, 110), (w - fig.width + 30 + 12, h - fh + 40 + 16), fig.split()[-1])
+        img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
+        img.alpha_composite(fig, (w - fig.width + 30, h - fh + 40))
     d = ImageDraw.Draw(img)
-    x = 60
-    lab = "그때 그 결정"
-    lf = F("Black", 40)
-    lw = d.textlength(lab, font=lf)
-    d.rounded_rectangle([x, 52, x + lw + 40, 112], radius=10, fill=RED)
-    d.text((x + 20, 58), lab, font=lf, fill=WHITE)
-    sub = "  ·  ".join(str(v) for v in (ep, year) if v)
+    ef = F("Black", 44)
+    if ep:
+        tw = d.textlength(ep, font=ef)
+        d.rectangle([56, 112, 56 + tw + 36, 176], fill=(178, 34, 34))
+        d.text((74, 116), ep, font=ef, fill=WHITE)
+    y = 196
+    for text, bg, fg in [(line1, BLACK, THUMB_YEL), (line2, WHITE, BLACK)]:
+        if not text:
+            continue
+        for size in (108, 96, 86, 76):
+            f1 = F("Black", size)
+            if d.textlength(text, font=f1) <= 640:
+                break
+        bb = d.textbbox((0, 0), text, font=f1)
+        th = bb[3] - bb[1]
+        tw = d.textlength(text, font=f1)
+        d.rectangle([56, y, 56 + tw + 48, y + th + 44], fill=bg)
+        d.text((80, y + 22 - bb[1]), text, font=f1, fill=fg)
+        y += th + 44
     if sub:
-        d.text((x + lw + 62, 62), sub, font=F("Bold", 36), fill=(220, 226, 238))
-    f, lines = _fit(d, title, 600, (128, 116, 104, 92, 84), 2)
-    lh = int(f.size * 1.22)
-    y = h - 70 - lh * len(lines)
-    _draw_lines(d, lines, f, x, y, lh_ratio=1.22, block=True, stroke=0)
+        d.text((60, y + 24), sub, font=F("Black", 40), fill=BLACK)
+    lf = F("Black", 34)
+    parts = [("경제 ", WHITE), ("[", (230, 60, 50)), ("원픽", THUMB_YEL), ("]", (230, 60, 50))]
+    lw = sum(d.textlength(t, font=lf) for t, _ in parts)
+    d.rounded_rectangle([w - lw - 70, 30, w - 30, 92], radius=31, fill=BLACK)
+    x = w - lw - 50
+    for t, c in parts:
+        d.text((x, 38), t, font=lf, fill=c)
+        x += d.textlength(t, font=lf)
     img.convert("RGB").save(out, quality=93)
     return out
+
+
+def split_thumb(lsc):
+    """썸네일 두 줄 문구 (AI가 준 두 줄, 없으면 thumb_title을 반으로)."""
+    l1, l2 = lsc.get("thumb_line1"), lsc.get("thumb_line2")
+    if l1 and l2:
+        return l1[:10], l2[:10]
+    t = re.sub(r"[\[\]]", "", lsc.get("thumb_title") or lsc.get("hook_title", "")).split()
+    k = max(1, len(t) // 2)
+    return " ".join(t[:k]), " ".join(t[k:])

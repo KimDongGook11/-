@@ -40,6 +40,7 @@ SAMPLE = {
 
 SAMPLE_LONG = {
     "hook_title": "파산 직전 애플, [90일]의 기적", "thumb_title": "[90일] 남은 애플",
+    "thumb_line1": "파산 90일 전", "thumb_line2": "돌아온 창업자",
     "youtube_title": "(샘플) 파산 90일 전 애플은 무엇을 버렸나", "description": "테스트용 샘플입니다.",
     "tags": ["애플", "스티브잡스"],
     "intro": [_seg("1997년 여름, 애플에는 90일을 버틸 돈밖에 없었습니다.", "empty office night"),

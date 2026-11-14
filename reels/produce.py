@@ -176,6 +176,10 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
             frame = None
     except Exception:
         frame = None
-    thumb = graphics.thumbnail(frame, lsc.get("thumb_title") or lsc["hook_title"], lsc.get("year"),
-                               lsc.get("ep"), workdir / "thumbnail.jpg")
+    from . import doubleexp
+    comp = lsc.get("company") or {}
+    fig = None if offline else doubleexp.figure_for(comp.get("country_ko"), workdir, seed=lsc.get("ep"))
+    l1, l2 = graphics.split_thumb(lsc)
+    sub = "  ·  ".join(str(v) for v in (lsc.get("year"), comp.get("name_ko"), comp.get("industry_ko")) if v)
+    thumb = graphics.thumbnail(frame, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg", figure=fig)
     return total, chapters, thumb, {"shots": shots, "words": len(words), "kind": "long"}

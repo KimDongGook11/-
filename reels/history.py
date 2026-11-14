@@ -108,7 +108,7 @@ def write_long(ep, material, brand):
 6. 핵심 숫자가 나오는 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
 7. 주가 흐름을 보여주기 좋은 문장 1~2개에 show_chart: true (상장사일 때만).
 8. hook_title: 18자 이내, 핵심 단어 하나를 [ ]로.
-   thumb_title: 유튜브 썸네일 문구. 두 줄로 읽히게 띄어쓰기 포함 14자 이내, 강한 단어, 핵심 단어 하나를 [ ]로 (예: "소니를 버린 [닌텐도]", "[90일] 남은 애플").
+   thumb_line1, thumb_line2: 유튜브 썸네일 두 줄 문구. 각 줄 띄어쓰기 포함 7자 이내, 강하고 궁금하게 (예: "소니를 버린" / "닌텐도의 결정", "파산 90일 전" / "돌아온 창업자").
    company: 회사 이름·나라·업종을 한국어로 짧게.
 9. youtube_title: 40자 이내, 호기심을 끄는 제목. description: 3~5줄 소개. tags: 10개 이내.
 
@@ -117,7 +117,7 @@ def write_long(ep, material, brand):
 
 JSON으로만 답해:
 {{
- "hook_title": "...", "thumb_title": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
+ "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
  "intro": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
  "company": {{"name_ko": "닌텐도", "country_ko": "일본", "industry_ko": "게임"}},
  "chapters": [{{"title": "...", "year": 1997, "summary": "핵심 한 줄", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
@@ -137,6 +137,7 @@ JSON으로만 답해:
         raise ValueError("장편 대본 챕터가 부족합니다")
     chart = d.get("chart") if isinstance(d.get("chart"), dict) and d["chart"].get("ticker") else None
     return {"hook_title": str(d.get("hook_title", ""))[:30], "thumb_title": str(d.get("thumb_title", ""))[:34],
+            "thumb_line1": str(d.get("thumb_line1") or "")[:10], "thumb_line2": str(d.get("thumb_line2") or "")[:10],
             "youtube_title": str(d.get("youtube_title", ""))[:90], "description": str(d.get("description", "")),
             "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
             "intro": norm_segments(d.get("intro")), "chapters": chapters, "chart": chart,
