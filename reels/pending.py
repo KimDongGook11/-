@@ -1,8 +1,8 @@
 """승인 대기 영상: 시리즈마다 하나씩 (state/pending_news.json, state/pending_history.json)."""
 from .utils import load_state, save_state
 
-SERIES = ("news", "history")
-LABEL = {"news": "오늘의 경제", "history": "그때 그 결정"}
+SERIES = ("news", "history", "youtube")
+LABEL = {"news": "오늘의 경제", "history": "그때 그 결정", "youtube": "유튜브 장편"}
 
 
 def load(series):

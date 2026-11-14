@@ -11,12 +11,12 @@ import os
 import tempfile
 import time
 
-from . import config, instagram, pending, storage, telegram
+from . import config, instagram, pending, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
 HELP = ("명령어\n/new - 오늘의 경제 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
         "/status - 승인 대기 중인 영상 보기\n/approve - 대기 중인 오늘의 경제 영상 게시 (버튼이 없을 때)\n"
-        "/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/help - 도움말\n\n"
+        "/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
         "영상이 온 뒤 2시간 안에 누른 버튼은 바로 처리되고, 그 뒤에는 최대 30분 안에 처리돼요.")
 
 
@@ -31,7 +31,7 @@ def _now():
 def _clear(p, keep_file=False):
     if p.get("tg_message_id"):
         telegram.remove_buttons(p["tg_message_id"])
-    if not keep_file and p.get("release_tag") and storage.enabled():
+    if not keep_file and not p.get("keep_release") and p.get("release_tag") and storage.enabled():
         storage.delete(p["release_tag"])
     pending.save(p.get("series", "news"), None)
 
@@ -43,8 +43,36 @@ def _published(p):
         save_state("history_ep", c)
 
 
+def _approve_youtube(p):
+    """장편을 유튜브에 공개 게시. 성공 True, 실패 False(다시 /approve youtube 가능)."""
+    if not youtube.enabled():
+        telegram.send_message("ℹ️ 유튜브 연결 정보(YT_…)가 없어서 올리지 못했어요. 직접 올려 주세요.")
+        return False
+    telegram.send_message("⏫ 유튜브에 올리는 중이에요. 5분 영상이라 3~10분 걸려요.")
+    d = tempfile.mkdtemp()
+    try:
+        vid_path = storage.download(p["release_tag"], os.path.join(d, "long.mp4"), name=p.get("video_name"))
+        try:
+            th = storage.download(p["release_tag"], os.path.join(d, "thumb.jpg"), name=p.get("thumb_name", "thumbnail.jpg"))
+        except Exception:
+            th = None
+        vid, st = youtube.upload(vid_path, p["yt_title"], p.get("yt_description", ""), p.get("yt_tags", []),
+                                 privacy=config.env("YT_PRIVACY", "public"), thumb=th)
+        telegram.send_message(f"🎉 유튜브 게시 완료! (상태: {st})\nhttps://youtu.be/{vid}\n\n"
+                              "썸네일·자막 처리는 몇 분 더 걸릴 수 있어요.")
+        _clear(p)
+        return True
+    except Exception as e:
+        print(f"  [유튜브] 실패: {e}")
+        telegram.send_message(f"⚠️ 유튜브 게시 실패\n{str(e)[:700]}\n\n영상은 보관 중이에요. "
+                              "이 메시지를 Claude에게 보여 주거나, 해결 뒤 /approve youtube 를 보내 주세요.")
+        return False
+
+
 def _approve(p):
     """게시 성공(또는 인스타 미연결)이면 True, 실패하면 False(영상 보관, 다시 누를 수 있음)."""
+    if p.get("series") == "youtube":
+        return _approve_youtube(p)
     if not instagram.enabled():
         telegram.send_message("✅ 승인 확인!\n위 영상을 저장해서 인스타에 직접 올려 주세요. "
                               "캡션은 초안 메시지의 '■ 캡션' 부분을 복사하면 돼요.")
@@ -91,7 +119,9 @@ def handle(updates):
                     finished.add(rid)
             elif action == "reject":
                 telegram.answer_callback(cq["id"], "폐기했어요")
-                telegram.send_message("❌ 폐기했어요. 새로 만들려면 /new 또는 /history 를 보내 주세요.")
+                telegram.send_message("❌ 유튜브에는 올리지 않을게요. 영상 원본은 다운로드 링크로 계속 받을 수 있어요."
+                                      if p.get("series") == "youtube" else
+                                      "❌ 폐기했어요. 새로 만들려면 /new 또는 /history 를 보내 주세요.")
                 _clear(p)
                 finished.add(rid)
             elif action == "redo":
@@ -116,7 +146,8 @@ def handle(updates):
                 telegram.send_message(f"🔁 [{pending.LABEL[series]}] 새로 만드는 중이에요. 5~15분 뒤 도착합니다.")
                 redo = series
             elif text.startswith(("/approve", "/승인")):
-                which = "history" if ("history" in text or "그때" in text) else "news"
+                which = ("youtube" if ("youtube" in text or "유튜브" in text) else
+                         "history" if ("history" in text or "그때" in text) else "news")
                 p = pending.load(which)
                 if not p:
                     telegram.send_message(f"ℹ️ 승인 대기 중인 [{pending.LABEL[which]}] 영상이 없어요.")
@@ -152,8 +183,10 @@ def wait_for_decision(rid, minutes):
     if not p:
         return "done", None
     until = _now() + dt.timedelta(minutes=minutes)
-    p["waiting_until"] = until.isoformat()
-    pending.save(p["series"], p)
+    wait_ids = {rid} | ({f"yt{rid}"} if pending.find(f"yt{rid}") else set())   # 장편 유튜브 버튼도 함께 기다림
+    for q in (pending.find(i) for i in wait_ids):
+        q["waiting_until"] = until.isoformat()
+        pending.save(q["series"], q)
     git_push_state("state: waiting")      # 30분 점검 작업이 끼어들지 않게 표시
     print(f"  [대기] {minutes}분 동안 버튼 대기")
     result = ("timeout", None)
@@ -163,7 +196,8 @@ def wait_for_decision(rid, minutes):
         if redo:
             result = ("redo", redo)
             break
-        if rid in finished:
+        wait_ids -= finished
+        if not wait_ids:
             result = ("done", None)
             break
     for q in pending.all_items():

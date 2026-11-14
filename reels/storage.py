@@ -33,10 +33,15 @@ def upload(path, tag, title):
     return tag
 
 
-def download(tag, dest):
+def download(tag, dest, name=None):
+    """보관본 내려받기. name을 주면 그 이름의 파일, 아니면 첫 번째 .mp4(없으면 첫 파일)."""
     r = requests.get(f"{API}/repos/{_repo()}/releases/tags/{tag}", headers=_h(), timeout=30)
     r.raise_for_status()
-    asset = r.json()["assets"][0]["url"]
+    assets = r.json()["assets"]
+    pick = [a for a in assets if a["name"] == name] if name else [a for a in assets if a["name"].endswith(".mp4")]
+    if name and not pick:
+        raise FileNotFoundError(f"{tag}에 {name} 파일이 없어요")
+    asset = (pick or assets)[0]["url"]
     with requests.get(asset, headers=_h({"Accept": "application/octet-stream"}), stream=True, timeout=300) as d:
         d.raise_for_status()
         with open(dest, "wb") as f:

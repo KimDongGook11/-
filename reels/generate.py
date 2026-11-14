@@ -11,7 +11,7 @@ import shutil
 import sys
 import traceback
 
-from . import approval, config, history, news, pending, produce, qc, render, script, storage, telegram
+from . import approval, config, history, news, pending, produce, qc, render, script, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -193,19 +193,32 @@ def deliver_long(res, offline=False):
     pv = str(lg["video"]).replace(".mp4", "_preview.mp4")
     render.preview(lg["video"], pv)
     telegram.send_video(pv, f"🎬 [유튜브 장편 미리보기 · 저화질] {_mmss(lg['duration'])}\n{qc.summary(lg.get('qc'))}")
-    telegram.send_message(
-        "📺 유튜브 업로드용 (직접 올리기)\n\n"
+    yt_on = youtube.enabled() and not offline and url
+    yt_title = (lsc.get('youtube_title') or lsc['hook_title'].replace('[', '').replace(']', ''))[:100]
+    yrid = f"yt{res['id']}"
+    msg_id = telegram.send_message(
+        ("📺 유튜브 장편 — 아래 버튼을 누르면 경제원픽 채널에 바로 공개 게시돼요 (제목·설명·태그·썸네일 포함)\n\n"
+         if yt_on else "📺 유튜브 업로드용 (직접 올리기)\n\n")
         + (f"■ 원본 영상 다운로드 (1080p)\n{url}\n\n" if url else "")
-        + f"■ 제목\n{lsc.get('youtube_title') or lsc['hook_title'].replace('[', '').replace(']', '')}\n\n"
+        + f"■ 제목\n{yt_title}\n\n"
         + f"■ 설명\n{desc}\n\n■ 태그\n{', '.join(lsc.get('tags', []))}\n\n"
-        + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8]))
+        + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8]),
+        buttons=[("✅ 유튜브 게시 (공개)", f"approve:{yrid}"), ("❌ 유튜브에는 안 올림", f"reject:{yrid}")]
+        if yt_on else None)
+    if yt_on:
+        expire_pending("youtube")
+        pending.save("youtube", {"id": yrid, "series": "youtube", "created_at": res.get("created_at"),
+                                 "release_tag": f"long-{res['id']}", "keep_release": True,
+                                 "video_name": f"long-{res['id']}.mp4", "thumb_name": "thumbnail.jpg",
+                                 "hook_title": yt_title, "yt_title": yt_title, "yt_description": desc,
+                                 "yt_tags": lsc.get("tags", []), "tg_message_id": msg_id})
 
 
 def expire_pending(series):
     old = pending.load(series)
     if not old:
         return
-    if old.get("release_tag") and storage.enabled():
+    if old.get("release_tag") and storage.enabled() and not old.get("keep_release"):
         storage.delete(old["release_tag"])
     if telegram.enabled() and old.get("tg_message_id"):
         telegram.remove_buttons(old["tg_message_id"])
