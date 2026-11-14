@@ -35,6 +35,11 @@ FONT_NAME = env("FONT_NAME", "Noto Sans CJK KR")
 IG_GRAPH_HOST = env("IG_GRAPH_HOST")
 IG_API_VERSION = env("IG_API_VERSION", "v23.0")
 
+# 오늘의 경제 마지막에 매일 붙는 마무리 멘트 (비워 두려면 Variables에 OUTRO_TEXT를 공백 한 칸으로)
+OUTRO_TEXT = env("OUTRO_TEXT", "매일 아침 경제 뉴스 딱 하나, 구독하고 내일 또 만나요!")
+# 유튜브 쇼츠 공개 시각(한국시간). 승인이 이 시각 전이면 이 시각에 예약 공개, 지나면 바로 공개. 비우면 항상 바로 공개
+YT_SHORTS_TIME = env("YT_SHORTS_TIME", "07:30")
+
 # --- 영상 규격 ---
 W, H, FPS = 1080, 1920, 30
 
