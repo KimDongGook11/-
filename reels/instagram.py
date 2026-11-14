@@ -29,11 +29,23 @@ def publish_reel(video_path, caption):
         import shutil
         if not shutil.which("ffmpeg"):
             raise RuntimeError(f"{e} (다시 인코딩할 ffmpeg가 없어요. /new 로 새 영상을 만들어 승인해 주세요)")
-        from .render import make_ig_safe
         safe = str(video_path).replace(".mp4", "_ig.mp4")
         print("  [인스타] 파일 거부 → 인스타 규격으로 다시 인코딩해 재시도")
-        make_ig_safe(video_path, safe)
+        _ig_safe(video_path, safe)
         return _publish(safe, caption)
+
+
+def _ig_safe(src, dst):
+    """인스타 릴스 규격: H.264 main 4.0, 30fps, 2초 키프레임, AAC 48kHz 128kbps 스테레오."""
+    import subprocess
+    cmd = ["ffmpeg", "-y", "-i", str(src), "-c:v", "libx264", "-preset", "veryfast", "-profile:v", "main",
+           "-level:v", "4.0", "-pix_fmt", "yuv420p", "-r", "30", "-g", "60", "-keyint_min", "60",
+           "-sc_threshold", "0", "-crf", "21", "-maxrate", "6M", "-bufsize", "12M",
+           "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", str(dst)]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError("다시 인코딩 실패: " + p.stderr[-300:])
+    return dst
 
 
 class UploadRejected(RuntimeError):
