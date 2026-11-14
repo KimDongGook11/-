@@ -1,5 +1,6 @@
 """오늘의 뉴스 고르기 + 릴스 대본 작성."""
 import datetime as dt
+import re
 
 from . import llm, news
 
@@ -82,7 +83,7 @@ def write_script(mats, topic, brand):
 
 JSON으로만 답해:
 {{
- "tag": "제목 위 빨간 꼬리표 2~4자 (예: 속보, 긴급, 금리, 환율, 증시, 유가, 반도체, 코인). 큰 사건일 때만 '속보'",
+ "tag": "제목 위 빨간 꼬리표 2~4자 (예: 금리, 환율, 증시, 유가, 반도체, 코인). '속보'라는 말은 절대 쓰지 마",
  "hook_title": "화면 위에 고정할 제목, 18자 이내. 가장 중요한 단어 하나를 [ ]로 감싸 강조 (예: 젠슨 황 [전격 사임], 엔비디아 4% 급락)",
  "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false,
                "number": null 또는 {{"value": "4.34%", "label": "엔비디아 주가 하락", "dir": "down"}}}}],
@@ -115,6 +116,12 @@ def norm_segments(items):
     return segs
 
 
+def _no_sokbo(text):
+    """제목·꼬리표에서 '속보' 문구를 뺀다 (사용자 요청)."""
+    t = re.sub(r"[\[\(【]?\s*속보\s*[\]\)】]?\s*[:：·|]?", "", str(text or ""))
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
 def normalize(data):
     segs = norm_segments(data.get("segments", []))
     if len(segs) < 3:
@@ -124,8 +131,8 @@ def normalize(data):
         chart = None
     tags = [t if str(t).startswith("#") else "#" + str(t) for t in data.get("hashtags", [])][:10]
     return {
-        "tag": str(data.get("tag") or "").strip()[:6],
-        "hook_title": str(data.get("hook_title") or segs[0]["text"])[:30],
+        "tag": _no_sokbo(data.get("tag"))[:6],
+        "hook_title": (_no_sokbo(data.get("hook_title")) or segs[0]["text"])[:30],
         "segments": segs[:9],
         "chart": chart,
         "key_facts": data.get("key_facts", []),
