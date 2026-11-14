@@ -241,11 +241,17 @@ def deliver(res, offline=False):
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +
             "\n\n■ 근거 링크\n" + "\n".join(res.get("links", [])[:4]) +
             "\n\n■ 캡션\n" + res["caption"])
-        res["tg_message_id"] = telegram.send_video(
-            res["video"], f"[{label}] {sc['hook_title']}\n\n아래 버튼을 눌러 주세요. 2시간 안에 누르면 바로 처리돼요.",
-            buttons=[("✅ 승인 → 인스타 게시", f"approve:{rid}"),
+        buttons = [("✅ 승인 → 인스타 게시", f"approve:{rid}"),
                      ("🔁 다른 " + ("에피소드로" if series == "history" else "뉴스로") + " 다시 만들기", f"redo:{rid}"),
-                     ("❌ 폐기", f"reject:{rid}")])
+                     ("❌ 폐기", f"reject:{rid}")]
+        cap = f"[{label}] {sc['hook_title']}\n\n아래 버튼을 눌러 주세요. 2시간 안에 누르면 바로 처리돼요."
+        try:
+            res["tg_message_id"] = telegram.send_video(res["video"], cap, buttons=buttons)
+        except Exception as e:   # 영상 전송이 끝내 안 되면 다운로드 링크 + 버튼으로 대신 보냄
+            print("  [텔레그램] 릴스 영상 전송 실패 → 링크로 대체:", e)
+            link = storage.public_url(res["release_tag"], f"{res['release_tag']}.mp4") if res.get("release_tag") else ""
+            res["tg_message_id"] = telegram.send_message(
+                f"⚠️ 영상 파일 전송이 실패해서 링크로 보내요.\n{link}\n\n" + cap, buttons=buttons)
     pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode", "long")}
                  | {"hook_title": res["script"]["hook_title"]})
 

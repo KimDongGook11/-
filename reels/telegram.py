@@ -1,5 +1,6 @@
 """텔레그램 봇: 미리보기 전송, 승인 버튼, 업데이트 읽기."""
 import json
+import time
 
 import requests
 
@@ -29,30 +30,41 @@ def send_message(text, buttons=None):
     return r.json()["result"]["message_id"]
 
 
+def _post_file(method, data, field, path, timeout, tries=4):
+    """파일 전송: 연결 끊김·일시 오류 시 잠깐 쉬고 다시 시도."""
+    last = None
+    for i in range(tries):
+        try:
+            with open(path, "rb") as f:
+                r = requests.post(_api(method), data=data, files={field: f}, timeout=timeout)
+            if r.status_code == 429 or r.status_code >= 500:
+                raise requests.HTTPError(f"HTTP {r.status_code}", response=r)
+            r.raise_for_status()
+            return r.json()["result"]["message_id"]
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            last = e
+            if isinstance(e, requests.HTTPError) and e.response is not None and 400 <= e.response.status_code < 429:
+                raise
+            print(f"  [텔레그램] {method} 실패({type(e).__name__}) → {10 * (i + 1)}초 뒤 다시 시도")
+            time.sleep(10 * (i + 1))
+    raise last
+
+
 def send_video(path, caption, buttons=None):
     data = {"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000], "supports_streaming": "true"}
     if buttons:
         data["reply_markup"] = _kb(buttons)
-    with open(path, "rb") as f:
-        r = requests.post(_api("sendVideo"), data=data, files={"video": f}, timeout=300)
-    r.raise_for_status()
-    return r.json()["result"]["message_id"]
+    return _post_file("sendVideo", data, "video", path, 300)
 
 
 def send_photo(path, caption=""):
-    with open(path, "rb") as f:
-        r = requests.post(_api("sendPhoto"), data={"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
-                          files={"photo": f}, timeout=120)
-    r.raise_for_status()
-    return r.json()["result"]["message_id"]
+    return _post_file("sendPhoto", {"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
+                      "photo", path, 120)
 
 
 def send_document(path, caption=""):
-    with open(path, "rb") as f:
-        r = requests.post(_api("sendDocument"), data={"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
-                          files={"document": f}, timeout=300)
-    r.raise_for_status()
-    return r.json()["result"]["message_id"]
+    return _post_file("sendDocument", {"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
+                      "document", path, 300)
 
 
 def remove_buttons(message_id):
