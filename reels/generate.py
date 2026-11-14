@@ -97,10 +97,13 @@ def _history_scripts():
     """반환: (장편 대본, 60초 대본, 에피소드, 근거 링크)"""
     used = load_state("episodes", [])
     tried = []
-    print("1) 에피소드 선정 + 위키백과 근거 수집")
+    print("1) 에피소드 선정(지금 화제인 기업 우선) + 위키백과 근거 수집")
+    heads = history.hot_headlines()
+    print(f"  [화제] 최근 뉴스 제목 {len(heads)}개 참고")
     for _ in range(3):
-        ep = history.pick_episode(used + tried)
-        print(f"   → {ep.get('company_ko')} {ep.get('year')}년: {ep.get('episode_ko')}")
+        ep = history.pick_episode(used + tried, heads)
+        print(f"   → {ep.get('company_ko')} {ep.get('year')}년: {ep.get('episode_ko')}"
+              + (f"  (요즘 화제: {ep['hot_reason']})" if ep.get("hot_reason") else ""))
         material, links = history.gather(ep, limit=12000)
         if material:
             break

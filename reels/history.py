@@ -32,24 +32,57 @@ def wiki_search(q, n=3):
     return [x["title"] for x in d.get("query", {}).get("search", [])]
 
 
-def pick_episode(used):
+def hot_headlines(n=60, hours=72):
+    """지금 화제인 기업을 고르기 위한 최근 경제 뉴스 제목들 (최신순)."""
+    import datetime as dt
+    from . import news
+    try:
+        items = news.fetch_all()
+    except Exception as e:
+        print(f"  [화제] 뉴스 수집 실패: {e}")
+        return []
+    now = dt.datetime.now(dt.timezone.utc)
+    fresh = [it for it in items if not it.get("published") or (now - it["published"]).total_seconds() < hours * 3600]
+    fresh.sort(key=lambda x: x.get("published") or now, reverse=True)
+    seen, out = set(), []
+    for it in fresh:
+        k = it["title"][:60].lower()
+        if k not in seen:
+            seen.add(k)
+            out.append(f"- {it['title']} ({it['source']})")
+    return out[:n]
+
+
+def pick_episode(used, headlines=None):
     done = "\n".join(f"- {u.get('company')} {u.get('year')} {u.get('episode_ko')}" for u in used[-40:]) or "(없음)"
-    prompt = f"""너는 경제 다큐멘터리 PD야. 인스타 릴스 시리즈 '{SERIES_NAME}'의 다음 에피소드를 하나 골라.
+    hot = "\n".join(headlines or []) or "(뉴스를 가져오지 못함)"
+    prompt = f"""너는 경제 다큐멘터리 PD야. 시리즈 '{SERIES_NAME}'의 다음 에피소드를 하나 골라.
 세계 유명 기업의 역사에서 회사의 운명을 바꾼 '결정적 순간' 하나(성공이든 실패든).
+
+[가장 중요: 지금 화제인 기업 우선]
+아래는 최근 2~3일 세계·한국 경제 뉴스 제목이야. 여기에 등장하는 기업 중 지금 가장 화제인 기업을 우선으로 골라
+(여러 뉴스에 나올수록, 실적·주가·신제품·인수합병·소송·위기 등 큰 뉴스일수록 우선).
+그 기업의 과거에서, 지금 뉴스와 이어지는 결정적 순간을 골라 (예: 지금 AI 반도체로 화제 → 그 회사가 과거에 내린 큰 베팅).
+뉴스에 적당한 기업이 없거나 이미 다룬 기업뿐이면 그때만 일반적으로 유명한 기업을 골라.
+
+[최근 뉴스 제목]
+{hot}
+
 조건:
-- 한국 20~40대가 아는 기업이거나, 이야기 자체가 놀라운 것
-- 미국·유럽·일본·한국·중국 등 지역과 업종을 골고루. 성공담과 실패담을 섞어서
 - 영어 위키백과에 그 사건이 자세히 나와 있을 법한 유명한 사건만
 - 이미 다룬 에피소드와 같은 기업은 피해:
 {done}
 
 JSON으로만 답해:
 {{"company": "영어 기업명", "company_ko": "한국어 기업명", "year": 사건 연도(숫자),
- "episode_ko": "에피소드 한 줄 요약(한국어)", "wiki_titles": ["이 사건이 나올 영어 위키백과 문서 제목 1~3개 (예: History of Apple Inc., Apple Inc.)"],
+ "episode_ko": "에피소드 한 줄 요약(한국어)",
+ "hot_reason": "지금 화제인 이유 한 줄(위 뉴스 제목에 있는 사실만, 한국어). 뉴스와 무관하게 골랐으면 빈 문자열",
+ "wiki_titles": ["이 사건이 나올 영어 위키백과 문서 제목 1~3개 (예: History of Apple Inc., Apple Inc.)"],
  "keywords": ["본문에서 이 사건을 찾을 영어 키워드 3~5개"],
  "ticker": "yfinance 티커 또는 null (예: AAPL, 7203.T, 005930.KS)", "listed_since": 상장 연도 또는 null}}"""
-    ep = llm.ask_json(prompt, temperature=0.9)
+    ep = llm.ask_json(prompt, temperature=0.7)
     ep["year"] = int(re.sub(r"\D", "", str(ep.get("year", "0"))) or 0)
+    ep["hot_reason"] = str(ep.get("hot_reason") or "").strip()
     return ep
 
 
@@ -99,6 +132,7 @@ def write_long(ep, material, brand):
 1. 연도·금액·숫자·인물·인용은 자료에 있는 것만. 확신 없는 디테일은 빼.
 2. 자료 문장을 그대로 번역하지 말고 이야기처럼 새로 풀어 써. 말투는 친근한 존댓말, 다큐 내레이션처럼.
 3. 구성: intro(2~3문장, 결과를 살짝 보여주는 후킹) + chapters 5개
+   {('요즘 화제: ' + ep['hot_reason'] + ' → intro 첫 문장은 이 요즘 소식으로 시작해서 과거 이야기로 넘어가. 이 소식은 이 문장에 적힌 내용만 쓰고 덧붙이지 마.') if ep.get('hot_reason') else ''}
    (① 그때 상황 ② 위기·갈림길 ③ 그 결정 ④ 그 후 어떻게 됐나 ⑤ 오늘 우리에게 주는 교훈).
    챕터 제목은 8자 이내, year는 그 챕터의 대표 연도(모르면 null), summary는 그 챕터 핵심을 담은 한 줄(20자 이내).
 4. 각 segment는 한 문장 30~60자. 챕터마다 7~10문장. 전체 글자 수 2,000~2,400자 (읽으면 약 5분). 짧게 끝내지 말고 배경·인물·숫자·결과를 충분히 풀어 써.
