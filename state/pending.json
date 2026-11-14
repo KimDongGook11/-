@@ -1,25 +1,24 @@
 {
-  "id": "20261114-0935",
-  "created_at": "2026-11-14T09:35:51.847557+09:00",
-  "video": "/home/runner/work/-/-/output/reel_20261114-0935.mp4",
+  "id": "20261114-1003",
+  "created_at": "2026-11-14T10:03:09.248178+09:00",
+  "video": "/home/runner/work/-/-/output/reel_20261114-1003.mp4",
   "sources": [
-    "Financial Times",
-    "BBC",
-    "Forbes"
+    "Reuters",
+    "Gizmodo",
+    "Financial Times"
   ],
-  "caption": "마이크로소프트의 주요 서비스가 24시간 가까이 마비되는 대형 사고가 발생했습니다. 🚨\n\n전 세계 70개국, 4억 3천만 명 이상의 사용자와 정부·병원·철도 시스템까지 큰 차질을 겪었는데요.\n\n소수 빅테크 기술에 대한 높은 의존도가 글로벌 경제에 얼마나 큰 위험이 될 수 있는지 잘 보여준 사건입니다. 💻\n\n📰 출처: Financial Times, BBC, Forbes\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#MS먹통 #빅테크 #글로벌경제 #오늘의경제 #IT뉴스",
-  "duration": 36.1,
-  "title_en": "Microsoft outage exposes global reliance on core tech providers",
-  "link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPV2gtUWFFTFVPQlVyam5rc0x4NnFKd1pPZTNCeWIzQllEd0hlNFJJTGVKcnhRTndjQ3Y0X19wUDFCNmRoXzlNWEVXazNkYkE3aGJfeWp3OVlSVUNZUGgyalE3X0EyeTJnZy02bDN3M3JvU1NwU3FLWW1Fd2NpNVM0YW5BOE0?oc=5",
-  "topic": "Global Microsoft outage disrupts core workplace tools, exposing heavy economic reliance on big tech",
+  "caption": "✈️ 미국 전역의 항공편 운항이 대규모 통신 장애로 일시 중단되었습니다.\n미국 항공청(FAA)이 AI 시스템을 도입하는 과정에서 발생한 이슈로 지목받고 있는데요.\n글로벌 물류 및 항공망 차질이 우리 물가와 시장에 어떤 영향을 줄지 주시할 필요가 있습니다. 📊\n\n📰 출처: Reuters, Gizmodo, Financial Times\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #미국항공 #FAA #물류대란 #오늘의경제",
+  "duration": 34.2,
+  "title_en": "Flights grounded across US after air traffic communications outage",
+  "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxPTTdvYllmb0pHUXVJVGNLUmFZb2I0WXpjZENubU52NW1nQlFJa1E4c3ZNTGhseUdiUzl0ZXJWa0pOSnR1ZDlRQk9FTHZlaWkyT0hLM1J3OW5tVUhIb0o4OWN5bDVVakF5T3lIanR1SVVMSkctSDlpb2loMWI2MENuWEIxTmhTcy1kZXdqSlRrdi1NMHlFSGtPRWEzdUFrMWR1c2wwNk9rRUUwOGpzajM0N1h2MndWVU9MYngyMVdudw?oc=5",
+  "topic": "US flights grounded following major air traffic communications outage",
   "links": [
-    "https://news.google.com/rss/articles/CBMihAFBVV95cUxPV2gtUWFFTFVPQlVyam5rc0x4NnFKd1pPZTNCeWIzQllEd0hlNFJJTGVKcnhRTndjQ3Y0X19wUDFCNmRoXzlNWEVXazNkYkE3aGJfeWp3OVlSVUNZUGgyalE3X0EyeTJnZy02bDN3M3JvU1NwU3FLWW1Fd2NpNVM0YW5BOE0?oc=5",
-    "https://www.bbc.co.uk/news/articles/c6rrg51rkz09o?at_medium=RSS&at_campaign=rss",
-    "https://news.google.com/rss/articles/CBMi5AFBVV95cUxNd0ZWZFJCWmp3MUlFMFFrRExhTldkeEs1aEt2bVJDend6Y24yck5wUHlsNF9yNERkQWNsY25va25DMnpMWFE2QmtZVy1CQnlVMjZTNlBFM1g1ak5kWjJEclk2V0IycmFKRHg1RjU2M1RVaHhwTEJUM2hZa0FXaUZRWVRZd0tpTThCZkoxeTJxZERQSFZBb1M3SWptclpVVUVxUEtzSUFTMWxLcmM4VURJbXNCQ1NZQm9fTzBnOS00eGRiV2NRVUo3Rl94QnR2TnlfMGM5dUYxRmZuVDQzZzBWRE0zb2w?oc=5",
-    "https://news.google.com/rss/articles/CBMihAFBVV95cUxNc1JOaEdsdTdDNG5MMWZtVW5rSWx1S2dKTXZ3ZmdOVUd2X2NFa1BmeS1kWkZpZ0diYmxZNGEtQ3R1MzNVN0RBM0txbHpfakxKR1MtblJZMFhsXzlacTlqUEpCZGZicmZLcm5yaHU3bGRDX1hBUHBPNEZ3TXJlZEwtTXRGeHg?oc=5"
+    "https://news.google.com/rss/articles/CBMivwFBVV95cUxPTTdvYllmb0pHUXVJVGNLUmFZb2I0WXpjZENubU52NW1nQlFJa1E4c3ZNTGhseUdiUzl0ZXJWa0pOSnR1ZDlRQk9FTHZlaWkyT0hLM1J3OW5tVUhIb0o4OWN5bDVVakF5T3lIanR1SVVMSkctSDlpb2loMWI2MENuWEIxTmhTcy1kZXdqSlRrdi1NMHlFSGtPRWEzdUFrMWR1c2wwNk9rRUUwOGpzajM0N1h2MndWVU9MYngyMVdudw?oc=5",
+    "https://news.google.com/rss/articles/CBMikgFBVV95cUxQbkd6WGx3czFzYkNyNzBLLWczM1JiZUNmdlJYWlMzVjV5NzZfaDlBay04Wm5FaExRamxoNTkxMVJtSEFURDFxWjBDSEhaQkctanlFRTVqQTRRcXhOa0VaUDlSVHdGb3VVRkNpSWo5UDdjNkNVb180S2VsbHcyaW9DSXVURnU1SlJDOWJoVUgwQVdUUQ?oc=5",
+    "https://news.google.com/rss/articles/CBMihAFBVV95cUxQVVo0M05Ga21Ub2RaX3EzZFp4Y0MxVFFNckR4bnczWHJlQkNvY3VJOHBYRFFFb0lrT3NseXp4S1pFWDRWMTVnTmhrLVQ0em1FZ2tTX0JwWUF5anU5THVpMmp0UmJmV18tdmFxanBtejliODVvXy11MEtnLVpOMGh3UG9kYkU?oc=5"
   ],
-  "release_tag": "reel-20261114-0935",
-  "tg_message_id": 23,
-  "hook_title": "MS [대규모 먹통] 전 세계 멈췄다",
-  "waiting_until": "2026-11-14T02:54:18.957836+00:00"
+  "release_tag": "reel-20261114-1003",
+  "tg_message_id": 29,
+  "hook_title": "미국 [항공 마비] 전격 운항 중단",
+  "waiting_until": "2026-11-14T03:16:55.468588+00:00"
 }
