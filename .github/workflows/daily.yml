@@ -34,6 +34,9 @@ jobs:
       TTS_RATE: ${{ vars.TTS_RATE }}
       GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
       TITLE_STYLE: ${{ vars.TITLE_STYLE }}
+      IG_AUTO_PUBLISH: ${{ vars.IG_AUTO_PUBLISH }}
+      BG_SPEED: ${{ vars.BG_SPEED }}
+      TTS_ENGINE: ${{ vars.TTS_ENGINE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

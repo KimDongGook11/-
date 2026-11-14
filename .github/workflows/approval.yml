@@ -15,7 +15,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 200
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -29,6 +29,9 @@ jobs:
       TTS_RATE: ${{ vars.TTS_RATE }}
       GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
       TITLE_STYLE: ${{ vars.TITLE_STYLE }}
+      IG_AUTO_PUBLISH: ${{ vars.IG_AUTO_PUBLISH }}
+      BG_SPEED: ${{ vars.BG_SPEED }}
+      TTS_ENGINE: ${{ vars.TTS_ENGINE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,6 +44,7 @@ jobs:
           git config user.email "reels-bot@users.noreply.github.com"
           pip install -q requests
           python -m reels.approval
+      # "다시 만들기"나 /new 일 때만 아래 단계 실행
       - name: 프로그램 설치
         if: steps.chk.outputs.redo == 'true'
         run: |

@@ -53,7 +53,7 @@ def model_order():
         except Exception as e:
             print(f"  [AI] 모델 목록 조회 실패(설정값 사용): {e}")
             found = []
-        _cache = list(dict.fromkeys(found[:3] + config.GEMINI_MODELS))
+        _cache = list(dict.fromkeys(found[:5] + config.GEMINI_MODELS))
     return _cache
 
 
@@ -78,15 +78,20 @@ def ask_json(prompt, temperature=0.6):
     }
     errors = []
     for model in model_order():
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 r = requests.post(f"{BASE}/models/{model}:generateContent", json=body,
-                                  headers=_headers(), timeout=180)
-                if r.status_code in (429, 500, 503):
-                    msg = f"{model}: HTTP {r.status_code} {r.text[:150]}"
+                                  headers=_headers(), timeout=120)
+                if r.status_code == 429:               # 무료 한도 초과 → 기다리지 말고 바로 다음 모델
+                    msg = f"{model}: HTTP 429 (무료 한도 초과)"
                     print(f"  [AI] {msg}")
                     errors.append(msg)
-                    time.sleep(15 * (attempt + 1))
+                    break
+                if r.status_code in (500, 503):        # 일시적 혼잡 → 잠깐 쉬고 한 번만 다시
+                    msg = f"{model}: HTTP {r.status_code} (일시적 오류)"
+                    print(f"  [AI] {msg}")
+                    errors.append(msg)
+                    time.sleep(8)
                     continue
                 if r.status_code in (400, 403, 404):   # 없는 모델/권한 없음 → 다음 모델
                     msg = f"{model}: HTTP {r.status_code} {r.text[:150]}"
@@ -99,9 +104,14 @@ def ask_json(prompt, temperature=0.6):
                 text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
                 print(f"  [AI] {model} 응답 받음")
                 return _extract_json(text)
+            except requests.Timeout:
+                msg = f"{model}: 응답 시간 초과 → 다음 모델"
+                print(f"  [AI] {msg}")
+                errors.append(msg)
+                break
             except (requests.RequestException, KeyError, IndexError, ValueError) as e:
                 msg = f"{model}: {type(e).__name__} {e}"
                 print(f"  [AI] {msg}")
                 errors.append(msg)
-                time.sleep(5)
+                time.sleep(3)
     raise RuntimeError("Gemini 호출 실패\n" + "\n".join(errors[-6:]))
