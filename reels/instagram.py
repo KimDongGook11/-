@@ -10,9 +10,9 @@ from . import config
 
 
 def enabled():
-    """자동 게시는 IG_AUTO_PUBLISH=true 일 때만 (지금은 직접 올리는 방식이 기본)."""
+    """승인 버튼 → 인스타 자동 게시 (기본 켜짐). 끄려면 Variables에 IG_AUTO_PUBLISH=false."""
     return bool(config.IG_USER_ID and config.IG_ACCESS_TOKEN) and \
-        config.env("IG_AUTO_PUBLISH", "false").lower() == "true"
+        config.env("IG_AUTO_PUBLISH", "true").lower() == "true"
 
 
 def graph_host(token):
