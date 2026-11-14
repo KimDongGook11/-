@@ -1,4 +1,4 @@
-"""Instagram Graph API로 릴스 게시 (영상 파일을 직접 업로드하는 resumable 방식).
+"""Instagram Graph API로 릴스 게시 (공개 주소 video_url 방식, 직접 업로드는 예비).
 5단계(인스타 연결)에서 IG_USER_ID, IG_ACCESS_TOKEN을 등록하면 동작합니다.
 통합 로그인(EAA… 토큰)과 인스타 로그인(IG… 토큰)을 모두 지원합니다."""
 import os
@@ -24,17 +24,18 @@ def graph_host(token):
 
 
 def publish_reel(video_path, caption):
-    """1차: 파일 직접 업로드(resumable). Meta가 거부하면(ProcessingFailedError)
-    2차: 인스타 규격으로 다시 인코딩 → GitHub 공개 주소에 올리고 Meta가 가져가게(video_url)."""
-    try:
-        return _publish(video_path, caption)
-    except UploadRejected as e:
-        print(f"  [인스타] 직접 업로드 거부 → 공개 주소 방식으로 재시도 ({e})")
+    """공개 주소 방식: 인스타 규격으로 다시 인코딩 → GitHub 공개 주소에 올리고 Meta가 가져가게(video_url).
+    (2026-11-14 진단: 파일 직접 업로드(rupload)는 이 계정에서 항상 ProcessingFailedError, 공개 주소 방식은 정상 처리)
+    공개 주소 방식이 실패하면 직접 업로드를 한 번 더 시도합니다."""
     import shutil
     src = str(video_path)
     if shutil.which("ffmpeg"):
         src = _ig_safe(video_path, str(video_path).replace(".mp4", "_ig.mp4"))
-    url, cleanup = _public_url(src)
+    try:
+        url, cleanup = _public_url(src)
+    except Exception as e:
+        print(f"  [인스타] 공개 주소 준비 실패 → 직접 업로드 시도 ({e})")
+        return _publish(src, caption)
     try:
         return _publish_url(url, caption)
     finally:
