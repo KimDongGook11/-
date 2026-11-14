@@ -15,7 +15,8 @@ from . import config, instagram, pending, storage, telegram
 from .utils import git_push_state, load_state, save_state
 
 HELP = ("명령어\n/new - 오늘의 경제 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
-        "/status - 승인 대기 중인 영상 보기\n/help - 도움말\n\n"
+        "/status - 승인 대기 중인 영상 보기\n/approve - 대기 중인 오늘의 경제 영상 게시 (버튼이 없을 때)\n"
+        "/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/help - 도움말\n\n"
         "영상이 온 뒤 2시간 안에 누른 버튼은 바로 처리되고, 그 뒤에는 최대 30분 안에 처리돼요.")
 
 
@@ -114,6 +115,13 @@ def handle(updates):
                     finished.add(old["id"])
                 telegram.send_message(f"🔁 [{pending.LABEL[series]}] 새로 만드는 중이에요. 5~15분 뒤 도착합니다.")
                 redo = series
+            elif text.startswith(("/approve", "/승인")):
+                which = "history" if ("history" in text or "그때" in text) else "news"
+                p = pending.load(which)
+                if not p:
+                    telegram.send_message(f"ℹ️ 승인 대기 중인 [{pending.LABEL[which]}] 영상이 없어요.")
+                elif _approve(p):
+                    finished.add(p["id"])
             elif text.startswith("/status"):
                 items = pending.all_items()
                 telegram.send_message("\n".join(f"⏳ [{pending.LABEL[p.get('series', 'news')]}] {p['hook_title']}"
