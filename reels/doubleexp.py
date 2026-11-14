@@ -9,12 +9,14 @@ from PIL import Image, ImageFilter, ImageOps
 from . import config
 
 API = "https://pixabay.com/api/"
-CITY = {"미국": "new york skyline", "일본": "tokyo skyline", "한국": "seoul skyline", "중국": "shanghai skyline",
+CITY = {"미국": "new york skyline buildings", "일본": "tokyo buildings skyline", "한국": "seoul buildings skyline",
+        "중국": "shanghai skyline",
         "영국": "london skyline", "독일": "frankfurt skyline", "프랑스": "paris skyline", "대만": "taipei skyline",
         "네덜란드": "amsterdam city", "스위스": "zurich city", "스웨덴": "stockholm city", "핀란드": "helsinki city",
         "캐나다": "toronto skyline", "인도": "mumbai skyline", "싱가포르": "singapore skyline", "홍콩": "hong kong skyline"}
-FACE_QUERIES = ["businessman suit portrait white background", "man suit portrait isolated",
-                "businessman portrait studio", "man suit standing portrait"]
+FACE_QUERIES = ["serious businessman suit portrait", "businessman suit portrait white background",
+                "man suit portrait isolated", "businessman portrait studio"]
+SMILE = {"smile", "smiling", "laugh", "laughing", "happy", "cheerful", "fun"}
 BLOCK = {"illustration", "cartoon", "drawing", "vector", "anime", "3d", "render", "clipart", "painting", "art"}
 
 
@@ -28,7 +30,7 @@ def _search(q, orientation="all", n=40):
     hits = []
     for h in r.json().get("hits", []):
         tags = {t.strip().lower() for t in h.get("tags", "").split(",")}
-        if tags & BLOCK:
+        if tags & BLOCK or ("portrait" in q and tags & SMILE):
             continue
         hits.append(h)
     return hits
@@ -69,6 +71,9 @@ def _smoothstep(x, a, b):
 def compose(person_rgba, city_rgb, height=900, blur=1.0):
     """정장 인물 실루엣 안에 도시: 위·왼쪽은 얼굴과 셔츠, 아래·오른쪽으로 갈수록 건물. 따뜻한 세피아 톤."""
     p = person_rgba.crop(person_rgba.getbbox())
+    if p.height > p.width * 1.3:                 # 전신 사진이면 머리~가슴만 (상반신 구도로 통일)
+        p = p.crop((0, 0, p.width, int(p.width * 1.3)))
+        p = p.crop(p.getbbox())
     alpha = np.array(p.split()[-1]).astype(float) / 255
     cols = alpha[: int(alpha.shape[0] * 0.5)].sum(axis=0)
     cx = (cols * np.arange(len(cols))).sum() / max(cols.sum(), 1)
@@ -89,7 +94,7 @@ def compose(person_rgba, city_rgb, height=900, blur=1.0):
     screen = 255 - (255 - face) * (255 - city_warm) / 255
     yy, xx = np.mgrid[0:h, 0:w]
     t = (0.65 * yy / h + 0.35 * xx / w)[:, :, None]   # 위·왼쪽 0 → 아래·오른쪽 1
-    g = _smoothstep(t, 0.32, 0.70)
+    g = _smoothstep(t, 0.26, 0.62)
     upper = face * 0.8 + screen * 0.2
     lower = city_warm * 0.75 + screen * 0.25
     out = upper * (1 - g) + lower * g

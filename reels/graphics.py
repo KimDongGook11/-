@@ -282,12 +282,13 @@ def thumbnail(frame_png, line1, line2, sub, ep, out, figure=None, w=1280, h=720)
     img = base.convert("RGBA")
     if figure:
         fig = Image.open(figure).convert("RGBA")
-        fh = int(h * 1.08)
-        fig = fig.resize((int(fig.width * fh / fig.height), fh), Image.LANCZOS)
+        sc = min(600 / fig.width, 760 / fig.height)          # 오른쪽 600×760 상자에 맞춤 (상반신)
+        fig = fig.resize((int(fig.width * sc), int(fig.height * sc)), Image.LANCZOS)
+        fx, fy = w - fig.width - 10, h - fig.height + 30
         sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        sh.paste((0, 0, 0, 110), (w - fig.width + 30 + 12, h - fh + 40 + 16), fig.split()[-1])
+        sh.paste((0, 0, 0, 110), (fx + 12, fy + 16), fig.split()[-1])
         img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
-        img.alpha_composite(fig, (w - fig.width + 30, h - fh + 40))
+        img.alpha_composite(fig, (fx, fy))
     d = ImageDraw.Draw(img)
     ef = F("Black", 44)
     if ep:
