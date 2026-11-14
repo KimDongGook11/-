@@ -1,0 +1,58 @@
+name: 그때 그 결정 (기업 역사)
+
+on:
+  schedule:
+    - cron: "0 9 * * *"     # 매일 한국시간 18:00 (GitHub 예약은 늦거나 빠질 수 있어 cron-job.org로도 실행)
+  workflow_dispatch:
+    inputs:
+      auto:
+        description: "자동 실행(하루 1번만)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reels-history
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRAND_NAME: ${{ vars.BRAND_NAME }}
+      TTS_VOICE: ${{ vars.TTS_VOICE }}
+      TTS_RATE: ${{ vars.TTS_RATE }}
+      GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+      TITLE_STYLE: ${{ vars.TITLE_STYLE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          pip install -q -r requirements.txt
+          git config user.name "reels-bot"
+          git config user.email "reels-bot@users.noreply.github.com"
+      - name: 에피소드 생성 → 텔레그램 전송 → 2시간 버튼 대기
+        run: python -m reels.generate --series history --wait 120 ${{ (github.event_name == 'schedule' || inputs.auto == 'true') && '--once-per-day' || '' }}
+      - name: 상태 저장
+        if: always()
+        run: |
+          git add state
+          git diff --cached --quiet && exit 0
+          git commit -q -m "state: history $(date -u +%F)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
