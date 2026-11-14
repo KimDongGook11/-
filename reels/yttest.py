@@ -10,7 +10,11 @@ from . import youtube
 
 def main():
     tok = youtube._token()
-    print("채널:", youtube.channel(tok))
+    ch = youtube.channel(tok)
+    print("채널:", ch)
+    if "경제" not in (ch or "") and os.environ.get("YT_TEST_ANY") != "true":
+        print("❌ 경제원픽 채널이 아니라서 시험 업로드를 하지 않았어요. 토큰을 다시 받아 주세요.")
+        return
     d = tempfile.mkdtemp()
     v, th = os.path.join(d, "t.mp4"), os.path.join(d, "t.jpg")
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "color=c=0x0A1020:s=1280x720:d=6",
