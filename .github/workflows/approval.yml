@@ -28,6 +28,8 @@ jobs:
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
       YT_PRIVACY: ${{ vars.YT_PRIVACY }}
+      YT_SHORTS_TIME: ${{ vars.YT_SHORTS_TIME }}
+      OUTRO_TEXT: ${{ vars.OUTRO_TEXT }}
       BRAND_NAME: ${{ vars.BRAND_NAME }}
       TTS_VOICE: ${{ vars.TTS_VOICE }}
       TTS_RATE: ${{ vars.TTS_RATE }}

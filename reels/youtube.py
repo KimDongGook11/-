@@ -39,8 +39,10 @@ def channel(tok=None):
     return items[0]["snippet"]["title"] if items else None
 
 
-def upload(path, title, description, tags=(), privacy="public", thumb=None, category="27", made_with_ai=True):
-    """영상 업로드 → (video_id, 실제 공개 상태). category 27 = 교육, 25 = 뉴스/정치."""
+def upload(path, title, description, tags=(), privacy="public", thumb=None, category="27", made_with_ai=True,
+           publish_at=None):
+    """영상 업로드 → (video_id, 실제 공개 상태). category 27 = 교육, 25 = 뉴스/정치.
+    publish_at(ISO 8601 UTC 문자열)을 주면 비공개로 올린 뒤 그 시각에 자동 공개됩니다."""
     tok = _token()
     meta = {
         "snippet": {"title": title[:100], "description": description[:4900], "tags": list(tags)[:30],
@@ -48,6 +50,8 @@ def upload(path, title, description, tags=(), privacy="public", thumb=None, cate
         "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False,
                    "containsSyntheticMedia": bool(made_with_ai)},
     }
+    if publish_at:
+        meta["status"].update({"privacyStatus": "private", "publishAt": publish_at})
     size = os.path.getsize(path)
     r = requests.post(f"{UPLOAD}/videos", params={"uploadType": "resumable", "part": "snippet,status"},
                       headers=_h(tok, {"Content-Type": "application/json; charset=UTF-8",

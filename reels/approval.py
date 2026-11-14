@@ -37,10 +37,76 @@ def _clear(p, keep_file=False):
 
 
 def _published(p):
-    if p.get("series") == "history":
-        c = load_state("history_ep", {"published": 0})
+    key = {"history": "history_ep", "news": "news_ep"}.get(p.get("series"))
+    if key:
+        c = load_state(key, {"published": 0})
         c["published"] = c.get("published", 0) + 1
-        save_state("history_ep", c)
+        save_state(key, c)
+
+
+def _next_news_no():
+    return load_state("news_ep", {"published": 0}).get("published", 0) + 1
+
+
+def _local_video(p):
+    path = p.get("video")
+    if not path or not os.path.exists(path):
+        path = os.path.join(tempfile.gettempdir(), f"reel_{p['id']}.mp4")
+        if not os.path.exists(path):
+            storage.download(p["release_tag"], path)
+    return path
+
+
+def _publish_at():
+    """설정한 공개 시각(한국시간)이 아직 안 지났으면 그 시각(UTC ISO), 지났으면 None(바로 공개)."""
+    hhmm = (config.YT_SHORTS_TIME or "").strip()
+    try:
+        h, m = (int(x) for x in hhmm.split(":"))
+    except ValueError:
+        return None
+    kst = dt.timezone(dt.timedelta(hours=9))
+    now = dt.datetime.now(kst)
+    at = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if at - now < dt.timedelta(minutes=10):
+        return None
+    return at.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _shorts_meta(p):
+    no = _next_news_no()
+    hook = p.get("hook_title", "").strip()
+    tag = (p.get("tag") or "").strip()
+    title = f"[{tag}] {hook}" if tag and not hook.startswith("[") else hook
+    title = f"{title} | 오늘의 원픽 #{no:03d}"
+    if len(title) > 100:
+        title = title[:100]
+    tags = [t.lstrip("#") for t in p.get("hashtags", [])]
+    links = "\n".join(p.get("links", [])[:3])
+    desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n"
+            f"{p.get('caption', '')}\n\n"
+            + (f"🔗 원문 기사\n{links}\n\n" if links else "")
+            + f"📅 매일 아침 세계 경제 뉴스 딱 하나 — 오늘의 원픽 #{no:03d}\n#Shorts")
+    return title, desc, list(dict.fromkeys(tags + ["Shorts", "경제뉴스", "오늘의원픽"]))
+
+
+def _upload_short(p):
+    """오늘의 경제 릴스를 유튜브 쇼츠로도 게시. 성공 True."""
+    title, desc, tags = _shorts_meta(p)
+    at = _publish_at()
+    try:
+        vid, st = youtube.upload(_local_video(p), title, desc, tags, category="25", publish_at=at,
+                                 privacy=config.env("YT_PRIVACY", "public"))
+    except Exception as e:
+        print(f"  [유튜브 쇼츠] 실패: {e}")
+        telegram.send_message(f"⚠️ 유튜브 쇼츠 게시 실패 (인스타는 끝났어요)\n{str(e)[:600]}\n\n"
+                              "해결한 뒤 /approve 를 보내면 유튜브만 다시 올려요.")
+        return False
+    p["yt_short_id"] = vid
+    pending.save(p.get("series", "news"), p)
+    when = (f"{config.YT_SHORTS_TIME} 예약 공개" if at else f"상태: {st}")
+    telegram.send_message(f"🎉 유튜브 쇼츠 게시 완료! ({when})\nhttps://youtube.com/shorts/{vid}\n\n"
+                          "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 '그때 그 결정' 영상을 연결해 두면 장편 조회수에 도움이 돼요.")
+    return True
 
 
 def _approve_youtube(p):
@@ -73,28 +139,30 @@ def _approve(p):
     """게시 성공(또는 인스타 미연결)이면 True, 실패하면 False(영상 보관, 다시 누를 수 있음)."""
     if p.get("series") == "youtube":
         return _approve_youtube(p)
-    if not instagram.enabled():
-        telegram.send_message("✅ 승인 확인!\n위 영상을 저장해서 인스타에 직접 올려 주세요. "
-                              "캡션은 초안 메시지의 '■ 캡션' 부분을 복사하면 돼요.")
-        _published(p)
-        _clear(p)
-        return True
-    telegram.send_message("⏫ 인스타에 올리는 중이에요. 1~3분 걸려요.")
-    path = p.get("video")
-    if not path or not os.path.exists(path):
-        path = os.path.join(tempfile.gettempdir(), f"reel_{p['id']}.mp4")
-        storage.download(p["release_tag"], path)
-    try:
-        mid, link = instagram.publish_reel(path, p["caption"])
-        telegram.send_message(f"🎉 인스타 게시 완료!\n{link or mid}")
-        _published(p)
-        _clear(p)
-        return True
-    except Exception as e:
-        print(f"  [인스타] 실패: {e}")
-        telegram.send_message(f"⚠️ 인스타 게시 실패\n{str(e)[:700]}\n\n영상은 그대로 보관 중이에요. "
-                              "이 메시지를 Claude에게 보여주고, 해결한 뒤 승인 버튼을 다시 눌러 주세요.")
-        return False
+    series = p.get("series", "news")
+    if not p.get("ig_done"):
+        if not instagram.enabled():
+            telegram.send_message("✅ 승인 확인!\n위 영상을 저장해서 인스타에 직접 올려 주세요. "
+                                  "캡션은 초안 메시지의 '■ 캡션' 부분을 복사하면 돼요.")
+        else:
+            telegram.send_message("⏫ 인스타에 올리는 중이에요. 1~3분 걸려요.")
+            try:
+                mid, link = instagram.publish_reel(_local_video(p), p["caption"])
+                telegram.send_message(f"🎉 인스타 게시 완료!\n{link or mid}")
+            except Exception as e:
+                print(f"  [인스타] 실패: {e}")
+                telegram.send_message(f"⚠️ 인스타 게시 실패\n{str(e)[:700]}\n\n영상은 그대로 보관 중이에요. "
+                                      "이 메시지를 Claude에게 보여주고, 해결한 뒤 승인 버튼을 다시 눌러 주세요.")
+                return False
+        p["ig_done"] = True
+        pending.save(series, p)
+    if series == "news" and youtube.enabled() and not p.get("yt_short_id"):
+        telegram.send_message("⏫ 유튜브 쇼츠로도 올리는 중이에요.")
+        if not _upload_short(p):
+            return False
+    _published(p)
+    _clear(p)
+    return True
 
 
 def handle(updates):
