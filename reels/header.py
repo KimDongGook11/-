@@ -88,8 +88,8 @@ def make_header(script, out, style=None):
 
     # 1줄: [태그] [날짜]
     kst = dt.datetime.now(dt.timezone(dt.timedelta(hours=9)))
-    date = f"{kst.month}월 {kst.day}일 ({WEEK[kst.weekday()]})"
-    tag = (script.get("tag") or "").strip()[:6]
+    date = script.get("pill") or f"{kst.month}월 {kst.day}일 ({WEEK[kst.weekday()]})"
+    tag = (script.get("tag") or "").strip()[:8]
     pf = _font(46)
     items = ([(tag, RED, WHITE)] if tag else []) + [(date, YELLOW, BLACK)]
     widths = [d.textlength(t, font=pf) + 52 for t, _, _ in items]
@@ -102,7 +102,7 @@ def make_header(script, out, style=None):
 
     # 2줄: 채널 이름
     bf = _font(34)
-    bt = config.BRAND_NAME
+    bt = script.get("brand") or config.BRAND_NAME
     d.text(((W - d.textlength(bt, font=bf)) / 2, y), bt, font=bf, fill=(235, 235, 235),
            stroke_width=3, stroke_fill=BLACK)
     y += 34 + 30
