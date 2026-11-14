@@ -47,7 +47,7 @@ def _fmt(v):
     return f"{v:,.3f}"
 
 
-def draw(dates, closes, label, out, w=960, h=580, mark_year=None):
+def draw(dates, closes, label, out, w=960, h=580, mark_year=None, upto=1.0):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -71,29 +71,31 @@ def draw(dates, closes, label, out, w=960, h=580, mark_year=None):
                         edgecolor="#2A3550", linewidth=2, zorder=-10)
     fig.patches.append(bg)
     fig.text(0.06, 0.88, label, color="#CBD5E1", fontproperties=fp(26))
-    fig.text(0.06, 0.76, _fmt(closes[-1]), color="white", fontproperties=fp(46))
+    fig.text(0.06, 0.76, _fmt(closes[max(2, int(round(len(closes) * upto))) - 1]), color="white", fontproperties=fp(46))
     if mi is not None and ratio >= 2:
         badge = f"그때 대비 ×{ratio:,.0f}배" if ratio >= 10 else f"그때 대비 ×{ratio:.1f}배"
     elif mi is not None:
         badge = f"그때 대비 {'▲' if chg >= 0 else '▼'} {abs(chg):.0f}%"
     else:
         badge = f"{'▲' if chg >= 0 else '▼'} {abs(chg):.2f}%"
-    fig.text(0.94, 0.78, badge, color=col, ha="right", fontproperties=fp(36 if mi is not None else 40))
+    if upto >= 1.0:
+        fig.text(0.94, 0.78, badge, color=col, ha="right", fontproperties=fp(36 if mi is not None else 40))
 
     ax = fig.add_axes([0.07, 0.12, 0.86, 0.58])
     ax.set_facecolor("none")
     x = list(range(len(closes)))
+    n = max(2, int(round(len(closes) * upto)))
     log = min(closes) > 0 and max(closes) / min(closes) > 20
     if log:
         ax.set_yscale("log")
-    ax.plot(x, closes, color=col, linewidth=4 if len(x) < 60 else 3, solid_capstyle="round")
+    ax.plot(x[:n], closes[:n], color=col, linewidth=4 if len(x) < 60 else 3, solid_capstyle="round")
     lo, hi = min(closes), max(closes)
     floor = lo * 0.8 if log else lo - ((hi - lo) * 0.12 or 1)
-    ax.fill_between(x, closes, floor, color=col, alpha=0.18)
+    ax.fill_between(x[:n], closes[:n], floor, color=col, alpha=0.18)
     ax.set_ylim(floor, hi * 1.25 if log else hi + ((hi - lo) * 0.12 or 1))
     ax.set_xlim(0, len(x) - 1)
-    ax.scatter([x[-1]], [closes[-1]], color=col, s=120, zorder=5)
-    if mi is not None:
+    ax.scatter([x[n - 1]], [closes[n - 1]], color=col, s=120, zorder=5)
+    if mi is not None and n > mi:
         ax.axvline(mi, color=MARK, linewidth=2.5, linestyle=(0, (4, 4)), zorder=4)
         ax.scatter([mi], [closes[mi]], color=MARK, s=140, zorder=6)
         ax.annotate(f"그때 ({dates[mi].year})", (mi, closes[mi]), xytext=(12, 18), textcoords="offset points",
@@ -109,6 +111,38 @@ def draw(dates, closes, label, out, w=960, h=580, mark_year=None):
     fig.savefig(out, transparent=True)
     plt.close(fig)
     return chg
+
+
+def _data(chart, offline, start_year):
+    import math
+    if offline:
+        if start_year:
+            dates = [dt.datetime(start_year + i // 12, i % 12 + 1, 1) for i in range((2026 - start_year) * 12)]
+            closes = [0.3 * math.exp(i / 45) * (1 + 0.15 * math.sin(i / 7)) for i in range(len(dates))]
+        else:
+            base = dt.datetime(2026, 10, 13)
+            dates = [base + dt.timedelta(days=i) for i in range(22)]
+            closes = [6000 + 80 * math.sin(i / 3) + i * 12 for i in range(22)]
+        return dates, closes
+    return get_series(chart["ticker"], start_year)
+
+
+def make_chart_frames(chart, out_dir, offline=False, start_year=None, mark_year=None, frames=24, w=960, h=580):
+    """선이 왼쪽부터 그려지는 애니메이션 프레임. 반환: (파일 패턴, 프레임 수, 폭, 높이) 또는 None"""
+    if not chart or not chart.get("ticker"):
+        return None
+    try:
+        dates, closes = _data(chart, offline, start_year)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        label = chart.get("label") or chart["ticker"]
+        for i in range(frames):
+            k = 1 - (1 - (i + 1) / frames) ** 2
+            draw(dates, closes, label, out_dir / f"{i:04d}.png", w=w, h=h, mark_year=mark_year, upto=k)
+        print(f"  [차트] {chart['ticker']} 애니메이션 {frames}프레임")
+        return str(out_dir / "%04d.png"), frames, w, h
+    except Exception as e:
+        print(f"  [차트] 생략 ({chart.get('ticker')}): {e}")
+        return None
 
 
 def make_chart(chart, out, offline=False, start_year=None, mark_year=None):

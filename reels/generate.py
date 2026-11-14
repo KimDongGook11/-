@@ -11,22 +11,26 @@ import shutil
 import sys
 import traceback
 
-from . import approval, chart, config, history, news, pending, render, script, stock, storage, telegram, tts
+from . import approval, config, history, news, pending, produce, render, script, storage, telegram
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
+
+def _seg(text, kw="stock market", **k):
+    return {"text": text, "keywords": kw, "show_chart": k.get("show_chart", False), "number": k.get("number")}
+
 
 SAMPLE = {
     "tag": "금리",
     "hook_title": "미국 금리 [0.25%p 인하], 내 대출은?",
     "segments": [
-        {"text": "미국이 또 금리를 내렸어요. 이번엔 0.25%p예요.", "keywords": "federal reserve", "show_chart": False},
-        {"text": "연준은 물가보다 일자리 둔화를 더 걱정하고 있다는 뜻이죠.", "keywords": "office workers city", "show_chart": False},
-        {"text": "발표 직후 S&P 500 지수는 1.2% 올랐어요.", "keywords": "stock market screen", "show_chart": True},
-        {"text": "금리가 내려가면 달러 가치가 약해지는 경우가 많아요.", "keywords": "us dollar money", "show_chart": False},
-        {"text": "그러면 원/달러 환율이 내려가 수입 물가 부담이 줄 수 있죠.", "keywords": "shipping containers port", "show_chart": False},
-        {"text": "한국은행도 금리 인하를 고민할 시간이 다가오고 있어요.", "keywords": "seoul skyline night", "show_chart": False},
-        {"text": "여러분은 이번 인하, 내 대출에 도움이 될 거라 보시나요?", "keywords": "family home", "show_chart": False},
+        _seg("미국이 또 금리를 내렸어요. 이번엔 0.25%p예요.", "federal reserve",
+             number={"value": "0.25%p", "label": "미국 기준금리 인하", "dir": "down"}),
+        _seg("연준은 물가보다 일자리 둔화를 더 걱정하고 있다는 뜻이죠.", "office workers city"),
+        _seg("발표 직후 S&P 500 지수는 1.2% 올랐어요.", "stock market screen", show_chart=True),
+        _seg("금리가 내려가면 달러 가치가 약해지는 경우가 많아요.", "us dollar money"),
+        _seg("그러면 원/달러 환율이 내려가 수입 물가 부담이 줄 수 있죠.", "shipping containers port"),
+        _seg("여러분은 이번 인하, 내 대출에 도움이 될 거라 보시나요?", "family home"),
     ],
     "chart": {"ticker": "^GSPC", "label": "S&P 500 · 최근 1개월"},
     "key_facts": ["(샘플 데이터 - 실제 뉴스 아님)"],
@@ -34,23 +38,27 @@ SAMPLE = {
     "hashtags": ["#경제뉴스", "#테스트"],
 }
 
-
-SAMPLE_HISTORY = {
-    "hook_title": "파산 직전 애플, [90일]의 기적",
-    "segments": [
-        {"text": "1997년, 애플은 파산까지 90일밖에 남지 않았어요.", "keywords": "empty office night", "show_chart": False},
-        {"text": "쫓겨났던 창업자 스티브 잡스가 회사로 돌아옵니다.", "keywords": "man walking city 1990s", "show_chart": False},
-        {"text": "그가 처음 한 일은 제품 수십 개를 4개로 줄이는 거였죠.", "keywords": "boardroom meeting", "show_chart": False},
-        {"text": "그리고 경쟁자 마이크로소프트의 투자를 받아들였어요.", "keywords": "handshake business", "show_chart": False},
-        {"text": "그 결정 이후 애플 주가는 수백 배가 됐습니다.", "keywords": "stock market screen", "show_chart": True},
-        {"text": "위기 때 필요한 건 더하기가 아니라 빼기였던 거죠.", "keywords": "minimal desk", "show_chart": False},
-        {"text": "여러분 회사라면, 무엇을 먼저 버리시겠어요?", "keywords": "office window view", "show_chart": False},
+SAMPLE_LONG = {
+    "hook_title": "파산 직전 애플, [90일]의 기적", "thumb_title": "파산 90일 전, 애플을 살린 [한 번의 선택]",
+    "youtube_title": "(샘플) 파산 90일 전 애플은 무엇을 버렸나", "description": "테스트용 샘플입니다.",
+    "tags": ["애플", "스티브잡스"],
+    "intro": [_seg("1997년 여름, 애플에는 90일을 버틸 돈밖에 없었습니다.", "empty office night"),
+              _seg("이 회사는 어떻게 세계에서 가장 비싼 기업이 됐을까요?", "city skyline")],
+    "chapters": [
+        {"title": "무너지는 애플", "year": 1996, "segments": [
+            _seg("1990년대 중반, 애플은 매년 큰 손실을 냈어요.", "old computer"),
+            _seg("제품은 수십 종류로 늘었지만 팔리는 건 없었죠.", "warehouse boxes",
+                 number={"value": "10억 달러", "label": "누적 손실(샘플)", "dir": "down"})]},
+        {"title": "돌아온 창업자", "year": 1997, "segments": [
+            _seg("그리고 쫓겨났던 창업자가 회사로 돌아옵니다.", "man walking city"),
+            _seg("첫 결정은 제품을 4개로 줄이는 것이었어요.", "minimal desk",
+                 number={"value": "4개", "label": "남긴 제품 라인", "dir": "none"})]},
+        {"title": "그 후", "year": 2001, "segments": [
+            _seg("그 결정 이후 주가는 어떻게 됐을까요?", "stock market screen", show_chart=True),
+            _seg("위기에서 필요한 건 더하기가 아니라 빼기였던 거죠.", "sunrise city")]},
     ],
     "chart": {"ticker": "AAPL", "label": "애플 주가 · 1994년~현재"},
     "key_facts": ["(샘플 데이터 - 검수 전)"],
-    "caption": "테스트용 샘플 대본입니다.",
-    "hashtags": ["#그때그결정", "#테스트"],
-    "tag": "그때 그 결정", "pill": "1997년", "brand": "EP.1 · 애플",
 }
 
 
@@ -80,33 +88,34 @@ def _news_script():
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
             "links": [m["link"] for m in mats]}
-    return sc, sources, meta, {}
+    return sc, sources, meta
 
 
-def _history_script():
+def _history_scripts():
+    """반환: (장편 대본, 60초 대본, 에피소드, 근거 링크)"""
     used = load_state("episodes", [])
     tried = []
     print("1) 에피소드 선정 + 위키백과 근거 수집")
     for _ in range(3):
         ep = history.pick_episode(used + tried)
         print(f"   → {ep.get('company_ko')} {ep.get('year')}년: {ep.get('episode_ko')}")
-        material, links = history.gather(ep)
+        material, links = history.gather(ep, limit=12000)
         if material:
             break
         tried.append(ep)
     else:
         raise RuntimeError("위키백과에서 충분한 근거 자료를 찾지 못했습니다.")
-    print("2) 대본 작성")
-    sc = script.normalize(history.write_script(ep, material, config.BRAND_NAME))
-    n = load_state("history_ep", {"published": 0}).get("published", 0) + 1
-    sc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"EP.{n} · {ep.get('company_ko', '')}"})
-    if sc.get("chart") is None and ep.get("ticker"):
-        sc["chart"] = {"ticker": ep["ticker"], "label": f"{ep.get('company_ko', '')} 주가 · {ep['year']}년~현재"}
-    meta = {"title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep}
-    return sc, ["Wikipedia"], meta, {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
+    print("2) 장편 대본(약 5분)")
+    lsc = history.write_long(ep, material, config.BRAND_NAME)
+    if lsc.get("chart") is None and ep.get("ticker"):
+        lsc["chart"] = {"ticker": ep["ticker"], "label": f"{ep.get('company_ko', '')} 주가 · {ep['year']}년~현재"}
+    print("3) 60초 요약 대본")
+    ssc = history.condense_short(lsc, ep)
+    return lsc, ssc, ep, links
 
 
 def make_reel(series="news", offline=False):
+    """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
     rid = ("h" if series == "history" else "n") + now.strftime("%Y%m%d-%H%M%S")
     work = config.WORK_DIR / rid
@@ -114,29 +123,78 @@ def make_reel(series="news", offline=False):
         shutil.rmtree(work)
     work.mkdir(parents=True)
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    if offline:
-        if series == "history":
-            sc, sources, meta, copt = SAMPLE_HISTORY, ["Wikipedia"], {"topic": "sample"}, {"start_year": 1994, "mark_year": 1997}
-        else:
-            sc, sources, meta, copt = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}, {}
-    else:
-        sc, sources, meta, copt = _history_script() if series == "history" else _news_script()
-
-    print("음성 생성")
-    narration, durs = tts.synthesize([s["text"] for s in sc["segments"]], work)
-    print("배경 영상·차트")
-    clips = [None] * len(durs) if offline else stock.fetch_clips(sc["segments"], durs, work)
-    chart_png = chart.make_chart(sc.get("chart"), work / "chart.png", offline=offline, **copt)
-    print("렌더링")
-    bgms = sorted((config.ASSETS_DIR / "bgm").glob("*.mp3")) if (config.ASSETS_DIR / "bgm").exists() else []
-    bgm = bgms[now.toordinal() % len(bgms)] if bgms else None
     out = config.OUTPUT_DIR / f"reel_{rid}.mp4"
-    render.render(sc, durs, clips, narration, chart_png, sources, work, out, bgm=bgm)
 
-    return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
-            "sources": sources, "caption": build_caption(sc, sources, series),
-            "duration": round(sum(durs), 1), **meta}
+    if series == "news":
+        if offline:
+            sc, sources, meta = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}
+        else:
+            sc, sources, meta = _news_script()
+        print("영상 제작 (세로 릴스)")
+        dur = produce.short(sc, work / "short", out, sources, offline=offline)
+        return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
+                "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1), **meta}
+
+    # ---- 그때 그 결정: 장편(가로 5분) + 60초 릴스 ----
+    if offline:
+        lsc = dict(SAMPLE_LONG)
+        ssc = script.normalize({"hook_title": lsc["hook_title"], "segments": lsc["intro"] + lsc["chapters"][1]["segments"]
+                                + lsc["chapters"][2]["segments"], "caption": "테스트용 샘플입니다.",
+                                "hashtags": ["#그때그결정"], "chart": lsc["chart"]})
+        ep = {"company": "Apple", "company_ko": "애플", "year": 1997, "episode_ko": "샘플"}
+        links = []
+    else:
+        lsc, ssc, ep, links = _history_scripts()
+    n = load_state("history_ep", {"published": 0}).get("published", 0) + 1
+    ep_label = f"EP.{n}"
+    lsc.update({"ep": ep_label, "year": ep["year"]})
+    ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"{ep_label} · {ep.get('company_ko', '')}"})
+    copt = {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
+    sources = ["Wikipedia"]
+
+    print("영상 제작 ① 장편 (가로 약 5분)")
+    long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
+    ldur, chapters, thumb = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
+    print("영상 제작 ② 60초 릴스 (세로)")
+    sdur = produce.short(ssc, work / "short", out, sources, offline=offline, chart_opts=copt)
+    return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": ssc,
+            "sources": sources, "caption": build_caption(ssc, sources, series), "duration": round(sdur, 1),
+            "title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep,
+            "long": {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
+                     "script": lsc}}
+
+
+def _mmss(t):
+    t = int(round(t))
+    return f"{t // 60:02d}:{t % 60:02d}"
+
+
+def deliver_long(res, offline=False):
+    """장편: GitHub Release에 원본·썸네일 보관 → 텔레그램에 썸네일, 미리보기, 유튜브 업로드용 문구."""
+    lg, ep = res["long"], res.get("episode", {})
+    lsc = lg["script"]
+    url = None
+    if not offline and storage.enabled():
+        tag = f"long-{res['id']}"
+        storage.upload(lg["video"], tag, lsc.get("youtube_title") or lsc["hook_title"])
+        storage.add_asset(tag, lg["thumb"], "thumbnail.jpg")
+        url = storage.public_url(tag, f"{tag}.mp4")
+        storage.prune("long-", keep=6)
+    if not telegram.enabled():
+        return
+    chap = "\n".join(f"{_mmss(t)} {name}" for t, name in lg["chapters"])
+    desc = (f"{lsc.get('description', '')}\n\n⏱ 챕터\n{chap}\n\n📚 참고: Wikipedia\n"
+            + "\n".join(res.get("links", [])[:3]) + "\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었습니다.")
+    telegram.send_photo(lg["thumb"], f"🖼 [그때 그 결정] 유튜브 썸네일 · {ep.get('company_ko', '')} {ep.get('year', '')}년")
+    pv = str(lg["video"]).replace(".mp4", "_preview.mp4")
+    render.preview(lg["video"], pv)
+    telegram.send_video(pv, f"🎬 [유튜브 장편 미리보기 · 저화질] {_mmss(lg['duration'])}")
+    telegram.send_message(
+        "📺 유튜브 업로드용 (직접 올리기)\n\n"
+        + (f"■ 원본 영상 다운로드 (1080p)\n{url}\n\n" if url else "")
+        + f"■ 제목\n{lsc.get('youtube_title') or lsc['hook_title'].replace('[', '').replace(']', '')}\n\n"
+        + f"■ 설명\n{desc}\n\n■ 태그\n{', '.join(lsc.get('tags', []))}\n\n"
+        + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8]))
 
 
 def expire_pending(series):
@@ -168,10 +226,12 @@ def deliver(res, offline=False):
                     "title_en": res.get("title_en", ""), "topic": res.get("topic", ""), "link": res.get("link", "")})
         save_state("history", log[-60:])
 
+    if res.get("long"):
+        deliver_long(res, offline=offline)
     if telegram.enabled():
         sc, rid, label = res["script"], res["id"], pending.LABEL[series]
         telegram.send_message(
-            f"🎬 [{label}] 릴스 초안 ({res['duration']}초)\n\n"
+            f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n\n"
             f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +
@@ -182,7 +242,7 @@ def deliver(res, offline=False):
             buttons=[("✅ 승인 → 인스타 게시", f"approve:{rid}"),
                      ("🔁 다른 " + ("에피소드로" if series == "history" else "뉴스로") + " 다시 만들기", f"redo:{rid}"),
                      ("❌ 폐기", f"reject:{rid}")])
-    pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode")}
+    pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode", "long")}
                  | {"hook_title": res["script"]["hook_title"]})
 
 

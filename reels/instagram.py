@@ -10,7 +10,9 @@ from . import config
 
 
 def enabled():
-    return bool(config.IG_USER_ID and config.IG_ACCESS_TOKEN)
+    """자동 게시는 IG_AUTO_PUBLISH=true 일 때만 (지금은 직접 올리는 방식이 기본)."""
+    return bool(config.IG_USER_ID and config.IG_ACCESS_TOKEN) and \
+        config.env("IG_AUTO_PUBLISH", "false").lower() == "true"
 
 
 def graph_host(token):
@@ -22,17 +24,90 @@ def graph_host(token):
 
 
 def publish_reel(video_path, caption):
-    """업로드에서 Meta가 파일을 거부하면(ProcessingFailedError) 인스타 규격으로 다시 인코딩해 한 번 더 시도."""
+    """1차: 파일 직접 업로드(resumable). Meta가 거부하면(ProcessingFailedError)
+    2차: 인스타 규격으로 다시 인코딩 → GitHub 공개 주소에 올리고 Meta가 가져가게(video_url)."""
     try:
         return _publish(video_path, caption)
     except UploadRejected as e:
-        import shutil
-        if not shutil.which("ffmpeg"):
-            raise RuntimeError(f"{e} (다시 인코딩할 ffmpeg가 없어요. /new 로 새 영상을 만들어 승인해 주세요)")
-        safe = str(video_path).replace(".mp4", "_ig.mp4")
-        print("  [인스타] 파일 거부 → 인스타 규격으로 다시 인코딩해 재시도")
-        _ig_safe(video_path, safe)
-        return _publish(safe, caption)
+        print(f"  [인스타] 직접 업로드 거부 → 공개 주소 방식으로 재시도 ({e})")
+    import shutil
+    src = str(video_path)
+    if shutil.which("ffmpeg"):
+        src = _ig_safe(video_path, str(video_path).replace(".mp4", "_ig.mp4"))
+    url, cleanup = _public_url(src)
+    try:
+        return _publish_url(url, caption)
+    finally:
+        cleanup()
+
+
+def _gh():
+    repo, tok = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_TOKEN")
+    if not (repo and tok):
+        raise RuntimeError("공개 주소 방식은 GitHub Actions 안에서만 동작해요.")
+    return repo, {"Authorization": f"Bearer {tok}", "Accept": "application/vnd.github+json"}
+
+
+def _public_url(path):
+    """영상을 임시 GitHub Release에 올리고 누구나 받을 수 있는 주소를 돌려줍니다 (공개 저장소 필요)."""
+    repo, h = _gh()
+    tag = f"ig-upload-{int(time.time())}"
+    r = requests.post(f"https://api.github.com/repos/{repo}/releases", headers=h, timeout=30,
+                      json={"tag_name": tag, "name": tag, "prerelease": True, "body": "인스타 업로드용 임시 파일"})
+    r.raise_for_status()
+    rel = r.json()
+    with open(path, "rb") as f:
+        a = requests.post(rel["upload_url"].split("{")[0] + "?name=reel.mp4", data=f, timeout=300,
+                          headers={**h, "Content-Type": "video/mp4"})
+    a.raise_for_status()
+    url = a.json()["browser_download_url"]
+    chk = requests.head(url, allow_redirects=True, timeout=30)
+    if chk.status_code != 200:
+        raise RuntimeError(f"공개 주소에서 영상을 받을 수 없어요(HTTP {chk.status_code}). 저장소가 Public인지 확인하세요.")
+    print(f"  [인스타] 공개 주소 준비: {url}")
+
+    def cleanup():
+        try:
+            requests.delete(f"https://api.github.com/repos/{repo}/releases/{rel['id']}", headers=h, timeout=30)
+            requests.delete(f"https://api.github.com/repos/{repo}/git/refs/tags/{tag}", headers=h, timeout=30)
+        except Exception:
+            pass
+    return url, cleanup
+
+
+def _wait_and_publish(base, uid, tok, cid):
+    for _ in range(60):  # 최대 10분 처리 대기
+        s = requests.get(f"{base}/{cid}", params={"fields": "status_code,status", "access_token": tok},
+                         timeout=30).json()
+        code = s.get("status_code")
+        if code == "FINISHED":
+            break
+        if code in ("ERROR", "EXPIRED"):
+            raise RuntimeError(f"인스타 처리 실패: {s}")
+        time.sleep(10)
+    else:
+        raise RuntimeError("인스타 처리 시간 초과")
+    p = requests.post(f"{base}/{uid}/media_publish", data={"creation_id": cid, "access_token": tok}, timeout=60)
+    if p.status_code != 200:
+        raise RuntimeError(f"게시 실패: {p.text[:400]}")
+    mid = p.json()["id"]
+    try:
+        link = requests.get(f"{base}/{mid}", params={"fields": "permalink", "access_token": tok},
+                            timeout=30).json().get("permalink")
+    except Exception:
+        link = None
+    return mid, link
+
+
+def _publish_url(url, caption):
+    tok, uid = config.IG_ACCESS_TOKEN.strip(), config.IG_USER_ID.strip()
+    base = f"https://{graph_host(tok)}/{config.IG_API_VERSION}"
+    r = requests.post(f"{base}/{uid}/media", timeout=60, data={
+        "media_type": "REELS", "video_url": url, "caption": caption[:2200],
+        "share_to_feed": "true", "access_token": tok})
+    if r.status_code != 200:
+        raise RuntimeError(f"컨테이너 생성 실패(공개 주소 방식): {r.text[:400]}")
+    return _wait_and_publish(base, uid, tok, r.json()["id"])
 
 
 def _ig_safe(src, dst):
@@ -70,28 +145,12 @@ def _publish(video_path, caption):
             "Authorization": f"OAuth {tok}", "offset": "0", "file_size": str(size)})
     if up.status_code != 200:
         if "ProcessingFailedError" in up.text:
-            raise UploadRejected(f"영상 업로드 실패(파일 거부): {up.text[:300]}")
+            try:
+                st = requests.get(f"{base}/{cid}", params={"fields": "status_code,status", "access_token": tok},
+                                  timeout=30).json()
+            except Exception:
+                st = {}
+            raise UploadRejected(f"영상 업로드 실패(파일 거부): {up.text[:200]} / 상태: {st}")
         raise RuntimeError(f"영상 업로드 실패: {up.text[:400]}")
 
-    for _ in range(60):  # 최대 10분 처리 대기
-        s = requests.get(f"{base}/{cid}", params={"fields": "status_code,status", "access_token": tok},
-                         timeout=30).json()
-        code = s.get("status_code")
-        if code == "FINISHED":
-            break
-        if code in ("ERROR", "EXPIRED"):
-            raise RuntimeError(f"인스타 처리 실패: {s}")
-        time.sleep(10)
-    else:
-        raise RuntimeError("인스타 처리 시간 초과")
-
-    p = requests.post(f"{base}/{uid}/media_publish", data={"creation_id": cid, "access_token": tok}, timeout=60)
-    if p.status_code != 200:
-        raise RuntimeError(f"게시 실패: {p.text[:400]}")
-    mid = p.json()["id"]
-    try:
-        link = requests.get(f"{base}/{mid}", params={"fields": "permalink", "access_token": tok},
-                            timeout=30).json().get("permalink")
-    except Exception:
-        link = None
-    return mid, link
+    return _wait_and_publish(base, uid, tok, cid)

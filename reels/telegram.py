@@ -39,6 +39,22 @@ def send_video(path, caption, buttons=None):
     return r.json()["result"]["message_id"]
 
 
+def send_photo(path, caption=""):
+    with open(path, "rb") as f:
+        r = requests.post(_api("sendPhoto"), data={"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
+                          files={"photo": f}, timeout=120)
+    r.raise_for_status()
+    return r.json()["result"]["message_id"]
+
+
+def send_document(path, caption=""):
+    with open(path, "rb") as f:
+        r = requests.post(_api("sendDocument"), data={"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000]},
+                          files={"document": f}, timeout=300)
+    r.raise_for_status()
+    return r.json()["result"]["message_id"]
+
+
 def remove_buttons(message_id):
     try:
         requests.post(_api("editMessageReplyMarkup"), timeout=20, data={

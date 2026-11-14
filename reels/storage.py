@@ -53,3 +53,33 @@ def delete(tag):
         requests.delete(f"{API}/repos/{_repo()}/git/refs/tags/{tag}", headers=_h(), timeout=30)
     except Exception as e:
         print(f"  [보관] 삭제 실패(무시): {e}")
+
+
+def add_asset(tag, path, name):
+    try:
+        r = requests.get(f"{API}/repos/{_repo()}/releases/tags/{tag}", headers=_h(), timeout=30)
+        r.raise_for_status()
+        up = r.json()["upload_url"].split("{")[0]
+        ctype = "image/jpeg" if name.endswith(".jpg") else "application/octet-stream"
+        with open(path, "rb") as f:
+            requests.post(f"{up}?name={name}", data=f, timeout=120, headers=_h({"Content-Type": ctype})).raise_for_status()
+    except Exception as e:
+        print(f"  [보관] 파일 추가 실패(무시): {e}")
+
+
+def public_url(tag, name):
+    """공개 저장소면 누구나 받을 수 있는 다운로드 주소."""
+    return f"https://github.com/{_repo()}/releases/download/{tag}/{name}"
+
+
+def prune(prefix, keep=6):
+    """오래된 보관본 정리 (prefix로 시작하는 것 중 최근 keep개만 남김)."""
+    try:
+        r = requests.get(f"{API}/repos/{_repo()}/releases", params={"per_page": 100}, headers=_h(), timeout=30)
+        r.raise_for_status()
+        rels = sorted([x for x in r.json() if x["tag_name"].startswith(prefix)],
+                      key=lambda x: x["created_at"], reverse=True)
+        for x in rels[keep:]:
+            delete(x["tag_name"])
+    except Exception as e:
+        print(f"  [보관] 정리 실패(무시): {e}")

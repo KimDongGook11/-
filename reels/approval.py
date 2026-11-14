@@ -45,8 +45,8 @@ def _published(p):
 def _approve(p):
     """게시 성공(또는 인스타 미연결)이면 True, 실패하면 False(영상 보관, 다시 누를 수 있음)."""
     if not instagram.enabled():
-        telegram.send_message("✅ 승인 확인!\n아직 인스타그램이 연결되지 않아 자동 게시는 건너뛰었어요.\n"
-                              "GitHub Secrets에 IG_USER_ID와 IG_ACCESS_TOKEN을 등록하면 다음부터 자동으로 게시됩니다.")
+        telegram.send_message("✅ 승인 확인!\n위 영상을 저장해서 인스타에 직접 올려 주세요. "
+                              "캡션은 초안 메시지의 '■ 캡션' 부분을 복사하면 돼요.")
         _published(p)
         _clear(p)
         return True

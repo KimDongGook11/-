@@ -88,32 +88,77 @@ def gather(ep, limit=7000):
     return material, links
 
 
-def write_script(ep, material, brand):
-    prompt = f"""너는 인스타 경제 릴스 채널 '{brand}'의 시리즈 '{SERIES_NAME}' 작가야.
+def write_long(ep, material, brand):
+    """약 5분 가로형 유튜브 대본 (챕터 구성)."""
+    prompt = f"""너는 경제 다큐 유튜브 채널 '{brand}'의 시리즈 '{SERIES_NAME}' 작가야.
 에피소드: {ep['company_ko']} ({ep['company']}), {ep['year']}년 — {ep['episode_ko']}
 
-아래 [자료]에 있는 사실만 근거로 40~55초짜리 한국어 릴스 대본을 써.
+아래 [자료]에 있는 사실만 근거로 약 5분 분량의 한국어 내레이션 대본을 써.
 
 [규칙]
-1. 연도·금액·숫자·인물·인용은 자료에 있는 것만. 자료에 없으면 쓰지 말고, 확신 없는 디테일은 빼.
-2. 자료 문장을 그대로 번역하지 말고 이야기처럼 새로 풀어 써.
-3. 말투는 친근한 존댓말. 다큐 내레이션처럼 긴장감 있게.
-4. 구성: ① 후킹(결과를 살짝 암시) ② {ep['year']}년 그때 상황 ③ 위기·갈림길 ④ 그 결정 ⑤ 결과(그 뒤 어떻게 됐나) ⑥ 오늘 우리에게 주는 의미 또는 질문.
-5. segments 7~9개, 각 25~45자, 전체 260~360자.
-6. keywords는 배경 스톡 영상 검색용 영어 1~3단어. 회사 로고·제품명·인물 이름은 피하고 분위기 위주(예: "old office 1990s", "factory assembly line", "boardroom meeting", "city at night").
-7. 상장 기업이고 티커가 있으면 chart에 넣어. 없으면 null.
-8. hook_title은 18자 이내, 가장 중요한 단어 하나를 [ ]로 감싸 강조(예: 파산 직전 애플, [90일]의 기적).
+1. 연도·금액·숫자·인물·인용은 자료에 있는 것만. 확신 없는 디테일은 빼.
+2. 자료 문장을 그대로 번역하지 말고 이야기처럼 새로 풀어 써. 말투는 친근한 존댓말, 다큐 내레이션처럼.
+3. 구성: intro(2~3문장, 결과를 살짝 보여주는 후킹) + chapters 5개
+   (① 그때 상황 ② 위기·갈림길 ③ 그 결정 ④ 그 후 어떻게 됐나 ⑤ 오늘 우리에게 주는 교훈).
+   챕터 제목은 8자 이내, year는 그 챕터의 대표 연도(모르면 null).
+4. 각 segment는 한 문장 30~60자. 챕터마다 5~8문장. 전체 글자 수 1,400~1,700자.
+5. keywords: 배경 스톡 영상 검색용 영어 1~3단어. 로고·제품명·인물 이름은 피하고 분위기 위주.
+6. 핵심 숫자가 나오는 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
+7. 주가 흐름을 보여주기 좋은 문장 1~2개에 show_chart: true (상장사일 때만).
+8. hook_title: 18자 이내, 핵심 단어 하나를 [ ]로. thumb_title: 썸네일용 20자 이내, 핵심 단어 하나를 [ ]로.
+9. youtube_title: 40자 이내, 호기심을 끄는 제목. description: 3~5줄 소개. tags: 10개 이내.
 
 [자료]
 {material}
 
 JSON으로만 답해:
 {{
- "hook_title": "...",
- "segments": [{{"text": "...", "keywords": "...", "show_chart": false}}],
- "chart": {{"ticker": "{ep.get('ticker') or ''}", "label": "기업명 주가 · {ep['year']}년~현재"}},
- "key_facts": ["대본에 쓴 연도·숫자 + 자료의 근거 문장 일부(영어 원문 짧게)"],
- "caption": "인스타 캡션 3~5줄",
- "hashtags": ["#그때그결정", "#기업역사"]
+ "hook_title": "...", "thumb_title": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
+ "intro": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
+ "chapters": [{{"title": "...", "year": 1997, "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
+ "chart": {{"ticker": "{ep.get('ticker') or ''}", "label": "기업명 주가 · 연도~현재"}},
+ "key_facts": ["대본에 쓴 연도·숫자 + 자료의 근거 문장 일부(영어 원문 짧게)"]
 }}"""
-    return llm.ask_json(prompt, temperature=0.7)
+    from .script import norm_segments
+    d = llm.ask_json(prompt, temperature=0.7)
+    chapters = []
+    for c in d.get("chapters", []):
+        segs = norm_segments(c.get("segments"))
+        if segs:
+            y = re.sub(r"\D", "", str(c.get("year") or ""))
+            chapters.append({"title": str(c.get("title", ""))[:12], "year": int(y) if y else None, "segments": segs})
+    if len(chapters) < 3:
+        raise ValueError("장편 대본 챕터가 부족합니다")
+    chart = d.get("chart") if isinstance(d.get("chart"), dict) and d["chart"].get("ticker") else None
+    return {"hook_title": str(d.get("hook_title", ""))[:30], "thumb_title": str(d.get("thumb_title", ""))[:34],
+            "youtube_title": str(d.get("youtube_title", ""))[:90], "description": str(d.get("description", "")),
+            "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
+            "intro": norm_segments(d.get("intro")), "chapters": chapters, "chart": chart,
+            "key_facts": d.get("key_facts", [])}
+
+
+def condense_short(long_sc, ep):
+    """장편 대본을 60초 이내 세로 릴스로 압축 (이미 근거 확인된 장편 대본만 사용)."""
+    lines = [s["text"] for s in long_sc["intro"]]
+    for c in long_sc["chapters"]:
+        lines.append(f"[{c['title']}]")
+        lines += [s["text"] for s in c["segments"]]
+    prompt = f"""아래는 '{SERIES_NAME}' 장편(약 5분) 대본이야. 이걸 인스타 릴스용 40~55초 세로 영상 대본으로 압축해.
+규칙:
+- 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지.
+- segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
+- 마지막 문장은 반드시 "전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요." 같은 안내.
+- keywords는 영어 1~3단어 분위기 위주. 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
+- hook_title 18자 이내, 핵심 단어 하나를 [ ]로.
+
+[장편 대본]
+{chr(10).join(lines)}
+
+JSON으로만 답해:
+{{"hook_title": "...", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
+ "caption": "인스타 캡션 3~5줄 (마지막 줄: 풀버전은 유튜브 경제 원픽에서)", "hashtags": ["#그때그결정", "#기업역사"]}}"""
+    from .script import normalize
+    d = llm.ask_json(prompt, temperature=0.6)
+    d["chart"] = long_sc.get("chart")
+    d["key_facts"] = long_sc.get("key_facts", [])
+    return normalize(d)

@@ -72,7 +72,8 @@ def write_script(mats, topic, brand):
 7. 각 segment의 keywords는 배경 스톡 영상 검색어로, 영어 1~3단어(예: "stock market", "oil refinery", "federal reserve building", "shipping containers"). 사람 얼굴 클로즈업이나 특정 인물 이름은 피해.
 8. chart는 이 뉴스와 가장 관련 있는 시세 1개. 아래 목록 중에서 고르고, 맞는 게 없으면 null:
 {TICKERS}
-9. show_chart는 차트를 보여주기 좋은 segment 1~2개에만 true.
+9. show_chart는 차트를 보여주기 좋은 segment 1개에만 true.
+10. 핵심 숫자가 나오는 segment 1~2개에는 number를 넣어 화면에 큰 숫자 카드로 띄워. value는 자료에 있는 숫자 그대로(예: "4.34%", "1,200억 달러"), label은 10자 내외 설명, dir은 up/down/none. 차트를 보여주는 segment에는 넣지 마.
 
 [자료]
 {chr(10).join(blocks)}
@@ -81,7 +82,8 @@ JSON으로만 답해:
 {{
  "tag": "제목 위 빨간 꼬리표 2~4자 (예: 속보, 긴급, 금리, 환율, 증시, 유가, 반도체, 코인). 큰 사건일 때만 '속보'",
  "hook_title": "화면 위에 고정할 제목, 18자 이내. 가장 중요한 단어 하나를 [ ]로 감싸 강조 (예: 젠슨 황 [전격 사임], 엔비디아 4% 급락)",
- "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false}}],
+ "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false,
+               "number": null 또는 {{"value": "4.34%", "label": "엔비디아 주가 하락", "dir": "down"}}}}],
  "chart": {{"ticker": "^GSPC", "label": "S&P 500 · 최근 1개월"}},
  "key_facts": ["대본에 쓴 숫자와 그 출처 매체 (검수용)"],
  "caption": "인스타 캡션 본문 3~5줄 (이모지 약간)",
@@ -91,14 +93,28 @@ JSON으로만 답해:
     return normalize(data)
 
 
-def normalize(data):
+def _number(n):
+    if not isinstance(n, dict) or not str(n.get("value", "")).strip():
+        return None
+    d = str(n.get("dir", "none")).lower()
+    return {"value": str(n["value"]).strip()[:14], "label": str(n.get("label", "")).strip()[:18],
+            "dir": d if d in ("up", "down") else "none"}
+
+
+def norm_segments(items):
     segs = []
-    for s in data.get("segments", []):
+    for s in items or []:
         text = str(s.get("text", "")).strip()
         if text:
             segs.append({"text": text,
                          "keywords": str(s.get("keywords") or "stock market").strip()[:60],
-                         "show_chart": bool(s.get("show_chart"))})
+                         "show_chart": bool(s.get("show_chart")),
+                         "number": _number(s.get("number"))})
+    return segs
+
+
+def normalize(data):
+    segs = norm_segments(data.get("segments", []))
     if len(segs) < 3:
         raise ValueError("대본 문장이 너무 적습니다: " + str(data)[:300])
     chart = data.get("chart") or {}
