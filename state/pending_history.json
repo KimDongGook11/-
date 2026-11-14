@@ -1,21 +1,22 @@
 {
-  "id": "h20261114-142025",
+  "id": "h20261114-151021",
   "series": "history",
-  "created_at": "2026-11-14T14:20:25.086457+09:00",
-  "video": "/home/runner/work/-/-/output/reel_h20261114-142025.mp4",
+  "created_at": "2026-11-14T15:10:21.730989+09:00",
+  "video": "/home/runner/work/-/-/output/reel_h20261114-151021.mp4",
   "sources": [
     "Wikipedia"
   ],
-  "caption": "2000년, 단돈 5천만 달러에 넷플릭스를 살 수 있었던 블록버스터.\n거대 오프라인 매장의 성공에 취해 다가오는 디지털 변화를 놓쳤습니다.\n결국 2010년 파산에 이르며 비디오 제국은 역사의 뒤안길로 사라졌죠.\n눈앞의 거대한 성공이 미래를 가릴 때, 우리는 어떤 선택을 해야 할까요?\n\n📚 참고: Wikipedia\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었습니다.\n\n#그때그결정 #기업역사 #블록버스터 #넷플릭스 #글로벌경제",
-  "duration": 42.4,
-  "title_en": "Blockbuster LLC",
-  "topic": "2000년 단돈 5천만 달러에 넷플릭스를 인수하라는 제안을 비웃으며 거절했다가 10년 뒤 파산에 이른 비디오 대여 공룡 블록버스터의 치명적 판단 착오",
+  "caption": "닌텐도가 하룻밤 만에 동맹을 파기하고 소니를 배신한 역사적 사건!\n주도권을 지키려던 닌텐도의 선택은 최악의 부메랑이 되어 돌아왔습니다.\n닌텐도가 직접 만든 거대 라이벌, 플레이스테이션의 탄생 비화.\n풀버전은 유튜브 경제 원픽에서\n\n📚 참고: Wikipedia\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었습니다.\n\n#그때그결정 #기업역사 #닌텐도 #소니 #플레이스테이션",
+  "duration": 44.7,
+  "title_en": "Nintendo Co., Ltd.",
+  "topic": "1991년 CES 무대에서 소니와의 CD-ROM 공동 개발 계약을 기습 파기하여 불세출의 라이벌 '플레이스테이션'을 스스로 탄생시킨 닌텐도의 치명적 결별",
   "links": [
-    "https://en.wikipedia.org/wiki/Blockbuster_(retailer)",
-    "https://en.wikipedia.org/wiki/Last_Blockbuster"
+    "https://en.wikipedia.org/wiki/Super_NES_CD-ROM",
+    "https://en.wikipedia.org/wiki/PlayStation",
+    "https://en.wikipedia.org/wiki/Nintendo"
   ],
-  "release_tag": "reel-h20261114-142025",
-  "tg_message_id": 39,
-  "hook_title": "넷플릭스를 걷어찬 [블록버스터]",
-  "waiting_until": "2026-11-14T07:31:34.031935+00:00"
+  "release_tag": "reel-h20261114-151021",
+  "tg_message_id": 46,
+  "hook_title": "닌텐도 최악의 [배신] 사건",
+  "waiting_until": "2026-11-14T08:43:42.791156+00:00"
 }
