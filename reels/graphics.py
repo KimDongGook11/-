@@ -126,8 +126,14 @@ def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16):
     col = UP if direction == "up" else DOWN if direction == "down" else YELLOW
     arrow = "▲ " if direction == "up" else "▼ " if direction == "down" else ""
     m = NUM_RE.match(str(value).strip())
-    big = F("Black", int(h * 0.34))
     small = F("SemiBold", int(h * 0.1))
+    # 최종 숫자(가장 긴 문자열)가 카드 폭의 88% 안에 들어오도록 글자 크기 자동 축소
+    final = arrow + str(value).strip()
+    size = int(h * 0.34)
+    probe = ImageDraw.Draw(Image.new("RGBA", (8, 8)))
+    while size > 20 and probe.textlength(final, font=F("Black", size)) > w * 0.88:
+        size -= 2
+    big = F("Black", size)
     for i in range(frames):
         k = 1 - (1 - (i + 1) / frames) ** 3
         if m:

@@ -1,0 +1,39 @@
+name: 유튜브 직접 게시 (보관된 장편)
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "jobs 폴더의 설정 파일"
+        default: "jobs/kodak_ep2.json"
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk fonts-noto-cjk-extra
+          sudo apt-get install -y -qq fonts-pretendard 2>/dev/null || true
+          if ! fc-list | grep -qi pretendard; then npm i --no-save --prefix /tmp/pf pretendard@1.3.9 >/dev/null 2>&1 && mkdir -p ~/.fonts && find /tmp/pf/node_modules/pretendard -path '*static*' -name 'Pretendard-*.otf' -exec cp {} ~/.fonts/ \; && fc-cache -f >/dev/null; fi
+          pip install -q -r requirements.txt "rembg[cpu]"
+      - name: 게시
+        run: python -m reels.yt_manual "${{ inputs.job }}"
