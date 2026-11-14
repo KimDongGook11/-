@@ -7,6 +7,18 @@ from .utils import font_file, run
 
 W, H, FPS = config.W, config.H, config.FPS
 
+# 인스타 릴스 규격: H.264 main, 4:2:0, 30fps, 2초 간격 키프레임(closed GOP), 비트레이트 상한 / AAC 48kHz 128kbps 스테레오
+IG_VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-profile:v", "main", "-level:v", "4.0",
+            "-pix_fmt", "yuv420p", "-r", str(FPS), "-g", str(FPS * 2), "-keyint_min", str(FPS * 2),
+            "-sc_threshold", "0", "-crf", "21", "-maxrate", "6M", "-bufsize", "12M"]
+IG_AUDIO = ["-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2"]
+
+
+def make_ig_safe(src, dst):
+    """이미 만든 영상을 인스타 규격으로 다시 인코딩."""
+    run(["ffmpeg", "-y", "-i", src, *IG_VIDEO, *IG_AUDIO, "-movflags", "+faststart", dst])
+    return dst
+
 
 def _ts(sec):
     sec = max(0.0, sec)
@@ -151,8 +163,6 @@ def render(script, durs, clips, narration, chart_png, sources, workdir, out_path
         amap = "1:a"
     run(["ffmpeg", "-y", *inputs, "-filter_complex", ";".join(fc),
          "-map", "[vout]", "-map", amap, "-t", f"{total:.3f}",
-         "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p",
-         "-r", str(FPS), "-c:a", "aac", "-b:a", "160k", "-ar", "44100",
-         "-movflags", "+faststart", out_path])
+         *IG_VIDEO, *IG_AUDIO, "-movflags", "+faststart", out_path])
     print(f"  [렌더] 완료: {out_path} ({total:.1f}초)")
     return out_path

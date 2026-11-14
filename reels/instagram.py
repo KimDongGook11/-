@@ -22,6 +22,25 @@ def graph_host(token):
 
 
 def publish_reel(video_path, caption):
+    """업로드에서 Meta가 파일을 거부하면(ProcessingFailedError) 인스타 규격으로 다시 인코딩해 한 번 더 시도."""
+    try:
+        return _publish(video_path, caption)
+    except UploadRejected as e:
+        import shutil
+        if not shutil.which("ffmpeg"):
+            raise RuntimeError(f"{e} (다시 인코딩할 ffmpeg가 없어요. /new 로 새 영상을 만들어 승인해 주세요)")
+        from .render import make_ig_safe
+        safe = str(video_path).replace(".mp4", "_ig.mp4")
+        print("  [인스타] 파일 거부 → 인스타 규격으로 다시 인코딩해 재시도")
+        make_ig_safe(video_path, safe)
+        return _publish(safe, caption)
+
+
+class UploadRejected(RuntimeError):
+    pass
+
+
+def _publish(video_path, caption):
     tok, uid = config.IG_ACCESS_TOKEN.strip(), config.IG_USER_ID.strip()
     base = f"https://{graph_host(tok)}/{config.IG_API_VERSION}"
 
@@ -38,6 +57,8 @@ def publish_reel(video_path, caption):
         up = requests.post(uri, data=f, timeout=600, headers={
             "Authorization": f"OAuth {tok}", "offset": "0", "file_size": str(size)})
     if up.status_code != 200:
+        if "ProcessingFailedError" in up.text:
+            raise UploadRejected(f"영상 업로드 실패(파일 거부): {up.text[:300]}")
         raise RuntimeError(f"영상 업로드 실패: {up.text[:400]}")
 
     for _ in range(60):  # 최대 10분 처리 대기
