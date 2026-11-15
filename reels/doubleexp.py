@@ -45,11 +45,23 @@ def _download(url):
 
 def cutout(img):
     """사람만 남긴 RGBA."""
-    try:
-        from rembg import new_session, remove
-        return remove(img, session=new_session("u2net_human_seg")).convert("RGBA")
-    except Exception as e:
-        print(f"  [썸네일] rembg 사용 불가 → GrabCut: {e}")
+    img.thumbnail((1200, 1200))              # 큰 사진은 줄여서 처리 (속도)
+    box = {}
+
+    def _run():
+        try:
+            from rembg import new_session, remove
+            box["out"] = remove(img, session=new_session("u2net_human_seg")).convert("RGBA")
+        except Exception as e:
+            box["err"] = e
+
+    import threading
+    t = threading.Thread(target=_run, daemon=True)   # rembg가 멈추면 작업 전체가 멈추던 문제 방지
+    t.start()
+    t.join(240)
+    if "out" in box:
+        return box["out"]
+    print(f"  [썸네일] rembg 사용 불가 → GrabCut: {box.get('err', '4분 안에 끝나지 않음')}", flush=True)
     import cv2
     a = np.array(img)[:, :, ::-1].copy()
     h, w = a.shape[:2]
