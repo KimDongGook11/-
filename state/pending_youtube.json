@@ -1,0 +1,26 @@
+{
+  "id": "yth20261115-175650",
+  "series": "youtube",
+  "created_at": "2026-11-15T17:56:50.514037+09:00",
+  "release_tag": "long-h20261115-175650",
+  "keep_release": true,
+  "video_name": "long-h20261115-175650.mp4",
+  "thumb_name": "thumbnail.jpg",
+  "hook_title": "월가의 거센 비난 속에서도 CUDA에 사운을 건 엔비디아의 베팅",
+  "yt_title": "월가의 거센 비난 속에서도 CUDA에 사운을 건 엔비디아의 베팅",
+  "yt_description": "엔비디아는 2000년대 중반, 사운을 걸고 범용 연산 플랫폼 CUDA 개발에 막대한 자금을 투입했습니다.\n월가의 거센 비난과 불확실성 속에서도 꺾이지 않았던 젠슨 황과 엔비디아의 결단!\n그래픽 카드를 AI 연산의 핵심으로 탈바꿈시킨 위대한 베팅의 비하인드 스토리를 공개합니다.\n\n⏱ 챕터\n00:00 오프닝\n00:21 시장의 절대강자\n01:22 한계를 뛰어넘다\n02:22 사운을 건 결정\n03:25 세계가 주목한 결실\n04:28 미래를 바꾼 통찰\n\n📚 참고: Wikipedia\nhttps://en.wikipedia.org/wiki/CUDA\nhttps://en.wikipedia.org/wiki/Nvidia\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었습니다.",
+  "yt_tags": [
+    "엔비디아",
+    "젠슨황",
+    "CUDA",
+    "GPU",
+    "인공지능",
+    "오늘의글로벌경제",
+    "그때그결정",
+    "경제다큐",
+    "반도체",
+    "이안벅"
+  ],
+  "tg_message_id": 74,
+  "waiting_until": "2026-11-15T11:24:44.248548+00:00"
+}

@@ -28,5 +28,11 @@
     "company": "Eastman Kodak Company",
     "year": 1975,
     "episode_ko": "세계 최초로 디지털카메라를 개발하고도 필름 사업 보호를 위해 기술을 은폐했다가 결국 몰락에 이른 코닥의 치명적 판단 착오"
+  },
+  {
+    "date": "h20261115-175650",
+    "company": "Nvidia Corporation",
+    "year": 2006,
+    "episode_ko": "월가의 거센 비난 속에서도 모든 GPU에 범용 연산 기능을 이식하는 CUDA 플랫폼 개발에 사운을 걸고 막대한 예산을 투입한 베팅"
   }
 ]
