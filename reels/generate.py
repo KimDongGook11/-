@@ -258,7 +258,7 @@ def deliver(res, offline=False):
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +
             "\n\n■ 근거 링크\n" + "\n".join(res.get("links", [])[:4]) +
             "\n\n■ 캡션\n" + res["caption"])
-        yt_note = " + 유튜브 쇼츠" if series == "news" and youtube.enabled() else ""
+        yt_note = " + 유튜브 쇼츠" if youtube.enabled() else ""
         buttons = [(f"✅ 승인 → 인스타{yt_note} 게시", f"approve:{rid}"),
                      ("🔁 다른 " + ("에피소드로" if series == "history" else "뉴스로") + " 다시 만들기", f"redo:{rid}"),
                      ("❌ 폐기", f"reject:{rid}")]
@@ -272,7 +272,7 @@ def deliver(res, offline=False):
                 f"⚠️ 영상 파일 전송이 실패해서 링크로 보내요.\n{link}\n\n" + cap, buttons=buttons)
     pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode", "long")}
                  | {"hook_title": res["script"]["hook_title"], "tag": res["script"].get("tag", ""),
-                    "hashtags": res["script"].get("hashtags", []),
+                    "hashtags": res["script"].get("hashtags", []), "brand": res["script"].get("brand", ""),
                     "question": res["script"].get("question") or res["script"]["segments"][-1]["text"]})
 
 

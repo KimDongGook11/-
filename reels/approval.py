@@ -72,7 +72,24 @@ def _publish_at():
     return at.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _history_meta(p):
+    hook = p.get("hook_title", "").strip()
+    brand = (p.get("brand") or "").strip()          # 예: "EP.3 · 코닥"
+    title = f"{hook} | 그때 그 결정 {brand}".strip()[:100]
+    long_id = load_state("history_links", {}).get(p["id"], {}).get("long")
+    long_line = (f"▶ 5분 풀버전 보기: https://youtu.be/{long_id}\n\n" if long_id
+                 else "▶ 5분 풀버전은 채널의 '그때 그 결정' 재생목록에서 볼 수 있어요.\n\n")
+    refs = "\n".join(p.get("links", [])[:3])
+    desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n{long_line}"
+            f"{p.get('caption', '')}\n\n" + (f"📚 참고 자료\n{refs}\n\n" if refs else "")
+            + "📅 기업의 운명을 바꾼 결정적 순간 — 그때 그 결정\n#Shorts")
+    tags = [t.lstrip("#") for t in p.get("hashtags", [])]
+    return title, desc, list(dict.fromkeys(tags + ["Shorts", "그때그결정", "기업이야기"]))
+
+
 def _shorts_meta(p):
+    if p.get("series") == "history":
+        return _history_meta(p)
     no = _next_news_no()
     hook = p.get("hook_title", "").strip()
     tag = (p.get("tag") or "").strip()
@@ -89,24 +106,53 @@ def _shorts_meta(p):
     return title, desc, list(dict.fromkeys(tags + ["Shorts", "경제뉴스", "오늘의원픽"]))
 
 
+def _link_history(rid, **ids):
+    """그때 그 결정: 같은 에피소드의 쇼츠·장편 영상 id를 기록 (서로 링크 걸기용)."""
+    links = load_state("history_links", {})
+    links.setdefault(rid, {}).update(ids)
+    save_state("history_links", dict(list(links.items())[-30:]))
+    return links[rid]
+
+
 def _upload_short(p):
-    """오늘의 경제 릴스를 유튜브 쇼츠로도 게시. 성공 True."""
+    """릴스를 유튜브 쇼츠로도 게시. 성공 True."""
+    series = p.get("series", "news")
     title, desc, tags = _shorts_meta(p)
-    at = _publish_at()
+    at = _publish_at() if series == "news" else None
     try:
-        vid, st = youtube.upload(_local_video(p), title, desc, tags, category="25", publish_at=at,
-                                 privacy=config.env("YT_PRIVACY", "public"))
+        vid, st = youtube.upload(_local_video(p), title, desc, tags, category="25" if series == "news" else "27",
+                                 publish_at=at, privacy=config.env("YT_PRIVACY", "public"))
     except Exception as e:
         print(f"  [유튜브 쇼츠] 실패: {e}")
         telegram.send_message(f"⚠️ 유튜브 쇼츠 게시 실패 (인스타는 끝났어요)\n{str(e)[:600]}\n\n"
-                              "해결한 뒤 /approve 를 보내면 유튜브만 다시 올려요.")
+                              "해결한 뒤 " + ("/approve history" if series == "history" else "/approve")
+                              + " 를 보내면 유튜브만 다시 올려요.")
         return False
     p["yt_short_id"] = vid
-    pending.save(p.get("series", "news"), p)
+    pending.save(series, p)
+    if series == "history":
+        meta = {k: p.get(k) for k in ("hook_title", "brand", "question", "caption", "links", "hashtags")}
+        _link_history(p["id"], short=vid, short_title=title, short_tags=tags, short_meta=meta)
     when = (f"{config.YT_SHORTS_TIME} 예약 공개" if at else f"상태: {st}")
-    telegram.send_message(f"🎉 유튜브 쇼츠 게시 완료! ({when})\nhttps://youtube.com/shorts/{vid}\n\n"
-                          "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 '그때 그 결정' 영상을 연결해 두면 장편 조회수에 도움이 돼요.")
+    tip = ("💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 이번 편 장편을 연결해 두면 장편 조회수에 도움이 돼요."
+           if series == "history" else
+           "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 '그때 그 결정' 영상을 연결해 두면 장편 조회수에 도움이 돼요.")
+    telegram.send_message(f"🎉 유튜브 쇼츠 게시 완료! ({when})\nhttps://youtube.com/shorts/{vid}\n\n{tip}")
     return True
+
+
+def _link_long(p, long_id):
+    """장편이 올라가면, 이미 올라간 같은 편 쇼츠 설명에 장편 링크를 넣어 줍니다."""
+    rid = p["id"][2:] if p["id"].startswith("yt") else p["id"]
+    rec = _link_history(rid, long=long_id)
+    if not rec.get("short"):
+        return
+    try:
+        _, desc, _ = _history_meta({"id": rid, "series": "history", **rec.get("short_meta", {})})
+        youtube.update_snippet(rec["short"], rec.get("short_title", ""), desc, rec.get("short_tags", []), category="27")
+        print("  [유튜브] 쇼츠 설명에 장편 링크 추가")
+    except Exception as e:
+        print(f"  [유튜브] 쇼츠 설명 수정 실패(무시): {e}")
 
 
 def _approve_youtube(p):
@@ -126,6 +172,7 @@ def _approve_youtube(p):
                                  privacy=config.env("YT_PRIVACY", "public"), thumb=th)
         telegram.send_message(f"🎉 유튜브 게시 완료! (상태: {st})\nhttps://youtu.be/{vid}\n\n"
                               "썸네일·자막 처리는 몇 분 더 걸릴 수 있어요.")
+        _link_long(p, vid)
         _clear(p)
         return True
     except Exception as e:
@@ -156,7 +203,7 @@ def _approve(p):
                 return False
         p["ig_done"] = True
         pending.save(series, p)
-    if series == "news" and youtube.enabled() and not p.get("yt_short_id"):
+    if series in ("news", "history") and youtube.enabled() and not p.get("yt_short_id"):
         telegram.send_message("⏫ 유튜브 쇼츠로도 올리는 중이에요.")
         if not _upload_short(p):
             return False
