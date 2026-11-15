@@ -46,7 +46,7 @@ def _candidates(title):
     return out
 
 
-def company_photo(titles, workdir):
+def company_photo(titles, workdir, episode=""):
     """(사진 경로, 출처 문구) 또는 (None, None)."""
     used = set(load_state("thumb_used", []))
     cands, seen = [], set()
@@ -63,7 +63,22 @@ def company_photo(titles, workdir):
         print("  [썸네일] 쓸 만한 실제 사진 없음 → 기존 방식")
         return None, None
     fresh.sort(key=lambda c: c["area"], reverse=True)
-    for c in random.sample(fresh[:5], min(5, len(fresh[:5]))):
+    order = random.sample(fresh[:5], min(5, len(fresh[:5])))
+    if episode and len(fresh) > 1:     # 에피소드 내용·시대와 가장 어울리는 사진을 AI가 고름 (실패하면 무작위)
+        try:
+            from . import llm
+            lst = "\n".join(f"{i}. {c['name']}" for i, c in enumerate(fresh[:25]))
+            ans = llm.ask_json(f"""유튜브 경제 다큐 썸네일 배경 사진을 고르려고 해.
+에피소드: {episode}
+아래 위키미디어 사진 파일 이름 중 이 에피소드(그 회사, 그 시대, 그 사건)와 가장 잘 어울리는 사진 번호를 순서대로 최대 3개.
+시대가 안 맞는 최신 제품, 추모·행사 사진, 사건과 무관한 인물 사진은 빼. 적당한 게 없으면 빈 목록.
+{lst}
+JSON으로만: {{"pick": [번호, ...]}}""", temperature=0.2)
+            picks = [fresh[int(i)] for i in ans.get("pick", []) if str(i).isdigit() and int(i) < len(fresh[:25])]
+            order = picks + [c for c in order if c not in picks]
+        except Exception as e:
+            print(f"  [썸네일] 사진 고르기 AI 실패(무작위): {e}")
+    for c in order:
         try:
             r = requests.get(c["url"], headers=UA, timeout=60)
             r.raise_for_status()

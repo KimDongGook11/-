@@ -180,7 +180,8 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
     comp = lsc.get("company") or {}
     l1, l2 = graphics.split_thumb(lsc)
     sub = "  ·  ".join(str(v) for v in (lsc.get("year"), comp.get("name_ko"), comp.get("industry_ko")) if v)
-    real, credit = (None, None) if offline else realphoto.company_photo(lsc.get("wiki_titles") or [], workdir)
+    real, credit = (None, None) if offline else realphoto.company_photo(
+        lsc.get("wiki_titles") or [], workdir, episode=f"{comp.get('name_ko', '')} {lsc.get('year', '')}년 — {lsc.get('hook_title', '')}")
     if real:   # 1순위: 위키미디어 공용의 실제 기업 사진 (합성 없음)
         lsc["thumb_credit"] = credit
         thumb = graphics.thumbnail_photo(real, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg")

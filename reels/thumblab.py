@@ -16,7 +16,7 @@ def main():
     for i, (country, l1, l2, sub, ep) in enumerate(SAMPLES):
         wd = out / f"s{i}"
         wd.mkdir(exist_ok=True)
-        real, credit = realphoto.company_photo(country, wd)
+        real, credit = realphoto.company_photo(country, wd, episode=f"{sub} — {l1} {l2}")
         if real:
             p = graphics.thumbnail_photo(real, l1, l2, sub, ep, out / f"thumb_{i}.jpg")
         else:
