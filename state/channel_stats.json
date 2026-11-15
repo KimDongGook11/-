@@ -1,0 +1,86 @@
+{
+  "collected_at": "2026-11-15T00:15:33+00:00",
+  "channel": "경제원픽_기업탐구생활",
+  "subscribers": 3,
+  "total_views": 1749,
+  "video_count": 7,
+  "videos": [
+    {
+      "id": "Ccr3chXHRCc",
+      "title": "디지털카메라를 먼저 만들고도 무너진 코닥 | 그때 그 결정 EP.2",
+      "published": "2026-11-14T13:31:15Z",
+      "kind": "long",
+      "duration_s": 339,
+      "privacy": "public",
+      "views": 1,
+      "likes": 0,
+      "comments": 0
+    },
+    {
+      "id": "PUUnfTzuOUg",
+      "title": "닌텐도의 기습 배신, 플레이스테이션이 탄생한 이유",
+      "published": "2026-11-14T07:25:05Z",
+      "kind": "long",
+      "duration_s": 222,
+      "privacy": "public",
+      "views": 4,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "vw8t_GGBXl4",
+      "title": "미국 [항공 마비] 전격 운항 중단",
+      "published": "2026-11-14T01:20:16Z",
+      "kind": "shorts",
+      "duration_s": 35,
+      "privacy": "public",
+      "views": 5,
+      "likes": 3,
+      "comments": 0
+    },
+    {
+      "id": "jCSS--PL9_c",
+      "title": "MS [대규모 먹통] 전 세계 업무가 멈춘다??",
+      "published": "2026-11-14T00:57:27Z",
+      "kind": "shorts",
+      "duration_s": 37,
+      "privacy": "public",
+      "views": 4,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "rgmxTSFLGZ8",
+      "title": "[AI 상장] 앤스로픽 [IPO 전격 착수], AI 시장 흔드나",
+      "published": "2026-11-14T00:44:14Z",
+      "kind": "shorts",
+      "duration_s": 44,
+      "privacy": "public",
+      "views": 624,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "puFmY8MmIUw",
+      "title": "[유가] 세계 원유, 다시 [공급 과잉]으로",
+      "published": "2026-11-14T00:42:18Z",
+      "kind": "shorts",
+      "duration_s": 35,
+      "privacy": "public",
+      "views": 1194,
+      "likes": 10,
+      "comments": 0
+    },
+    {
+      "id": "TQk003O7Klk",
+      "title": "[금리] 연준 [금리 인상] 압박, 물가 싸움",
+      "published": "2026-11-14T00:40:47Z",
+      "kind": "shorts",
+      "duration_s": 42,
+      "privacy": "public",
+      "views": 3,
+      "likes": 3,
+      "comments": 0
+    }
+  ]
+}
