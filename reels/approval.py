@@ -37,11 +37,20 @@ def _clear(p, keep_file=False):
 
 
 def _published(p):
-    key = {"history": "history_ep", "news": "news_ep"}.get(p.get("series"))
-    if key:
-        c = load_state(key, {"published": 0})
-        c["published"] = c.get("published", 0) + 1
-        save_state(key, c)
+    """회차 번호 올리기. 같은 에피소드의 릴스·유튜브 장편은 한 회차로 셈 (어느 쪽이 먼저 게시돼도 1번만)."""
+    series = "history" if p.get("series") == "youtube" else p.get("series")
+    key = {"history": "history_ep", "news": "news_ep"}.get(series)
+    if not key:
+        return
+    rid = str(p.get("id", ""))
+    rid = rid[2:] if rid.startswith("yt") else rid
+    c = load_state(key, {"published": 0})
+    ids = c.get("ids", [])
+    if rid and rid in ids:
+        return
+    c["published"] = c.get("published", 0) + 1
+    c["ids"] = (ids + [rid])[-100:] if rid else ids
+    save_state(key, c)
 
 
 def _next_news_no():
@@ -173,6 +182,7 @@ def _approve_youtube(p):
         telegram.send_message(f"🎉 유튜브 게시 완료! (상태: {st})\nhttps://youtu.be/{vid}\n\n"
                               "썸네일·자막 처리는 몇 분 더 걸릴 수 있어요.")
         _link_long(p, vid)
+        _published(p)
         _clear(p)
         return True
     except Exception as e:
