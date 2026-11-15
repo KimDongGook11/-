@@ -77,6 +77,17 @@ def upload(path, title, description, tags=(), privacy="public", thumb=None, cate
     return vid, status
 
 
+def update_snippet(vid, title, description, tags=(), category="27", tok=None):
+    """올린 영상의 제목·설명·태그 수정 (snippet 전체를 다시 보냄)."""
+    tok = tok or _token()
+    body = {"id": vid, "snippet": {"title": title[:100], "description": description[:4900], "tags": list(tags)[:30],
+                                   "categoryId": category, "defaultLanguage": "ko", "defaultAudioLanguage": "ko"}}
+    r = requests.put(f"{API}/videos", params={"part": "snippet"}, json=body, headers=_h(tok), timeout=30)
+    if r.status_code != 200:
+        raise RuntimeError(f"유튜브 정보 수정 실패: {r.text[:300]}")
+    return True
+
+
 def status(vid, tok=None):
     tok = tok or _token()
     r = requests.get(f"{API}/videos", params={"part": "status,processingDetails", "id": vid},
