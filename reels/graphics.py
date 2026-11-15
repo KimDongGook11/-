@@ -329,6 +329,58 @@ def thumbnail(frame_png, line1, line2, sub, ep, out, figure=None, w=1280, h=720)
     return out
 
 
+def thumbnail_photo(photo, line1, line2, sub, ep, out, w=1280, h=720):
+    """실제 사진을 화면 가득 + 왼쪽 어둡게 + 기존과 같은 제목 상자·EP·채널 로고 (합성 없이 사진 그대로)."""
+    from PIL import ImageEnhance
+    ph = Image.open(photo).convert("RGB")
+    r = max(w / ph.width, h / ph.height)
+    ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS)
+    x0 = max(0, int((ph.width - w) * 0.6))                 # 가운데보다 살짝 오른쪽을 살림 (왼쪽은 글자)
+    y0 = max(0, (ph.height - h) // 2)
+    ph = ph.crop((x0, y0, x0 + w, y0 + h))
+    ph = ImageEnhance.Contrast(ImageEnhance.Color(ph).enhance(1.08)).enhance(1.06)
+    img = ph.convert("RGBA")
+    grad = Image.new("L", (w, 1))
+    grad.putdata([int(200 * max(0.0, 1 - x / (w * 0.62)) ** 1.4) for x in range(w)])
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 255))
+    shade.putalpha(grad.resize((w, h)))
+    img.alpha_composite(shade)
+    d = ImageDraw.Draw(img)
+    ef = F("Black", 44)
+    if ep:
+        tw = d.textlength(ep, font=ef)
+        d.rectangle([56, 112, 56 + tw + 36, 176], fill=(178, 34, 34))
+        d.text((74, 116), ep, font=ef, fill=WHITE)
+    y = 196
+    for text, bg, fg in [(line1, BLACK, THUMB_YEL), (line2, WHITE, BLACK)]:
+        if not text:
+            continue
+        for size in (108, 96, 86, 76):
+            f1 = F("Black", size)
+            if d.textlength(text, font=f1) <= 640:
+                break
+        bb = d.textbbox((0, 0), text, font=f1)
+        th = bb[3] - bb[1]
+        tw = d.textlength(text, font=f1)
+        d.rectangle([56, y, 56 + tw + 48, y + th + 44], fill=bg)
+        d.text((80, y + 22 - bb[1]), text, font=f1, fill=fg)
+        y += th + 44
+    if sub:
+        sf = F("Black", 40)
+        d.text((62, y + 26), sub, font=sf, fill=(0, 0, 0, 160))
+        d.text((60, y + 24), sub, font=sf, fill=WHITE)
+    lf = F("Black", 34)
+    parts = [("경제 ", WHITE), ("[", (230, 60, 50)), ("원픽", THUMB_YEL), ("]", (230, 60, 50))]
+    lw = sum(d.textlength(t, font=lf) for t, _ in parts)
+    d.rounded_rectangle([w - lw - 70, 30, w - 30, 92], radius=31, fill=BLACK)
+    x = w - lw - 50
+    for t, c in parts:
+        d.text((x, 38), t, font=lf, fill=c)
+        x += d.textlength(t, font=lf)
+    img.convert("RGB").save(out, quality=93)
+    return out
+
+
 def split_thumb(lsc):
     """썸네일 두 줄 문구 (AI가 준 두 줄, 없으면 thumb_title을 반으로)."""
     l1, l2 = lsc.get("thumb_line1"), lsc.get("thumb_line2")

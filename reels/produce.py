@@ -176,10 +176,15 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
             frame = None
     except Exception:
         frame = None
-    from . import doubleexp
+    from . import doubleexp, realphoto
     comp = lsc.get("company") or {}
-    fig = None if offline else doubleexp.figure_for(comp.get("country_ko"), workdir, seed=lsc.get("ep"))
     l1, l2 = graphics.split_thumb(lsc)
     sub = "  ·  ".join(str(v) for v in (lsc.get("year"), comp.get("name_ko"), comp.get("industry_ko")) if v)
-    thumb = graphics.thumbnail(frame, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg", figure=fig)
+    real, credit = (None, None) if offline else realphoto.company_photo(lsc.get("wiki_titles") or [], workdir)
+    if real:   # 1순위: 위키미디어 공용의 실제 기업 사진 (합성 없음)
+        lsc["thumb_credit"] = credit
+        thumb = graphics.thumbnail_photo(real, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg")
+    else:
+        fig = None if offline else doubleexp.figure_for(comp.get("country_ko"), workdir, seed=lsc.get("ep"))
+        thumb = graphics.thumbnail(frame, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg", figure=fig)
     return total, chapters, thumb, {"shots": shots, "words": len(words), "kind": "long"}

@@ -154,7 +154,8 @@ def make_reel(series="news", offline=False):
         lsc, ssc, ep, links = _history_scripts()
     n = load_state("history_ep", {"published": 0}).get("published", 0) + 1
     ep_label = f"EP.{n}"
-    lsc.update({"ep": ep_label, "year": ep["year"]})
+    lsc.update({"ep": ep_label, "year": ep["year"],
+                "wiki_titles": [ep.get("company", "")] + list(ep.get("wiki_titles") or [])})
     ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"{ep_label} · {ep.get('company_ko', '')}"})
     copt = {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
     sources = ["Wikipedia"]
@@ -192,7 +193,9 @@ def deliver_long(res, offline=False):
         return
     chap = "\n".join(f"{_mmss(t)} {name}" for t, name in lg["chapters"])
     desc = (f"{lsc.get('description', '')}\n\n⏱ 챕터\n{chap}\n\n📚 참고: Wikipedia\n"
-            + "\n".join(res.get("links", [])[:3]) + "\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었습니다.")
+            + "\n".join(res.get("links", [])[:3]) + "\n🎞 영상: Pixabay"
+            + (f"\n🖼 썸네일 사진: {lsc['thumb_credit']}" if lsc.get("thumb_credit") else "")
+            + "\n🤖 이 콘텐츠는 AI로 제작되었습니다.")
     telegram.send_photo(lg["thumb"], f"🖼 [그때 그 결정] 유튜브 썸네일 · {ep.get('company_ko', '')} {ep.get('year', '')}년")
     pv = str(lg["video"]).replace(".mp4", "_preview.mp4")
     render.preview(lg["video"], pv)

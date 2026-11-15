@@ -1,12 +1,12 @@
-"""썸네일 시험 제작: 실제 무료 사진으로 이중 노출 썸네일 몇 장을 만들어 GitHub Release 'thumb-lab'에 올림."""
+"""썸네일 시험 제작: 위키미디어 실제 기업 사진 썸네일 몇 장을 만들어 GitHub Release 'thumb-lab'에 올림."""
 import requests
 
-from . import config, doubleexp, graphics, storage
+from . import config, doubleexp, graphics, realphoto, storage
 
-SAMPLES = [("미국", "파산 90일 전", "돌아온 창업자", "1997  ·  애플  ·  IT", "EP.4"),
-           ("일본", "소니를 버린", "닌텐도의 결정", "1991  ·  닌텐도  ·  게임", "EP.3"),
-           ("한국", "반도체에 건", "이건희의 도박", "1983  ·  삼성  ·  반도체", "EP.5"),
-           ("미국", "5천만 달러를", "거절한 대가", "2000  ·  블록버스터  ·  유통", "EP.2")]
+SAMPLES = [(["Apple Inc.", "History of Apple Inc."], "파산 90일 전", "돌아온 창업자", "1997  ·  애플  ·  IT", "EP.4"),
+           (["Nintendo", "History of Nintendo"], "소니를 버린", "닌텐도의 결정", "1991  ·  닌텐도  ·  게임", "EP.3"),
+           (["Nvidia"], "월가의 비난", "사운 건 베팅", "2006  ·  엔비디아  ·  반도체", "EP.5"),
+           (["Kodak", "Eastman Kodak"], "최초를 은폐한", "코닥의 몰락", "1975  ·  코닥  ·  필름", "EP.2")]
 
 
 def main():
@@ -16,11 +16,14 @@ def main():
     for i, (country, l1, l2, sub, ep) in enumerate(SAMPLES):
         wd = out / f"s{i}"
         wd.mkdir(exist_ok=True)
-        fig = doubleexp.figure_for(country, wd, seed=i)
-        p = graphics.thumbnail(None, l1, l2, sub, ep, out / f"thumb_{i}.jpg", figure=fig)
+        real, credit = realphoto.company_photo(country, wd)
+        if real:
+            p = graphics.thumbnail_photo(real, l1, l2, sub, ep, out / f"thumb_{i}.jpg")
+        else:
+            p = graphics.thumbnail(None, l1, l2, sub, ep, out / f"thumb_{i}.jpg",
+                                   figure=doubleexp.figure_for("미국", wd, seed=i))
+        print(i, credit)
         files.append(p)
-        if fig:
-            files.append(fig.rename(out / f"figure_{i}.png"))
     if not storage.enabled():
         print("로컬 실행: 저장만 함", files)
         return
