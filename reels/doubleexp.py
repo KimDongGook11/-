@@ -7,6 +7,7 @@ import requests
 from PIL import Image, ImageFilter, ImageOps
 
 from . import config
+from .utils import load_state, save_state
 
 API = "https://pixabay.com/api/"
 CITY = {"미국": "new york skyline buildings", "일본": "tokyo buildings skyline", "한국": "seoul buildings skyline",
@@ -119,7 +120,7 @@ def compose(person_rgba, city_rgb, height=900, blur=1.0):
 
 def figure_for(country_ko, workdir, seed=None):
     """에피소드용 인물+도시 합성 이미지 경로 (실패하면 None)."""
-    rnd = random.Random(seed)
+    rnd = random.Random()
     try:
         faces = []
         for q in FACE_QUERIES:
@@ -130,8 +131,13 @@ def figure_for(country_ko, workdir, seed=None):
         cities = _search(city_q, "vertical") or _search(city_q, "horizontal") or _search("city skyline", "all")
         if not faces or not cities:
             return None
-        face = _download(rnd.choice(faces[:12])["largeImageURL"])
-        city = _download(rnd.choice(cities[:12])["largeImageURL"])
+        used = set(load_state("thumb_used", []))     # 최근 썸네일에 쓴 사진은 제외 (매번 다른 인물·도시)
+        faces = [h for h in faces if h["id"] not in used][:30] or faces[:30]
+        cities = [h for h in cities if h["id"] not in used][:30] or cities[:30]
+        fh, ch = rnd.choice(faces), rnd.choice(cities)
+        save_state("thumb_used", (load_state("thumb_used", []) + [fh["id"], ch["id"]])[-60:])
+        face = _download(fh["largeImageURL"])
+        city = _download(ch["largeImageURL"])
         fig = compose(cutout(face), city)
         out = workdir / "thumb_figure.png"
         fig.save(out)
