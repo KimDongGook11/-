@@ -123,6 +123,19 @@ def _link_history(rid, **ids):
     return links[rid]
 
 
+def _cover(p):
+    """유튜브 쇼츠 썸네일 = 인스타 커버와 같은 화면. 못 구하면 None(유튜브 자동 선택)."""
+    dest = os.path.join(tempfile.gettempdir(), f"cover_{p['id']}.jpg")
+    try:
+        got = instagram.cover_frame(_local_video(p), dest)
+        if not got and p.get("cover_name") and p.get("release_tag"):
+            got = storage.download(p["release_tag"], dest, name=p["cover_name"])
+        return got
+    except Exception as e:
+        print(f"  [유튜브 쇼츠] 썸네일 준비 실패(자동 선택으로 진행): {e}")
+        return None
+
+
 def _upload_short(p):
     """릴스를 유튜브 쇼츠로도 게시. 성공 True."""
     series = p.get("series", "news")
@@ -130,7 +143,7 @@ def _upload_short(p):
     at = _publish_at() if series == "news" else None
     try:
         vid, st = youtube.upload(_local_video(p), title, desc, tags, category="25" if series == "news" else "27",
-                                 publish_at=at, privacy=config.env("YT_PRIVACY", "public"))
+                                 publish_at=at, privacy=config.env("YT_PRIVACY", "public"), thumb=_cover(p))
     except Exception as e:
         print(f"  [유튜브 쇼츠] 실패: {e}")
         telegram.send_message(f"⚠️ 유튜브 쇼츠 게시 실패 (인스타는 끝났어요)\n{str(e)[:600]}\n\n"

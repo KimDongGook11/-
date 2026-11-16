@@ -11,7 +11,7 @@ import shutil
 import sys
 import traceback
 
-from . import approval, config, history, news, pending, produce, qc, render, script, storage, telegram, youtube
+from . import approval, config, history, instagram, news, pending, produce, qc, render, script, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -238,6 +238,10 @@ def deliver(res, offline=False):
     expire_pending(series)
     if not offline and storage.enabled():
         res["release_tag"] = storage.upload(res["video"], f"reel-{res['id']}", res["script"]["hook_title"])
+        cov = instagram.cover_frame(res["video"], str(res["video"]).replace(".mp4", "_cover.jpg"))
+        if cov:   # 유튜브 쇼츠 썸네일 = 인스타 커버 (승인 처리 쪽엔 ffmpeg가 없을 수 있어 미리 보관)
+            storage.add_asset(res["release_tag"], cov, "cover.jpg")
+            res["cover_name"] = "cover.jpg"
     if series == "history":
         eps = load_state("episodes", [])
         ep = res.get("episode", {})

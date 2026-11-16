@@ -15,6 +15,20 @@ def enabled():
         config.env("IG_AUTO_PUBLISH", "true").lower() == "true"
 
 
+COVER_MS = 0   # 릴스 커버 = 이 시점 화면 (0 = 첫 화면 큰 제목). 유튜브 쇼츠 썸네일도 같은 화면을 씀
+
+
+def cover_frame(video_path, dest):
+    """인스타 커버와 같은 화면(COVER_MS)을 JPEG로 뽑음. 실패하면 None."""
+    import shutil
+    import subprocess
+    if not shutil.which("ffmpeg") or not os.path.exists(str(video_path)):
+        return None
+    p = subprocess.run(["ffmpeg", "-y", "-ss", f"{COVER_MS / 1000:.3f}", "-i", str(video_path), "-frames:v", "1",
+                        "-q:v", "3", str(dest)], capture_output=True, text=True)
+    return str(dest) if p.returncode == 0 and os.path.exists(str(dest)) else None
+
+
 def graph_host(token):
     """통합 로그인(EAA… 토큰)은 graph.facebook.com, 인스타 로그인(IG… 토큰)은 graph.instagram.com."""
     forced = os.environ.get("IG_GRAPH_HOST")
@@ -105,7 +119,7 @@ def _publish_url(url, caption):
     base = f"https://{graph_host(tok)}/{config.IG_API_VERSION}"
     r = requests.post(f"{base}/{uid}/media", timeout=60, data={
         "media_type": "REELS", "video_url": url, "caption": caption[:2200],
-        "share_to_feed": "true", "access_token": tok})
+        "share_to_feed": "true", "thumb_offset": str(COVER_MS), "access_token": tok})
     if r.status_code != 200:
         raise RuntimeError(f"컨테이너 생성 실패(공개 주소 방식): {r.text[:400]}")
     return _wait_and_publish(base, uid, tok, r.json()["id"])
@@ -134,7 +148,7 @@ def _publish(video_path, caption):
 
     r = requests.post(f"{base}/{uid}/media", timeout=60, data={
         "media_type": "REELS", "upload_type": "resumable", "caption": caption[:2200],
-        "share_to_feed": "true", "access_token": tok})
+        "share_to_feed": "true", "thumb_offset": str(COVER_MS), "access_token": tok})
     if r.status_code != 200:
         raise RuntimeError(f"컨테이너 생성 실패: {r.text[:400]}")
     cid = r.json()["id"]
