@@ -2,6 +2,8 @@
 
 반환: narration.wav, 문장별 길이(초), 단어 목록 [(시작초, 끝초, 단어, 문장번호)] (영상 전체 기준 시각)
 - edge (기본): 마이크로소프트 음성, 단어별 타이밍을 정확히 받아 자막을 말에 맞춤
+- typecast: 타입캐스트 API (유료, 감정 표현 자연스러움). 단어 타이밍을 받아 자막을 말에 맞춤.
+  실패(크레딧 소진 등)하면 edge로 자동 대체. 설정: TYPECAST_API_KEY, TYPECAST_VOICE, TYPECAST_MODEL, TYPECAST_TEMPO
 - gemini: 구글 Gemini 음성(더 자연스러움, 무료 한도 안에서). 단어 타이밍은 글자 수로 추정
 - gtts / dummy: 대체용·테스트용
 """
@@ -56,6 +58,33 @@ def _gemini(text, out_wav):
         w.writeframes(pcm)
 
 
+TC_API = "https://api.typecast.ai"
+
+
+class TypecastFailed(RuntimeError):
+    pass
+
+
+def _typecast(text, out_mp3, prev="", nxt="", voice=None, model=None, tempo=None):
+    """타입캐스트: 문장 하나 → mp3 + 단어 타이밍. 앞뒤 문장을 함께 보내 감정·억양을 자연스럽게."""
+    import requests
+    body = {"voice_id": voice or config.env("TYPECAST_VOICE", ""), "text": text,
+            "model": model or config.env("TYPECAST_MODEL", "ssfm-v30"), "language": "kor",
+            "prompt": {"emotion_type": "smart", "previous_text": prev[-1500:], "next_text": nxt[:1500]},
+            "output": {"audio_format": "mp3", "audio_tempo": float(tempo or config.env("TYPECAST_TEMPO", "1.1"))}}
+    if not body["voice_id"]:
+        raise RuntimeError("TYPECAST_VOICE(목소리 ID)가 비어 있음")
+    r = requests.post(f"{TC_API}/v1/text-to-speech/with-timestamps", params={"granularity": "word"}, json=body,
+                      headers={"X-API-KEY": config.env("TYPECAST_API_KEY", "").strip()}, timeout=120)
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
+    d = r.json()
+    with open(out_mp3, "wb") as f:
+        f.write(base64.b64decode(d["audio"]))
+    words = [(float(w["start"]), float(w["end"]), w["text"].strip()) for w in (d.get("words") or []) if w["text"].strip()]
+    return words
+
+
 def _estimate_words(text, total):
     """단어 타이밍을 글자 수 비율로 추정 (타이밍을 못 받는 음성 엔진용)."""
     ws = text.split()
@@ -69,8 +98,21 @@ def _estimate_words(text, total):
     return out
 
 
-def _one(text, out_mp3, engine):
+def _one(text, out_mp3, engine, prev="", nxt=""):
     """음성 한 문장 → (오디오 파일, 단어 타이밍 또는 None)"""
+    if engine == "typecast":
+        last = None
+        for attempt in range(2):
+            try:
+                words = _typecast(text, out_mp3, prev, nxt)
+                if out_mp3.exists() and out_mp3.stat().st_size > 1000:
+                    return out_mp3, words or None
+            except Exception as e:
+                last = e
+                print(f"  [음성] 타입캐스트 실패({attempt+1}/2): {e}")
+                if any(c in str(e) for c in ("401", "402", "403")):
+                    break
+        raise TypecastFailed(str(last))
     if engine == "dummy":
         secs = max(1.5, len(text.replace(" ", "")) / 6.5)
         run(["ffmpeg", "-y", "-f", "lavfi", "-i", "sine=frequency=220:sample_rate=44100",
@@ -103,12 +145,28 @@ def synthesize(texts, workdir, lead=None, tail=0.0):
     workdir.mkdir(parents=True, exist_ok=True)
     lead = lead or {}
     engine = config.TTS_ENGINE
+    if engine == "typecast":
+        try:
+            return _synth(texts, workdir, lead, tail, engine)
+        except TypecastFailed as e:   # 목소리가 섞이지 않게 처음부터 edge로 다시
+            print(f"  [음성] 타입캐스트를 쓸 수 없어 전체를 edge 음성으로 다시 만듭니다: {e}")
+            global LAST_FALLBACK
+            LAST_FALLBACK = str(e)[:200]
+            engine = "edge"
+    return _synth(texts, workdir, lead, tail, engine)
+
+
+LAST_FALLBACK = None
+
+
+def _synth(texts, workdir, lead, tail, engine):
     wavs, durs, words = [], [], []
     t0 = 0.0
     for i, text in enumerate(texts):
         mp3 = workdir / f"tts_{i:02d}.mp3"
         wav = workdir / f"tts_{i:02d}.wav"
-        src, ws = _one(text, mp3, engine)
+        src, ws = _one(text, mp3, engine, prev=" ".join(texts[max(0, i - 3):i]),
+                       nxt=" ".join(texts[i + 1:i + 3]))
         pre = float(lead.get(i, 0.0))
         post = PAD + (tail if i == len(texts) - 1 else 0.0)
         af = (f"adelay={int(pre * 1000)}:all=1," if pre > 0 else "") + f"apad=pad_dur={post}"

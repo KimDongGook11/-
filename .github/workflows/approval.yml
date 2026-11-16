@@ -38,6 +38,10 @@ jobs:
       IG_AUTO_PUBLISH: ${{ vars.IG_AUTO_PUBLISH }}
       BG_SPEED: ${{ vars.BG_SPEED }}
       TTS_ENGINE: ${{ vars.TTS_ENGINE }}
+      TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      TYPECAST_VOICE: ${{ vars.TYPECAST_VOICE }}
+      TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
+      TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

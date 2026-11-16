@@ -1,0 +1,37 @@
+name: 목소리 비교 샘플
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidates:
+        description: "타입캐스트 목소리 ID (쉼표로, 비우면 자동 6개)"
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      TYPECAST_CANDIDATES: ${{ inputs.candidates }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TTS_VOICE: ${{ vars.TTS_VOICE }}
+      TTS_RATE: ${{ vars.TTS_RATE }}
+      TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q -r requirements.txt
+      - name: 샘플 만들기
+        run: python -u -m reels.voicelab
