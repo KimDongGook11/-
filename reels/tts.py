@@ -68,7 +68,8 @@ class TypecastFailed(RuntimeError):
 def _typecast(text, out_mp3, prev="", nxt="", voice=None, model=None, tempo=None):
     """타입캐스트: 문장 하나 → mp3 + 단어 타이밍. 앞뒤 문장을 함께 보내 감정·억양을 자연스럽게."""
     import requests
-    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_6322940059d649937b97f326"),   # 기본: 렉스(남, 중년) "text": text,
+    # 기본 목소리: 렉스(남, 중년)
+    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_6322940059d649937b97f326"), "text": text,
             "model": model or config.env("TYPECAST_MODEL", "ssfm-v31"), "language": "kor",
             "prompt": {"emotion_type": "smart", "previous_text": prev[-1500:], "next_text": nxt[:1500]},
             "output": {"audio_format": "mp3", "audio_tempo": float(tempo or config.env("TYPECAST_TEMPO", "1.1"))}}
