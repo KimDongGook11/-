@@ -39,7 +39,12 @@ def best_model(v):
 def pick(vs):
     want = [x.strip() for x in config.env("TYPECAST_CANDIDATES", "").split(",") if x.strip()]
     if want:
-        return [v for v in vs if v["voice_id"] in want]
+        ids = [w for w in want if w.startswith(("tc_", "uc_"))]
+        names = [w for w in want if not w.startswith(("tc_", "uc_"))]
+        hit = [v for v in vs if v["voice_id"] in ids or
+               any(n in ((v.get("voice_name") or {}).get("kor") or "") for n in names)]
+        print("찾은 목소리:", [((v.get("voice_name") or {}).get("kor"), v["voice_id"]) for v in hit] or "없음")
+        return hit
     def score(v):
         uc = " ".join(v.get("use_cases") or []).lower()
         s = sum(k in uc for k in GOOD) * 2

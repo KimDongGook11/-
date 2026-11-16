@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       candidates:
-        description: "타입캐스트 목소리 ID (쉼표로, 비우면 자동 6개)"
+        description: "타입캐스트 목소리 ID 또는 한글 이름 (쉼표로, 비우면 자동 6개)"
         default: ""
 
 permissions:
