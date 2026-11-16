@@ -68,15 +68,20 @@ class TypecastFailed(RuntimeError):
 def _typecast(text, out_mp3, prev="", nxt="", voice=None, model=None, tempo=None):
     """타입캐스트: 문장 하나 → mp3 + 단어 타이밍. 앞뒤 문장을 함께 보내 감정·억양을 자연스럽게."""
     import requests
-    # 기본 목소리: 렉스(남, 중년)
-    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_6322940059d649937b97f326"), "text": text,
+    # 기본 목소리: 필재(남, 중저음) — 이전: 렉스 tc_6322940059d649937b97f326
+    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_68257f68bc6e3c161ab5078d"), "text": text,
             "model": model or config.env("TYPECAST_MODEL", "ssfm-v31"), "language": "kor",
             "prompt": {"emotion_type": "smart", "previous_text": prev[-1500:], "next_text": nxt[:1500]},
             "output": {"audio_format": "mp3", "audio_tempo": float(tempo or config.env("TYPECAST_TEMPO", "1.1"))}}
     if not body["voice_id"]:
         raise RuntimeError("TYPECAST_VOICE(목소리 ID)가 비어 있음")
-    r = requests.post(f"{TC_API}/v1/text-to-speech/with-timestamps", params={"granularity": "word"}, json=body,
-                      headers={"X-API-KEY": config.env("TYPECAST_API_KEY", "").strip()}, timeout=120)
+    def call():
+        return requests.post(f"{TC_API}/v1/text-to-speech/with-timestamps", params={"granularity": "word"},
+                             json=body, headers={"X-API-KEY": config.env("TYPECAST_API_KEY", "").strip()}, timeout=120)
+    r = call()
+    if r.status_code in (400, 404, 422) and body["model"] == "ssfm-v31" and not model:
+        body["model"] = "ssfm-v30"   # 이 목소리가 최신 모델을 지원하지 않으면 한 단계 아래로
+        r = call()
     if r.status_code != 200:
         raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
     d = r.json()
