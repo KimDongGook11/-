@@ -68,8 +68,8 @@ class TypecastFailed(RuntimeError):
 def _typecast(text, out_mp3, prev="", nxt="", voice=None, model=None, tempo=None):
     """타입캐스트: 문장 하나 → mp3 + 단어 타이밍. 앞뒤 문장을 함께 보내 감정·억양을 자연스럽게."""
     import requests
-    body = {"voice_id": voice or config.env("TYPECAST_VOICE", ""), "text": text,
-            "model": model or config.env("TYPECAST_MODEL", "ssfm-v30"), "language": "kor",
+    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_6322940059d649937b97f326"),   # 기본: 렉스(남, 중년) "text": text,
+            "model": model or config.env("TYPECAST_MODEL", "ssfm-v31"), "language": "kor",
             "prompt": {"emotion_type": "smart", "previous_text": prev[-1500:], "next_text": nxt[:1500]},
             "output": {"audio_format": "mp3", "audio_tempo": float(tempo or config.env("TYPECAST_TEMPO", "1.1"))}}
     if not body["voice_id"]:
@@ -153,6 +153,13 @@ def synthesize(texts, workdir, lead=None, tail=0.0):
             global LAST_FALLBACK
             LAST_FALLBACK = str(e)[:200]
             engine = "edge"
+            try:
+                from . import telegram
+                if telegram.enabled():
+                    telegram.send_message("⚠️ 타입캐스트 음성을 쓸 수 없어서 이번 영상은 기존 목소리(선희)로 만들어요.\n"
+                                          f"원인: {LAST_FALLBACK}\n(크레딧 소진이면 타입캐스트 API 플랜을 확인해 주세요)")
+            except Exception:
+                pass
     return _synth(texts, workdir, lead, tail, engine)
 
 
