@@ -65,7 +65,7 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
     count = 0
     for i, s in enumerate(segs):
         n = s.get("number")
-        if not n or i in busy or count >= 2:
+        if not n or i in busy or count >= (3 if len(segs) > 10 else 2):   # 1분 30초 원픽은 숫자 카드 3개까지
             continue
         pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"),
                                                    workdir / f"num_{i}", w=CARD["w"] - 100, h=460)

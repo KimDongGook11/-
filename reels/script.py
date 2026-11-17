@@ -51,7 +51,7 @@ def gather_materials(pool, main_item, limit=6):
         mats.append(it)
         if len(mats) >= limit:
             break
-    for m in mats[:3]:
+    for m in mats[:4]:   # 1분 30초 대본이라 기사 본문을 넉넉히
         m["body"] = news.fetch_article_text(m["link"])
     return mats
 
@@ -62,22 +62,23 @@ def write_script(mats, topic, brand):
     for i, m in enumerate(mats):
         b = f"[자료 {i+1}] 매체: {m['source']}\n제목: {m['title']}\n요약: {m['summary'] or '-'}"
         if m.get("body"):
-            b += f"\n본문 일부: {m['body'][:2500]}"
+            b += f"\n본문 일부: {m['body'][:3500]}"
         blocks.append(b)
     prompt = f"""너는 '{brand}'라는 인스타그램 경제 릴스 채널의 작가야. 오늘은 {today}이야.
 주제: {topic}
 
-아래 자료만 근거로 30~50초짜리 한국어 릴스 대본을 써.
+아래 자료만 근거로 약 1분 20초(80초 안팎)짜리 한국어 릴스 대본을 써.
 
 [규칙]
 1. 숫자·날짜·인명·기관명은 자료에 나온 것만 써. 자료에 없는 수치는 절대 지어내지 마.
 2. 자료 문장을 번역해서 그대로 옮기지 말고, 쉬운 말로 새로 풀어서 써.
 3. 말투는 친근한 존댓말(~요, ~죠). 경제 용어는 한 번 쉽게 풀어줘.
-4. 구성: 1번 문장은 3초 안에 멈추게 하는 후킹 → 무슨 일이 있었나 → 왜 중요한가 → 한국/내 지갑에 미치는 영향 → 마지막은 시청자에게 던지는 질문.
+4. 구성: 1번 문장은 3초 안에 멈추게 하는 후킹 → 무슨 일이 있었나 → 왜 이런 일이 생겼나(배경) → 한국/내 지갑에 미치는 영향 → 앞으로 볼 것 → 마지막은 시청자에게 던지는 질문.
+   - 길어진 만큼 중간에 지루하지 않게, 3~4문장마다 새 정보(숫자·비교·반전)를 하나씩 넣어.
    - 1번 문장에는 자료에 있는 가장 강한 숫자(등락률·금액·최고/최저 기록)를 꼭 넣어. 숫자가 자료에 없을 때만 숫자 없이 써.
    - 1번 문장에는 1번 segment의 number 카드도 함께 넣어서, 영상 첫 화면부터 큰 숫자가 보이게 해.
    - 마지막 질문은 댓글로 답하기 쉬운 양자택일이나 한 단어 답 질문으로 (예: "여러분은 지금 달러, 사시겠어요 기다리시겠어요?").
-5. segments는 6~8개, 각 문장은 25~45자. 전체 합계 220~320자.
+5. segments는 12~15개, 각 문장은 25~45자. 전체 합계 500~580자. 같은 내용 반복으로 길이를 채우지 마.
 6. 투자 권유(사라/팔아라)는 하지 마.
 7. 각 segment의 keywords는 배경 스톡 영상 검색어야. 그 문장 내용을 **눈으로 보이는 구체적인 장면**으로 바꾼 영어 2~3단어.
    좋은 예: "stock exchange screen", "oil refinery", "shipping containers port", "semiconductor factory", "tokyo street night", "bank building", "gas station price", "supermarket shopping".
@@ -85,7 +86,7 @@ def write_script(mats, topic, brand):
 8. chart는 이 뉴스와 가장 관련 있는 시세 1개. 아래 목록 중에서 고르고, 맞는 게 없으면 null:
 {TICKERS}
 9. show_chart는 차트를 보여주기 좋은 segment 1개에만 true.
-10. 핵심 숫자가 나오는 segment 1~2개에는 number를 넣어 화면에 큰 숫자 카드로 띄워. value는 자료에 있는 숫자 그대로(예: "4.34%", "1,200억 달러"), label은 10자 내외 설명, dir은 up/down/none. 차트를 보여주는 segment에는 넣지 마.
+10. 핵심 숫자가 나오는 segment 2~3개에는 number를 넣어 화면에 큰 숫자 카드로 띄워. value는 자료에 있는 숫자 그대로(예: "4.34%", "1,200억 달러"), label은 10자 내외 설명, dir은 up/down/none. 차트를 보여주는 segment에는 넣지 마.
 
 [자료]
 {chr(10).join(blocks)}
@@ -102,7 +103,7 @@ JSON으로만 답해:
  "hashtags": ["#경제뉴스", "#글로벌경제"]
 }}"""
     data = llm.ask_json(prompt, temperature=0.7)
-    return normalize(data)
+    return normalize(data, max_segs=16)
 
 
 def add_outro(sc, text):
@@ -140,7 +141,7 @@ def _no_sokbo(text):
     return re.sub(r"\s{2,}", " ", t).strip()
 
 
-def normalize(data):
+def normalize(data, max_segs=9):
     segs = norm_segments(data.get("segments", []))
     if len(segs) < 3:
         raise ValueError("대본 문장이 너무 적습니다: " + str(data)[:300])
@@ -151,7 +152,7 @@ def normalize(data):
     return {
         "tag": _no_sokbo(data.get("tag"))[:6],
         "hook_title": (_no_sokbo(data.get("hook_title")) or segs[0]["text"])[:30],
-        "segments": segs[:9],
+        "segments": segs[:max_segs],
         "chart": chart,
         "key_facts": data.get("key_facts", []),
         "caption": str(data.get("caption", "")).strip(),

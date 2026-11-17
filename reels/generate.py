@@ -138,6 +138,7 @@ def make_reel(series="news", offline=False):
             sc, sources, meta = _news_script()
         print("영상 제작 (세로 릴스)")
         dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
+        info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
                 "qc": qc.check(out, info, sc, offline=offline), **meta}

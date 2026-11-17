@@ -29,8 +29,9 @@ def check(path, info, script, offline=False):
 
         # 1) 길이
         if kind == "short":
-            ok = 25 <= dur <= 60
-            items.append(("길이", ok, f"{dur:.0f}초" + ("" if ok else " (권장 25~60초)")))
+            lo, hi = info.get("range", (25, 60))
+            ok = lo <= dur <= hi
+            items.append(("길이", ok, f"{dur:.0f}초" + ("" if ok else f" (권장 {lo}~{hi}초)")))
         else:
             ok = dur >= 240
             items.append(("길이", ok, f"{int(dur // 60)}분 {int(dur % 60)}초" + ("" if ok else " (목표 5분보다 짧음)")))
