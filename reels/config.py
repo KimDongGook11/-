@@ -25,7 +25,7 @@ IG_ACCESS_TOKEN = env("IG_ACCESS_TOKEN")
 # --- 선택 설정 (GitHub Variables) ---
 # 앞에서부터 차례로 시도하고, 실패하면 다음 모델로 넘어갑니다.
 GEMINI_MODELS = [m.strip() for m in env(
-    "GEMINI_MODELS", "gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash").split(",") if m.strip()]
+    "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest").split(",") if m.strip()]
 BRAND_NAME = env("BRAND_NAME", "오늘의 글로벌 경제")
 TTS_VOICE = env("TTS_VOICE", "ko-KR-SunHiNeural")   # 남성: ko-KR-InJoonNeural
 TTS_RATE = env("TTS_RATE", "+12%")

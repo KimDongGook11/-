@@ -54,7 +54,8 @@ def model_order():
         except Exception as e:
             print(f"  [AI] 모델 목록 조회 실패(설정값 사용): {e}")
             found = []
-        _cache = list(dict.fromkeys(found[:5] + config.GEMINI_MODELS))
+        lite = [n for n in found if "lite" in n][:2]   # 한도가 따로인 lite 모델도 마지막 대안으로
+        _cache = list(dict.fromkeys(found[:5] + config.GEMINI_MODELS + lite))
     return _cache
 
 
