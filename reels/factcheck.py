@@ -108,8 +108,10 @@ def check_numbers(sc, sources_text):
     return res
 
 
-def _sources_block(mats, limit=3500):
+def _sources_block(mats, limit=1800):
+    """검증용 근거 묶음 (너무 길면 AI 응답이 시간 초과 → 본문 있는 자료 위주로 짧게)."""
     out = []
+    mats = sorted(mats, key=lambda m: not m.get("body"))[:6]
     for j, m in enumerate(mats):
         b = f"[자료 {j+1}] {m['source']} — {m['title']}\n{m.get('summary') or ''}"
         if m.get("body"):
@@ -135,7 +137,7 @@ def ai_verify(sc, mats, idx=None):
 {_sources_block(mats)}
 
 JSON으로만: {{"results": [{{"i": 문장번호, "verdict": "ok|partial|unsupported|skip", "why": "다르면 무엇이 다른지 20자 내외"}}]}}"""
-    data = llm.ask_json(prompt, temperature=0.1)
+    data = llm.ask_json(prompt, temperature=0.1, timeout=240, keep_models=True)
     return {int(r.get("i", -1)): r for r in data.get("results", []) if str(r.get("i", "")).lstrip("-").isdigit()}
 
 
@@ -155,7 +157,7 @@ def fix(sc, mats, problems):
 {_sources_block(mats)}
 
 JSON으로만: {{"fixes": [{{"i": 번호, "text": "고친 문장", "number": null 또는 {{"value": "4.3%", "label": "설명", "dir": "up|down|none"}}}}]}}"""
-    data = llm.ask_json(prompt, temperature=0.3)
+    data = llm.ask_json(prompt, temperature=0.3, timeout=240, keep_models=True)
     return data.get("fixes", [])
 
 

@@ -17,7 +17,6 @@ FEEDS = [
     ("CNBC", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"),
     ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
     ("BBC", "https://feeds.bbci.co.uk/news/business/rss.xml"),
-    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
     ("Google News", "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US:en"),
     ("Google News", GN + "site:reuters.com+(economy+OR+markets)+when:1d"),
     ("Google News", GN + "site:bloomberg.com+(economy+OR+markets)+when:1d"),
@@ -29,7 +28,6 @@ FEEDS = [
     ("NPR", "https://feeds.npr.org/1017/rss.xml"),
     ("Google News", GN + "site:apnews.com+(economy+OR+markets+OR+stocks)+when:1d"),
     ("연합뉴스", "https://www.yna.co.kr/rss/economy.xml"),
-    ("한국경제", "https://www.hankyung.com/feed/economy"),
     ("매일경제", "https://www.mk.co.kr/rss/30100041/"),
 ]
 

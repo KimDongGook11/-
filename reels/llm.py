@@ -70,7 +70,8 @@ def _extract_json(text):
         raise
 
 
-def ask_json(prompt, temperature=0.6):
+def ask_json(prompt, temperature=0.6, timeout=120, keep_models=False):
+    """keep_models=True: 시간 초과가 나도 그 모델을 이번 실행 내내 빼지 않음 (긴 검증용 호출)."""
     if not config.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY가 설정되지 않았습니다.")
     body = {
@@ -82,7 +83,7 @@ def ask_json(prompt, temperature=0.6):
         for attempt in range(2):
             try:
                 r = requests.post(f"{BASE}/models/{model}:generateContent", json=body,
-                                  headers=_headers(), timeout=120)
+                                  headers=_headers(), timeout=timeout)
                 if r.status_code == 429:               # 무료 한도 초과 → 기다리지 말고 바로 다음 모델
                     msg = f"{model}: HTTP 429 (무료 한도 초과)"
                     print(f"  [AI] {msg}")
@@ -110,7 +111,8 @@ def ask_json(prompt, temperature=0.6):
                 msg = f"{model}: 응답 시간 초과 → 다음 모델"
                 print(f"  [AI] {msg}")
                 errors.append(msg)
-                _bad.add(model)
+                if not keep_models:
+                    _bad.add(model)
                 break
             except (requests.RequestException, KeyError, IndexError, ValueError) as e:
                 msg = f"{model}: {type(e).__name__} {e}"

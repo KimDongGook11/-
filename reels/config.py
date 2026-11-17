@@ -39,8 +39,9 @@ IG_API_VERSION = env("IG_API_VERSION", "v23.0")
 OUTRO_TEXT = env("OUTRO_TEXT", "매일 아침 경제 뉴스 딱 하나, 구독하고 내일 또 만나요!")
 # 유튜브 쇼츠 공개 시각(한국시간). 승인이 이 시각 전이면 이 시각에 예약 공개, 지나면 바로 공개. 비우면 항상 바로 공개
 YT_SHORTS_TIME = env("YT_SHORTS_TIME", "07:30")
-# 그때 그 결정 60초 세로 요약(인스타 릴스·유튜브 쇼츠)도 만들지. 2026-11-17 사용자 결정: 안 만듦(5분 장편만 유튜브)
-HISTORY_SHORT = env("HISTORY_SHORT", "false").lower() == "true"
+# 그때 그 결정 1분 세로 요약(인스타 릴스·유튜브 쇼츠)도 만들지. 2026-11-17 22:32 사용자 최종 결정: 만듦
+# (5분 장편 = 유튜브, 1분 요약 = 인스타 릴스 + 유튜브 쇼츠). 끄려면 Variables에 HISTORY_SHORT=false
+HISTORY_SHORT = env("HISTORY_SHORT", "true").lower() == "true"
 
 # --- 영상 규격 ---
 W, H, FPS = 1080, 1920, 30
