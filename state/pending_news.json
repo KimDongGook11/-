@@ -1,0 +1,81 @@
+{
+  "id": "n20261118-061002",
+  "series": "news",
+  "created_at": "2026-11-18T06:10:02.432706+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261118-061002.mp4",
+  "sources": [
+    "Bloomberg.com",
+    "shattered.io",
+    "Crypto Briefing",
+    "BigGo Finance",
+    "The New York Times",
+    "Reuters"
+  ],
+  "caption": "미국 트럼프 행정부가 동남아시아 데이터센터를 통한 AI 반도체 우회 이용을 전격 차단했습니다 🚨\n\n싱가포르, 말레이시아 등 5개국을 거치는 첨단 칩 수출은 물론, 원격 서버 대여까지 미국 상무부 허가를 받도록 규제를 강화했는데요.\n\n이로 인해 관련 주가가 폭락하고, 490억 달러에 달하는 대출 시장까지 살얼음판을 걷고 있습니다. 글로벌 AI 반도체 공급망 개편이 우리 IT 증시에는 어떤 영향을 줄지 주목됩니다 📉\n\n📰 출처: Bloomberg.com, shattered.io, Crypto Briefing\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#반도체 #AI반도체 #미국경제 #트럼프 #데이터센터 #글로벌경제 #오늘의경제",
+  "duration": 71.9,
+  "qc": {
+    "ok": true,
+    "items": [
+      [
+        "길이",
+        true,
+        "72초"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 100%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 154개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "US Hits Asia Data Centers With AI Chip Curbs As Trump Visits",
+  "link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPak5MQ0ZBa1V4d0xxZHhROWFld3dqQWxkWE1HM0tQZWo1RWo4eEpwVTJnSzNlemgzdEx0TGxaZ2Q1SHhCcHdMeWMwcy0zR3lUZk9ETXM2Mm9kbXRtQzlibjlBZEFrRDZtcm5Ld0JXZW9VYmdjRFVLYUxtYjdYS0M3WHBkV1E1WjdNRS1sd3JwNjV1YnEwVHRPbnVnRTJGZFhOXzlBaDVfbDN0cmFELUk4eks2QQ?oc=5",
+  "topic": "US hits Asian data centers with new AI chip restrictions under Trump administration",
+  "links": [
+    "https://news.google.com/rss/articles/CBMiswFBVV95cUxPak5MQ0ZBa1V4d0xxZHhROWFld3dqQWxkWE1HM0tQZWo1RWo4eEpwVTJnSzNlemgzdEx0TGxaZ2Q1SHhCcHdMeWMwcy0zR3lUZk9ETXM2Mm9kbXRtQzlibjlBZEFrRDZtcm5Ld0JXZW9VYmdjRFVLYUxtYjdYS0M3WHBkV1E1WjdNRS1sd3JwNjV1YnEwVHRPbnVnRTJGZFhOXzlBaDVfbDN0cmFELUk4eks2QQ?oc=5",
+    "https://news.google.com/rss/articles/CBMimgFBVV95cUxQU3VLWGFTb1FXaFB5UGZQbldKVEgteWlMN2p2T0dZWG9YNVJBc25HSTlhOUJnb1BYakNZM3hBNWhOeGN2bmdwNXNkOUszMm5nVEllY3FqZFQ0OTVRQ0QtbWdLMWltamN4R0pwMmVqYzRTNERkYUhFWngzRGVqWjVnbmNVMEJ6TWwxMTdqVU9rMzlBTF8zemNYUFJB?oc=5",
+    "https://news.google.com/rss/articles/CBMieEFVX3lxTE4tNXlhQWw0Tkd6enJhaEwtYXZudUMzZHJpaHotV1FqWlpmczlpbVJkbWVvXzBHeUNhVzlRVkFub092V2piSm02eUlISHZPamFiUG94QlVna3NIZnhzN2szU0RFOFZIekI5OXJ3d3FhZEI3cVVvLUdZdw?oc=5",
+    "https://news.google.com/rss/articles/CBMidkFVX3lxTFBWa0lGRWVlVEJRTXc2bTRRdWdGZWlqMVRKWmotOGJrcmNUUVVEelF0V0l4bU5tWVZ0a0dOa3pqYl94TUtmOXgtUElqOWJNS0t6VVgwOUNlT0RhREl3U1RXYzdYLUk5T2hNRlBHWXFGSmdyMUNpYUE?oc=5",
+    "https://news.google.com/rss/articles/CBMihAFBVV95cUxQdm1wQ21sa3dTMllldzJUazl0dVVzN1pLd0p6UUk3cFJJT08tU29jalgxSFJpbmVnQ1ZLLW9Kcnd1cFI5SVNoSlRPdkZFMzM1T1hORzc5VVVPUDdTLWsyeUxZUTdLanAwMlNZRUFEdUQyWnVaaUNueUMtR0MtU2NHUmYwQ2E?oc=5",
+    "https://news.google.com/rss/articles/CBMixAFBVV95cUxNRzR5X05qSEx5T0JaQUhWZlJsLUtmbkxuSDFFTDVrenhlRWtZSF9sVmlvaHA5NnVBTm9rSFhOaVFXU0YtdTRtNEoxNl9pLVZLRFZXQVoxR0VVdkF2eUNNUVRJcHEzWTRobUFRSUU5OFdIM1dTbFZoZ1c2VzBmeHVESGdjclBhdEhSQnc5ZHdQZERRU2RlbGU5eEFUQ2RleU9ROFIwOV94MUhoMVZZVmp5TldpSW4wTUNlbUNCelVTVGNWaUhZ?oc=5",
+    "https://news.google.com/rss/articles/CBMitAFBVV95cUxPMjhwVzZrQ1FranFNWlRGLVkzN1JSb1dwUlU0QVAzZHVIYll0QTByXzBEV3NCT2JzLV9hVjJkdFp1YUhKcVdJSVpMelZHZ0hod09jbExCRnpDWDBMS09iS0ExQ2VHV3czc2pHNjNTQ3MzRG1zODVfS1Zpam9VV2VHU0VwM0x0QVpiN2x4OXB2bTV5aXNXRWVXcjFnRFkxbVZZV2JNdk5hMzZNZjBOZ25ybG1YXzY?oc=5",
+    "https://news.google.com/rss/articles/CBMisAFBVV95cUxQYUhkejBaZ0NfSVBiLU9FdUxRZ3NMUTBZdUhLLTVKRjg5QVdDVVpQal9LaThWNjJjMEJNRkcwTEFJVm1HOG51amxfRk1XNnVvcmtzTDNNS2g3TVN4THo5V0h0bTlWYWRZQ3d4N3JlU3JyNnctc2FucnZ5U0dXb0tDeG9OSFVjMVd0d0NySzVkWVVoc01mRVRMVE16TjVTcXFnTE5wZWhTZEU0cnZlanloYg?oc=5"
+  ],
+  "release_tag": "reel-n20261118-061002",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 136,
+  "hook_title": "미국 규제에 [20% 폭락], AI 주가 흔들리나",
+  "tag": "반도체",
+  "hashtags": [
+    "#반도체",
+    "#AI반도체",
+    "#미국경제",
+    "#트럼프",
+    "#데이터센터",
+    "#글로벌경제",
+    "#오늘의경제"
+  ],
+  "brand": "",
+  "question": "여러분은 이번 규제로 AI 반도체 주가가 더 떨어질까요, 곧 회복될까요?",
+  "waiting_until": "2026-11-17T23:09:48.372562+00:00"
+}
