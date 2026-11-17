@@ -133,6 +133,55 @@ JSON으로만 답해:
     return normalize(data, max_segs=16)
 
 
+def polish_flow(sc, outro=""):
+    """팩트체크 뒤 원고 흐름 검수: 고치거나 뺀 문장 때문에 끊긴 연결, 특히 마지막 질문과 마무리 멘트로
+    넘어가는 부분을 자연스럽게 다듬음. 사실·숫자는 바꾸지 않고, 바뀌면 원래 문장을 그대로 둠."""
+    from .factcheck import ko_numbers
+    segs = sc["segments"]
+    if len(segs) < 3:
+        return sc
+    lines = "\n".join(f"{i}. {x['text']}" for i, x in enumerate(segs))
+    prompt = f"""너는 경제 릴스 원고 편집자야. 아래 [원고]는 내레이션 문장 목록이고, 끝에 마무리 멘트 "{outro}"가 붙어.
+일부 문장은 팩트체크로 고쳐지거나 빠져서 흐름이 끊겼을 수 있어. 소리 내어 읽었을 때 자연스럽게 이어지도록 다듬어.
+
+[규칙]
+- 문장 수와 순서는 그대로. 각 번호의 문장을 같은 번호로 돌려줘.
+- 사실·숫자·인명·기관명은 절대 바꾸거나 더하거나 빼지 마. 바꿀 수 있는 건 접속어, 문장 끝맺음, 앞뒤 연결 표현, 어순뿐이야.
+- 같은 말 반복이나 앞 문장과 어색하게 부딪치는 부분을 고쳐.
+- 마지막 문장은 시청자에게 던지는 질문이어야 해. 바로 앞 문장 내용에서 자연스럽게 이어지고, 이 뉴스와 직접 관련 있고,
+  댓글로 답하기 쉬운 양자택일이나 한 단어 답 질문으로, 물음표로 끝내. 질문 뒤에 마무리 멘트가 바로 이어져도 어색하지 않게.
+- 투자 권유(사라/팔아라)는 하지 마. 말투는 친근한 존댓말(~요, ~죠). 각 문장 45자 이내.
+- 고칠 게 없으면 그대로 돌려줘.
+
+[원고]
+{lines}
+
+JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...], "changed": [바꾼 번호들]}}"""
+    try:
+        data = llm.ask_json(prompt, temperature=0.3)
+        out = [str(t).strip() for t in data.get("segments", [])]
+    except Exception as e:
+        print(f"  [원고 검수] 건너뜀: {e}")
+        return sc
+    if len(out) != len(segs):
+        print(f"  [원고 검수] 문장 수가 달라 적용 안 함 ({len(segs)}→{len(out)})")
+        return sc
+    nums = lambda t: sorted(round(v, 2) for v, _, _ in ko_numbers(t))
+    changed = []
+    for i, t in enumerate(out):
+        if not t or t == segs[i]["text"]:
+            continue
+        if nums(t) != nums(segs[i]["text"]) or len(t) > 60:
+            print(f"  [원고 검수] {i}번 문장은 숫자·길이가 달라져 원래대로 둠")
+            continue
+        segs[i]["text"] = t
+        changed.append(i)
+    if not segs[-1]["text"].rstrip().endswith("?"):
+        print("  [원고 검수] ⚠️ 마지막 문장이 질문이 아니에요")
+    print(f"  [원고 검수] 다듬은 문장 {len(changed)}개: {changed}")
+    return sc
+
+
 def add_outro(sc, text):
     """매일 같은 마무리 멘트를 붙여 '내일도 오는 채널'이라는 인상을 만듭니다."""
     text = (text or "").strip()

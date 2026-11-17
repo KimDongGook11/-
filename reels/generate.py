@@ -90,10 +90,12 @@ def _news_script():
     sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")
     try:
-        sc, sc["factcheck"] = factcheck.run(sc, mats)
+        sc, sc["factcheck"] = factcheck.run(sc, mats, skip_last=1)   # 마지막 질문은 사실 확인 대상이 아님
     except Exception as e:
         print(f"  [팩트체크] 건너뜀: {e}")
         sc["factcheck"] = None
+    print("5) 원고 검수 (흐름·마지막 질문 연결)")
+    sc = script.polish_flow(sc, config.OUTRO_TEXT)
     sc = script.add_outro(sc, config.OUTRO_TEXT)
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
