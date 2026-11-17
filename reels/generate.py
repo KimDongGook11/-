@@ -9,6 +9,7 @@ import argparse
 import datetime as dt
 import shutil
 import sys
+import time
 import traceback
 
 from . import approval, config, factcheck, history, instagram, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
@@ -308,6 +309,24 @@ def deliver(res, offline=False):
                     "question": res["script"].get("question") or res["script"]["segments"][-1]["text"]})
 
 
+def _wait_us_close(max_min=40):   # 작업 시간 제한(180분) 안에 버튼 대기까지 끝나도록
+    """오늘의 원픽은 미국 장 마감(뉴욕 16:00) + 10분 뒤에만 제작. 장중이면 마감까지 기다림.
+    너무 오래 기다려야 하면 False (이번 실행은 건너뜀)."""
+    from zoneinfo import ZoneInfo
+    ny = dt.datetime.now(ZoneInfo("America/New_York"))
+    open_t = ny.replace(hour=9, minute=30, second=0, microsecond=0)
+    ready = ny.replace(hour=16, minute=10, second=0, microsecond=0)
+    if ny.weekday() >= 5 or not (open_t <= ny < ready):
+        return True
+    mins = (ready - ny).total_seconds() / 60
+    if mins > max_min:
+        print(f"미국 장이 열려 있어요(마감까지 {mins:.0f}분). 장 마감 뒤에 다시 실행해 주세요. 건너뜁니다.")
+        return False
+    print(f"미국 장 마감 전이에요. 종가 확정까지 {mins:.0f}분 기다린 뒤 만들어요.")
+    time.sleep(mins * 60)
+    return True
+
+
 def _today():
     return dt.datetime.now(KST).strftime("%Y%m%d")
 
@@ -323,6 +342,8 @@ def main():
     if a.offline:
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
     series = a.series
+    if series == "news" and not a.offline and not _wait_us_close():
+        return
     if a.once_per_day:
         key = "last_daily" if series == "news" else f"last_daily_{series}"
         prev_mark = load_state(key, {})
