@@ -59,6 +59,60 @@ def _gemini(text, out_wav):
 
 
 TC_API = "https://api.typecast.ai"
+PILJAE = "tc_68257f68bc6e3c161ab5078d"
+# 시리즈별 목소리 (2026-11-17 사용자 결정: 오늘의 원픽 = 서현, 그때 그 결정 = 필재). ID 또는 한글 이름
+VOICE_BY_SERIES = {
+    "news": lambda: config.env("TYPECAST_VOICE_NEWS", "서현"),
+    "history": lambda: config.env("TYPECAST_VOICE_HISTORY") or config.env("TYPECAST_VOICE", PILJAE),
+}
+_series = "history"
+_resolved = {}
+
+
+def set_series(series):
+    """이번 영상의 시리즈를 정함 (목소리 선택용)."""
+    global _series
+    _series = series if series in VOICE_BY_SERIES else "history"
+
+
+def resolve_voice(name_or_id):
+    """목소리 ID(tc_…) 또는 한글 이름(예: 서현) → ID. 못 찾으면 None."""
+    if not name_or_id:
+        return None
+    if name_or_id.startswith(("tc_", "uc_")):
+        return name_or_id
+    if name_or_id in _resolved:
+        return _resolved[name_or_id]
+    import requests
+    vid = None
+    try:
+        r = requests.get(f"{TC_API}/v3/voices", headers={"X-API-KEY": config.env("TYPECAST_API_KEY", "").strip()},
+                         timeout=30)
+        r.raise_for_status()
+        hits = [v for v in r.json() if ((v.get("voice_name") or {}).get("kor") or "").strip() == name_or_id.strip()]
+        hits.sort(key=lambda v: not any(m.get("version") == "ssfm-v31" for m in v.get("models", [])))
+        vid = hits[0]["voice_id"] if hits else None
+        print(f"  [음성] '{name_or_id}' → {vid or '목록에 없음'}")
+    except Exception as e:
+        print(f"  [음성] 목소리 목록 조회 실패: {e}")
+    _resolved[name_or_id] = vid
+    return vid
+
+
+def current_voice():
+    """이번 시리즈의 타입캐스트 목소리 ID. 원하는 목소리를 못 찾으면 필재로 (텔레그램 알림)."""
+    want = VOICE_BY_SERIES[_series]()
+    vid = resolve_voice(want)
+    if not vid:
+        vid = PILJAE
+        try:
+            from . import telegram
+            if telegram.enabled() and not _resolved.get("_warned_" + str(want)):
+                _resolved["_warned_" + str(want)] = True
+                telegram.send_message(f"ℹ️ 타입캐스트 목소리 '{want}'을(를) 찾지 못해 이번 영상은 필재 목소리로 만들어요.")
+        except Exception:
+            pass
+    return vid
 
 
 class TypecastFailed(RuntimeError):
@@ -68,8 +122,8 @@ class TypecastFailed(RuntimeError):
 def _typecast(text, out_mp3, prev="", nxt="", voice=None, model=None, tempo=None):
     """타입캐스트: 문장 하나 → mp3 + 단어 타이밍. 앞뒤 문장을 함께 보내 감정·억양을 자연스럽게."""
     import requests
-    # 기본 목소리: 필재(남, 중저음) — 이전: 렉스 tc_6322940059d649937b97f326
-    body = {"voice_id": voice or config.env("TYPECAST_VOICE", "tc_68257f68bc6e3c161ab5078d"), "text": text,
+    # 목소리: 시리즈별 (원픽 서현, 그때 그 결정 필재) — 이전: 렉스 tc_6322940059d649937b97f326
+    body = {"voice_id": voice or current_voice(), "text": text,
             "model": model or config.env("TYPECAST_MODEL", "ssfm-v31"), "language": "kor",
             "prompt": {"emotion_type": "smart", "previous_text": prev[-1500:], "next_text": nxt[:1500]},
             "output": {"audio_format": "mp3", "audio_tempo": float(tempo or config.env("TYPECAST_TEMPO", "1.1"))}}

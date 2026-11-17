@@ -11,7 +11,7 @@ import shutil
 import sys
 import traceback
 
-from . import approval, config, factcheck, history, instagram, news, pending, produce, qc, render, script, storage, telegram, youtube
+from . import approval, config, factcheck, history, instagram, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -132,6 +132,7 @@ def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
     rid = ("h" if series == "history" else "n") + now.strftime("%Y%m%d-%H%M%S")
+    tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
         shutil.rmtree(work)
