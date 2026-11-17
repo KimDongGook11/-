@@ -40,8 +40,16 @@ JSON으로만 답해: {{"pick": 번호, "topic": "영어로 한 줄 주제 요�
     return idx, res
 
 
-def gather_materials(pool, main_item, limit=6):
-    """선택된 뉴스와 같은 주제를 다룬 다른 매체 기사까지 모아 사실 확인 자료로 씁니다."""
+def _query(title):
+    """기사 제목 → 같은 주제 기사를 찾을 검색어 (핵심 단어 5~6개)."""
+    words = [w for w in re.findall(r"[A-Za-z0-9$%.\-]+|[가-힣]{2,}", title)
+             if w.lower() not in news.STOP and len(w) > 1]
+    return " ".join(words[:6])
+
+
+def gather_materials(pool, main_item, limit=8, want=3):
+    """선택된 뉴스와 같은 주제의 기사를 모으고 본문을 확보합니다 (팩트체크 근거).
+    본문이 want개보다 적으면 가디언 API·구글 뉴스 검색으로 같은 주제 기사를 더 찾아 보강."""
     group = [main_item] + [pool[j] for j in main_item.get("related", [])]
     seen, mats = set(), []
     for it in group:
@@ -49,10 +57,29 @@ def gather_materials(pool, main_item, limit=6):
             continue
         seen.add(it["link"])
         mats.append(it)
-        if len(mats) >= limit:
+        if len(mats) >= 6:
             break
-    for m in mats[:4]:   # 1분 30초 대본이라 기사 본문을 넉넉히
+    for m in mats:
         m["body"] = news.fetch_article_text(m["link"])
+    have = sum(1 for m in mats if m.get("body"))
+    q = _query(main_item["title"])
+    if have < want and q:
+        extra = news.guardian_search(q) + news.gnews_search(q)
+        for it in extra:
+            if have >= want or len(mats) >= limit:
+                break
+            key = re.sub(r"\W+", "", it["title"].lower())[:60]
+            if it["link"] in seen or key in {re.sub(r"\W+", "", m["title"].lower())[:60] for m in mats}:
+                continue
+            seen.add(it["link"])
+            if not it.get("body"):
+                it["body"] = news.fetch_article_text(it["link"])
+            if it.get("body"):
+                mats.append(it)
+                have += 1
+    mats.sort(key=lambda m: (m is not main_item, not m.get("body")))   # 주 기사 먼저, 본문 있는 자료 앞으로
+    print(f"  [근거] 자료 {len(mats)}개 중 본문 확보 {have}개: "
+          + ", ".join(f"{m['source']}{'✓' if m.get('body') else '✗'}" for m in mats))
     return mats
 
 

@@ -11,7 +11,7 @@ import shutil
 import sys
 import traceback
 
-from . import approval, config, history, instagram, news, pending, produce, qc, render, script, storage, telegram, youtube
+from . import approval, config, factcheck, history, instagram, news, pending, produce, qc, render, script, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -87,6 +87,12 @@ def _news_script():
     mats = script.gather_materials(pool, main)
     print("3) 대본 작성")
     sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME)
+    print("4) 팩트체크 (숫자 대조 + AI 검증)")
+    try:
+        sc, sc["factcheck"] = factcheck.run(sc, mats)
+    except Exception as e:
+        print(f"  [팩트체크] 건너뜀: {e}")
+        sc["factcheck"] = None
     sc = script.add_outro(sc, config.OUTRO_TEXT)
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
@@ -276,7 +282,8 @@ def deliver(res, offline=False):
     if telegram.enabled():
         sc, rid, label = res["script"], res["id"], pending.LABEL[series]
         telegram.send_message(
-            f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n{qc.summary(res.get('qc'))}\n\n"
+            f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n{qc.summary(res.get('qc'))}\n"
+            + (factcheck.summary(sc.get("factcheck")) + "\n" if sc.get("factcheck") else "") + "\n"
             f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +

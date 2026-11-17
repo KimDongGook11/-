@@ -2,6 +2,7 @@
 import datetime as dt
 import email.utils
 import html
+import json
 import re
 import xml.etree.ElementTree as ET
 
@@ -22,6 +23,14 @@ FEEDS = [
     ("Google News", GN + "site:bloomberg.com+(economy+OR+markets)+when:1d"),
     ("Google News", GN + "site:ft.com+economy+when:1d"),
     ("Google News KR", "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko"),
+    # 본문을 받을 수 있는 매체 (2026-11-17 추가: 팩트체크 근거 확보용)
+    ("Guardian", "https://www.theguardian.com/business/economics/rss"),
+    ("Guardian", "https://www.theguardian.com/business/rss"),
+    ("NPR", "https://feeds.npr.org/1017/rss.xml"),
+    ("Google News", GN + "site:apnews.com+(economy+OR+markets+OR+stocks)+when:1d"),
+    ("연합뉴스", "https://www.yna.co.kr/rss/economy.xml"),
+    ("한국경제", "https://www.hankyung.com/feed/economy"),
+    ("매일경제", "https://www.mk.co.kr/rss/30100041/"),
 ]
 
 STOP = set("""the a an and or of to in on for with at by from as is are was were be been this that
@@ -145,16 +154,99 @@ def rank(items, history, max_age_hours=30, top=25):
     return fresh[:top], pool
 
 
+_GN_CACHE = {}
+
+
+def decode_gnews(url):
+    """구글 뉴스 중계 주소(news.google.com/rss/articles/…)를 원래 기사 주소로 풀기. 실패하면 ""."""
+    if url in _GN_CACHE:
+        return _GN_CACHE[url]
+    real = ""
+    try:
+        m = re.search(r"/articles/([^?/]+)", url)
+        if m:
+            aid = m.group(1)
+            r = requests.get(f"https://news.google.com/rss/articles/{aid}", headers=config.UA, timeout=12)
+            sg = re.search(r'data-n-a-sg="([^"]+)"', r.text)
+            ts = re.search(r'data-n-a-ts="([^"]+)"', r.text)
+            if sg and ts:
+                inner = json.dumps(["garturlreq", [["X", "X", ["X", "X"], None, None, 1, 1, "US:en", None, 1, None,
+                                                    None, None, None, None, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1,
+                                                   None, 0, 0, None, 0], aid, int(ts.group(1)), sg.group(1)])
+                body = "f.req=" + requests.utils.quote(json.dumps([[["Fbv4je", inner, None, "generic"]]]))
+                p = requests.post("https://news.google.com/_/DotsSplashUi/data/batchexecute", data=body, timeout=12,
+                                  headers={**config.UA, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"})
+                arr = json.loads(p.text.split("\n\n", 1)[1])
+                real = json.loads(arr[0][2])[1]
+    except Exception:
+        real = ""
+    _GN_CACHE[url] = real
+    return real
+
+
+def _extract(html_text, url=""):
+    """기사 HTML → 본문 텍스트. trafilatura가 있으면 그것, 없으면 JSON-LD articleBody, 그다음 <p> 태그."""
+    try:
+        import trafilatura
+        t = trafilatura.extract(html_text, url=url or None, include_comments=False, include_tables=False,
+                                favor_recall=True)
+        if t and len(t) > 300:
+            return re.sub(r"\s+", " ", t).strip()
+    except Exception:
+        pass
+    for m in re.finditer(r'"articleBody"\s*:\s*"((?:[^"\\]|\\.)*)"', html_text):
+        try:
+            t = json.loads('"' + m.group(1) + '"')
+            if len(t) > 300:
+                return _clean(t, 20000)
+        except Exception:
+            pass
+    paras = re.findall(r"<p[^>]*>(.*?)</p>", html_text, flags=re.S | re.I)
+    return " ".join(_clean(p, 2000) for p in paras)
+
+
 def fetch_article_text(url, limit=3500):
-    """기사 본문 일부를 가져옵니다 (실패하면 빈 문자열). 수치 확인용 참고 자료로만 씁니다."""
-    if not url or "news.google.com" in url:
+    """기사 본문 일부를 가져옵니다 (실패하면 빈 문자열). 팩트체크 근거로 씁니다."""
+    if not url:
         return ""
+    if "news.google.com" in url:
+        url = decode_gnews(url)
+        if not url:
+            return ""
     try:
         r = requests.get(url, headers=config.UA, timeout=12)
         if r.status_code != 200:
             return ""
-        paras = re.findall(r"<p[^>]*>(.*?)</p>", r.text, flags=re.S | re.I)
-        text = " ".join(_clean(p, 2000) for p in paras)
-        return text[:limit]
+        r.encoding = r.apparent_encoding if not r.encoding or r.encoding.lower() == "iso-8859-1" else r.encoding
+        text = _extract(r.text, url)
+        return text[:limit] if len(text) >= 300 else ""
     except Exception:
         return ""
+
+
+def guardian_search(query, n=3, limit=3500):
+    """가디언 무료 API로 같은 주제의 기사 본문 찾기 (키: GUARDIAN_API_KEY, 없으면 개발용 'test')."""
+    try:
+        r = requests.get("https://content.guardianapis.com/search", timeout=15, params={
+            "q": query, "from-date": (dt.date.today() - dt.timedelta(days=3)).isoformat(),
+            "order-by": "relevance", "page-size": n, "show-fields": "bodyText,trailText",
+            "api-key": config.env("GUARDIAN_API_KEY", "test")})
+        out = []
+        for x in r.json().get("response", {}).get("results", []):
+            body = (x.get("fields") or {}).get("bodyText", "")
+            if len(body) > 300:
+                out.append({"title": x.get("webTitle", ""), "link": x.get("webUrl", ""), "source": "Guardian",
+                            "summary": _clean((x.get("fields") or {}).get("trailText", "")), "body": body[:limit],
+                            "published": _date(x.get("webPublicationDate"))})
+        return out
+    except Exception:
+        return []
+
+
+def gnews_search(query, n=6):
+    """구글 뉴스 검색(최근 2일)으로 같은 주제의 다른 매체 기사 찾기."""
+    try:
+        r = requests.get(GN + requests.utils.quote(query + " when:2d"), headers=config.UA, timeout=15)
+        return parse_feed(r.content, "Google News")[:n]
+    except Exception:
+        return []
