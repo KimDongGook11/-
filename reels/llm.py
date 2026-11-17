@@ -79,6 +79,20 @@ def ask_json(prompt, temperature=0.6, timeout=120, keep_models=False):
         "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
     }
     errors = []
+    rounds = int(config.env("GEMINI_ROUNDS", "4"))
+    for rnd in range(rounds):   # 구글 쪽 일시 혼잡(503)이면 모든 모델이 실패 → 잠깐 쉬고 처음부터 다시 (최대 약 10분)
+        if rnd:
+            wait = 60 * rnd
+            print(f"  [AI] 모든 모델이 혼잡/실패 → {wait}초 쉬고 다시 시도 ({rnd + 1}/{rounds})")
+            time.sleep(wait)
+            _bad.clear()
+        res = _try_models(body, timeout, keep_models, errors)
+        if res is not None:
+            return res
+    raise RuntimeError("Gemini 호출 실패\n" + "\n".join(errors[-6:]))
+
+
+def _try_models(body, timeout, keep_models, errors):
     for model in [m for m in model_order() if m not in _bad] or model_order():
         for attempt in range(2):
             try:
@@ -119,4 +133,4 @@ def ask_json(prompt, temperature=0.6, timeout=120, keep_models=False):
                 print(f"  [AI] {msg}")
                 errors.append(msg)
                 time.sleep(3)
-    raise RuntimeError("Gemini 호출 실패\n" + "\n".join(errors[-6:]))
+    return None
