@@ -47,6 +47,7 @@ jobs:
       BG_SPEED: ${{ vars.BG_SPEED }}
       TTS_ENGINE: ${{ vars.TTS_ENGINE }}
       TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      HISTORY_SHORT: ${{ vars.HISTORY_SHORT }}
       TYPECAST_VOICE: ${{ vars.TYPECAST_VOICE }}
       TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
       TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
@@ -66,7 +67,7 @@ jobs:
           pip install -q -r requirements.txt "rembg[cpu]"
           git config user.name "reels-bot"
           git config user.email "reels-bot@users.noreply.github.com"
-      - name: 장편(5분)+릴스(60초) 생성 → 텔레그램 전송 → 2시간 버튼 대기
+      - name: 장편(5분, 유튜브) 생성 → 텔레그램 전송 → 버튼 대기
         run: python -m reels.generate --series history --wait ${{ inputs.wait || '120' }} ${{ (github.event_name == 'schedule' || inputs.auto == 'true') && '--once-per-day' || '' }}
       - name: 상태 저장
         if: always()

@@ -115,8 +115,10 @@ def _history_scripts():
     lsc = history.write_long(ep, material, config.BRAND_NAME)
     if lsc.get("chart") is None and ep.get("ticker"):
         lsc["chart"] = {"ticker": ep["ticker"], "label": f"{ep.get('company_ko', '')} 주가 · {ep['year']}년~현재"}
-    print("3) 60초 요약 대본")
-    ssc = history.condense_short(lsc, ep)
+    ssc = None
+    if config.HISTORY_SHORT:
+        print("3) 60초 요약 대본")
+        ssc = history.condense_short(lsc, ep)
     return lsc, ssc, ep, links
 
 
@@ -157,21 +159,25 @@ def make_reel(series="news", offline=False):
     ep_label = f"EP.{n}"
     lsc.update({"ep": ep_label, "year": ep["year"],
                 "wiki_titles": [ep.get("company", "")] + list(ep.get("wiki_titles") or [])})
-    ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"{ep_label} · {ep.get('company_ko', '')}"})
+    if ssc:
+        ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"{ep_label} · {ep.get('company_ko', '')}"})
     copt = {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
     sources = ["Wikipedia"]
 
     print("영상 제작 ① 장편 (가로 약 5분)")
     long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
     ldur, chapters, thumb, linfo = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
+    long_res = {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
+                "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}
+    base = {"id": rid, "series": series, "created_at": now.isoformat(), "sources": sources,
+            "title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep,
+            "long": long_res}
+    if not ssc:   # 장편만 (유튜브 전용)
+        return {**base, "video": None, "script": lsc, "long_only": True}
     print("영상 제작 ② 60초 릴스 (세로)")
     sdur, sinfo = produce.short(ssc, work / "short", out, sources, offline=offline, chart_opts=copt)
-    return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": ssc,
-            "sources": sources, "caption": build_caption(ssc, sources, series), "duration": round(sdur, 1),
-            "title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep,
-            "qc": qc.check(out, sinfo, ssc, offline=offline),
-            "long": {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
-                     "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}}
+    return {**base, "video": str(out), "script": ssc, "caption": build_caption(ssc, sources, series),
+            "duration": round(sdur, 1), "qc": qc.check(out, sinfo, ssc, offline=offline)}
 
 
 def _mmss(t):
@@ -211,7 +217,9 @@ def deliver_long(res, offline=False):
         + f"■ 제목\n{yt_title}\n\n"
         + f"■ 설명\n{desc}\n\n■ 태그\n{', '.join(lsc.get('tags', []))}\n\n"
         + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8]),
-        buttons=[("✅ 유튜브 게시 (공개)", f"approve:{yrid}"), ("❌ 유튜브에는 안 올림", f"reject:{yrid}")]
+        buttons=([("✅ 유튜브 게시 (공개)", f"approve:{yrid}")]
+                 + ([("🔁 다른 에피소드로 다시 만들기", f"redo:{yrid}")] if res.get("long_only") else [])
+                 + [("❌ 유튜브에는 안 올림", f"reject:{yrid}")])
         if yt_on else None)
     if yt_on:
         expire_pending("youtube")
@@ -237,6 +245,14 @@ def deliver(res, offline=False):
     """보관(GitHub Release) + 텔레그램 미리보기 + 대기 상태 저장."""
     series = res["series"]
     expire_pending(series)
+    if res.get("long_only"):
+        eps = load_state("episodes", [])
+        ep = res.get("episode", {})
+        eps.append({"date": res["id"], "company": ep.get("company", ""), "year": ep.get("year"),
+                    "episode_ko": ep.get("episode_ko", res.get("topic", ""))})
+        save_state("episodes", eps[-200:])
+        deliver_long(res, offline=offline)
+        return
     if not offline and storage.enabled():
         res["release_tag"] = storage.upload(res["video"], f"reel-{res['id']}", res["script"]["hook_title"])
         cov = instagram.cover_frame(res["video"], str(res["video"]).replace(".mp4", "_cover.jpg"))
@@ -306,16 +322,18 @@ def main():
             return
         save_state(key, {"date": _today()})
         git_push_state("state: daily start")   # 다른 예약 실행과 중복 방지
+    deadline = dt.datetime.now(KST) + dt.timedelta(minutes=a.wait)   # 다시 만들기가 있어도 전체 대기는 a.wait 안에서
     try:
         while True:
             res = make_reel(series, offline=a.offline)
             if a.no_deliver:
                 break
             deliver(res, offline=a.offline)
-            print("완료:", res["video"])
-            if not a.wait or not telegram.enabled():
+            print("완료:", res.get("video") or res.get("long", {}).get("video"))
+            left = int((deadline - dt.datetime.now(KST)).total_seconds() // 60)
+            if not a.wait or not telegram.enabled() or left < 5:
                 break
-            kind, nxt = approval.wait_for_decision(res["id"], a.wait)
+            kind, nxt = approval.wait_for_decision(res["id"], left)
             if kind != "redo":
                 break
             series = nxt

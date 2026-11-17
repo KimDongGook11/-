@@ -39,6 +39,7 @@ jobs:
       BG_SPEED: ${{ vars.BG_SPEED }}
       TTS_ENGINE: ${{ vars.TTS_ENGINE }}
       TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      HISTORY_SHORT: ${{ vars.HISTORY_SHORT }}
       TYPECAST_VOICE: ${{ vars.TYPECAST_VOICE }}
       TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
       TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}

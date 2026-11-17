@@ -265,10 +265,11 @@ def handle(updates):
             elif action == "redo":
                 telegram.answer_callback(cq["id"], "다시 만들게요")
                 telegram.send_message(f"🔁 [{pending.LABEL[p.get('series', 'news')]}] 다시 만드는 중이에요. "
-                                      "5~15분 뒤 도착합니다.")
+                                      + ("20~40분 뒤 도착합니다." if p.get("series") in ("youtube", "history")
+                                         else "5~15분 뒤 도착합니다."))
                 _clear(p)
                 finished.add(rid)
-                redo = p.get("series", "news")
+                redo = "history" if p.get("series") == "youtube" else p.get("series", "news")
         elif "message" in u:
             m = u["message"]
             if not _owner(m.get("chat", {}).get("id")):
@@ -317,11 +318,11 @@ def _fetch(timeout=0):
 
 def wait_for_decision(rid, minutes):
     """영상 전송 직후 실시간 대기. 반환: ('redo', 시리즈) | ('done', None) | ('timeout', None)"""
-    p = pending.find(rid)
+    p = pending.find(rid) or pending.find(f"yt{rid}")
     if not p:
         return "done", None
     until = _now() + dt.timedelta(minutes=minutes)
-    wait_ids = {rid} | ({f"yt{rid}"} if pending.find(f"yt{rid}") else set())   # 장편 유튜브 버튼도 함께 기다림
+    wait_ids = ({rid} if pending.find(rid) else set()) | ({f"yt{rid}"} if pending.find(f"yt{rid}") else set())   # 장편 유튜브 버튼도 함께 기다림
     for q in (pending.find(i) for i in wait_ids):
         q["waiting_until"] = until.isoformat()
         pending.save(q["series"], q)
