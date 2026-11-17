@@ -325,18 +325,21 @@ def main():
     series = a.series
     if a.once_per_day:
         key = "last_daily" if series == "news" else f"last_daily_{series}"
-        if load_state(key, {}).get("date") == _today():
+        prev_mark = load_state(key, {})
+        if prev_mark.get("date") == _today():
             print("오늘 자동 제작은 이미 했어요. 건너뜁니다.")
             return
         save_state(key, {"date": _today()})
         git_push_state("state: daily start")   # 다른 예약 실행과 중복 방지
     deadline = dt.datetime.now(KST) + dt.timedelta(minutes=a.wait)   # 다시 만들기가 있어도 전체 대기는 a.wait 안에서
+    delivered = False
     try:
         while True:
             res = make_reel(series, offline=a.offline)
             if a.no_deliver:
                 break
             deliver(res, offline=a.offline)
+            delivered = True
             print("완료:", res.get("video") or res.get("long", {}).get("video"))
             left = int((deadline - dt.datetime.now(KST)).total_seconds() // 60)
             if not a.wait or not telegram.enabled() or left < 5:
@@ -347,6 +350,12 @@ def main():
             series = nxt
     except Exception as e:
         traceback.print_exc()
+        if a.once_per_day and not delivered:   # 전송 전에 실패하면 '오늘 했음' 표시를 되돌려 다시 시도할 수 있게
+            try:
+                save_state(key, prev_mark)
+                git_push_state("state: daily reset (실패)")
+            except Exception as e2:
+                print("  [상태] 되돌리기 실패:", e2)
         if telegram.enabled() and not a.offline:
             try:
                 telegram.send_message(f"❌ [{pending.LABEL[series]}] 릴스 생성 실패\n{type(e).__name__}: {str(e)[:600]}\n\n"
