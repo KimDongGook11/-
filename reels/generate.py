@@ -31,7 +31,7 @@ SAMPLE = {
         _seg("발표 직후 S&P 500 지수는 1.2% 올랐어요.", "stock market screen", show_chart=True),
         _seg("금리가 내려가면 달러 가치가 약해지는 경우가 많아요.", "us dollar money"),
         _seg("그러면 원/달러 환율이 내려가 수입 물가 부담이 줄 수 있죠.", "shipping containers port"),
-        _seg("여러분은 이번 인하, 내 대출에 도움이 될 거라 보시나요?", "family home"),
+        _seg("이번 인하, 내 대출에 도움이 될까요? 여러분은 어떻게 생각하세요?", "family home"),
     ],
     "chart": {"ticker": "^GSPC", "label": "S&P 500 · 최근 1개월"},
     "key_facts": ["(샘플 데이터 - 실제 뉴스 아님)"],
