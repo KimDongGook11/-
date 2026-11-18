@@ -171,12 +171,10 @@ def make_reel(series="news", offline=False):
         links = []
     else:
         lsc, ssc, ep, links = _history_scripts()
-    n = load_state("history_ep", {"published": 0}).get("published", 0) + 1
-    ep_label = f"EP.{n}"
-    lsc.update({"ep": ep_label, "year": ep["year"],
+    lsc.update({"ep": "", "year": ep["year"],   # 회차 번호(EP.n)는 쓰지 않음
                 "wiki_titles": [ep.get("company", "")] + list(ep.get("wiki_titles") or [])})
     if ssc:
-        ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": f"{ep_label} · {ep.get('company_ko', '')}"})
+        ssc.update({"tag": history.SERIES_NAME, "pill": f"{ep['year']}년", "brand": ep.get('company_ko', '')})
     copt = {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
     sources = ["Wikipedia"]
 

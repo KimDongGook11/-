@@ -39,7 +39,7 @@ def _clear(p, keep_file=False):
 def _published(p):
     """회차 번호 올리기. 같은 에피소드의 릴스·유튜브 장편은 한 회차로 셈 (어느 쪽이 먼저 게시돼도 1번만)."""
     series = "history" if p.get("series") == "youtube" else p.get("series")
-    key = {"history": "history_ep", "news": "news_ep"}.get(series)
+    key = {"news": "news_ep"}.get(series)   # 그때 그 결정은 회차 번호를 세지 않음
     if not key:
         return
     rid = str(p.get("id", ""))
@@ -83,7 +83,7 @@ def _publish_at():
 
 def _history_meta(p):
     hook = p.get("hook_title", "").strip()
-    brand = (p.get("brand") or "").strip()          # 예: "EP.3 · 코닥"
+    brand = (p.get("brand") or "").strip()          # 예: "코닥"
     title = f"{hook} | 그때 그 결정 {brand}".strip()[:100]
     long_id = load_state("history_links", {}).get(p["id"], {}).get("long")
     long_line = (f"▶ 5분 풀버전 보기: https://youtu.be/{long_id}\n\n" if long_id

@@ -174,7 +174,7 @@ def panel_b(lsc, ci, out, W=1920, H=1080):
     img, d = _canvas(W, H)
     ch = lsc["chapters"][ci - 1]
     ep, year = lsc.get("ep", ""), lsc.get("year")
-    d.text((70, 42), f"경제 [원픽]   ·   그때 그 결정 {ep}", font=F("SemiBold", 30), fill=(255, 255, 255, 170))
+    d.text((70, 42), f"경제 [원픽]   ·   그때 그 결정 {ep}".rstrip(), font=F("SemiBold", 30), fill=(255, 255, 255, 170))
     d.text((PX, 112), f"CHAPTER {ci}", font=F("Bold", 30), fill=YELLOW)
     tf, lines = _fit(d, ch["title"], PW, (64, 56, 50), 2)
     y = _draw_lines(d, lines, tf, PX, 156)
