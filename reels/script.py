@@ -1,5 +1,6 @@
 """오늘의 뉴스 고르기 + 릴스 대본 작성."""
 import datetime as dt
+import json
 import re
 
 from . import llm, news
@@ -129,7 +130,7 @@ def write_script(mats, topic, brand, recent=None):
 JSON으로만 답해:
 {{
  "tag": "제목 위 빨간 꼬리표 2~4자 (예: 금리, 환율, 증시, 유가, 반도체, 코인). '속보'라는 말은 절대 쓰지 마",
- "hook_title": "화면 위에 고정할 제목, 18자 이내. 가장 중요한 단어 하나를 [ ]로 감싸 강조. 자료에 숫자가 있으면 숫자를 넣고, 내 돈과의 연결이 보이게 (좋은 예: 유가 [8% 급락], 기름값 내려가나 / 엔비디아 [4% 급락]). '??', '먹통', '마비'처럼 자료보다 과장된 표현은 금지",
+ "hook_title": "화면 위에 고정할 제목, 18자 이내. 오늘 주제 키워드(핵심 기업·제품·나라 이름 등)를 꼭 넣고, 가장 중요한 단어 하나를 [ ]로 감싸 강조. 자료에 숫자가 있으면 숫자를 넣고, 내 돈과의 연결이 보이게 (좋은 예: 유가 [8% 급락], 기름값 내려가나 / 엔비디아 [4% 급락]). '??', '먹통', '마비'처럼 자료보다 과장된 표현은 금지",
  "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false,
                "number": null 또는 {{"value": "4.34%", "label": "엔비디아 주가 하락", "dir": "down"}}}}],
  "chart": {{"ticker": "^GSPC", "label": "S&P 500 · 최근 1개월"}},
@@ -148,12 +149,13 @@ def polish_flow(sc, outro=""):
     segs = sc["segments"]
     if len(segs) < 3:
         return sc
-    lines = "\n".join(f"{i}. {x['text']}" for i, x in enumerate(segs))
+    lines = json.dumps([x["text"] for x in segs], ensure_ascii=False, indent=0)
     prompt = f"""너는 경제 릴스 원고 편집자야. 아래 [원고]는 내레이션 문장 목록이고, 끝에 마무리 멘트 "{outro}"가 붙어.
 일부 문장은 팩트체크로 고쳐지거나 빠져서 흐름이 끊겼을 수 있어. 소리 내어 읽었을 때 자연스럽게 이어지도록 다듬어.
 
 [규칙]
-- 문장 수와 순서는 그대로. 각 번호의 문장을 같은 번호로 돌려줘.
+- 문장 수와 순서는 그대로. 입력 배열과 같은 길이·같은 순서의 배열로 돌려줘.
+- 문장 앞에 번호(1. 2. 등)나 기호를 붙이지 마.
 - 사실·숫자·인명·기관명은 절대 바꾸거나 더하거나 빼지 마. 바꿀 수 있는 건 접속어, 문장 끝맺음, 앞뒤 연결 표현, 어순뿐이야.
 - 같은 말 반복이나 앞 문장과 어색하게 부딪치는 부분을 고쳐.
 - 마지막 문장은 시청자에게 던지는 질문이어야 해. 바로 앞 문장 내용에서 자연스럽게 이어지고, 이 뉴스와 직접 관련 있고,
@@ -161,10 +163,10 @@ def polish_flow(sc, outro=""):
 - 투자 권유(사라/팔아라)는 하지 마. 말투는 친근한 존댓말(~요, ~죠). 각 문장 45자 이내.
 - 고칠 게 없으면 그대로 돌려줘.
 
-[원고]
+[원고 (JSON 배열)]
 {lines}
 
-JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...], "changed": [바꾼 번호들]}}"""
+JSON으로만: {{"segments": ["첫 문장", "둘째 문장", ...], "changed": [바꾼 문장 순서(0부터)]}}"""
     try:
         data = llm.ask_json(prompt, temperature=0.3)
         out = [str(t).strip() for t in data.get("segments", [])]
@@ -175,11 +177,14 @@ JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...], "changed": [�
         print(f"  [원고 검수] 문장 수가 달라 적용 안 함 ({len(segs)}→{len(out)})")
         return sc
     nums = lambda t: sorted(round(v, 2) for v, _, _ in ko_numbers(t))
+    digits = lambda t: re.findall(r"\d+", t)
     changed = []
     for i, t in enumerate(out):
+        if not re.match(r"\s*\d{1,3}\s*[.)]\s", segs[i]["text"]):
+            t = re.sub(r"^\s*\d{1,3}\s*[.)]\s*", "", t)   # 검수 AI가 붙인 줄 번호 제거
         if not t or t == segs[i]["text"]:
             continue
-        if nums(t) != nums(segs[i]["text"]) or len(t) > 60:
+        if nums(t) != nums(segs[i]["text"]) or digits(t) != digits(segs[i]["text"]) or len(t) > 60:
             print(f"  [원고 검수] {i}번 문장은 숫자·길이가 달라져 원래대로 둠")
             continue
         segs[i]["text"] = t
@@ -206,21 +211,22 @@ def proofread(sc):
     sc["proofread"] = []
     if not segs:
         return sc
-    lines = "\n".join(f"{i}. {s['text']}" for i, s in enumerate(segs))
+    lines = json.dumps([s["text"] for s in segs], ensure_ascii=False, indent=0)
     prompt = f"""너는 한국어 방송 자막 교정 담당이야. 아래 문장들은 영상 자막으로 그대로 화면에 나가.
 맞춤법·띄어쓰기·오타·잘못된 조사·어색하게 깨진 글자만 고쳐.
 
 [규칙]
-- 문장 수와 순서는 그대로. 각 번호의 문장을 같은 번호로 돌려줘.
+- 문장 수와 순서는 그대로. 입력 배열과 같은 길이·같은 순서의 배열로 돌려줘.
+- 문장 앞에 번호(1. 2. 등)나 기호를 붙이지 마.
 - 내용·표현·말투·어순은 바꾸지 마. 더 좋은 표현으로 바꾸는 것도 금지. 틀린 것만 고쳐.
 - 숫자·단위·날짜·인명·기업명·기관명은 절대 바꾸지 마. 단, 같은 회사·사람 이름을 문장마다 다르게 쓴 경우(예: 엔비디아/앤비디아)는 흔히 쓰는 한국어 표기 하나로 맞춰.
 - 영어 약어(AI, CEO 등)는 그대로.
 - 고칠 게 없으면 그대로 돌려줘.
 
-[자막]
+[자막 (JSON 배열)]
 {lines}
 
-JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...]}}"""
+JSON으로만: {{"segments": ["첫 문장", "둘째 문장", ...]}}"""
     try:
         out = [str(t).strip() for t in llm.ask_json(prompt, temperature=0.1).get("segments", [])]
     except Exception as e:
@@ -230,9 +236,15 @@ JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...]}}"""
         print(f"  [맞춤법] 문장 수가 달라 적용 안 함 ({len(segs)}→{len(out)})")
         return sc
     nums = lambda t: sorted(round(v, 2) for v, _, _ in ko_numbers(t))
+    digits = lambda t: re.findall(r"\d+", t)     # 연도·작은 숫자까지 글자 그대로 비교 (1993→3993 방지)
     for s, t in zip(segs, out):
         old = s["text"]
+        if not re.match(r"\s*\d{1,3}\s*[.)]\s", old):
+            t = re.sub(r"^\s*\d{1,3}\s*[.)]\s*", "", t)   # 교정 AI가 붙인 줄 번호 제거
         if not t or t == old:
+            continue
+        if digits(t) != digits(old):
+            print(f"  [맞춤법] 숫자가 달라져 원래대로 둠: {old} → {t}")
             continue
         ratio = difflib.SequenceMatcher(None, old.replace(" ", ""), t.replace(" ", "")).ratio()
         if nums(t) != nums(old) or ratio < 0.8 or abs(len(t) - len(old)) > 6:
@@ -275,7 +287,7 @@ def _number(n):
 def norm_segments(items):
     segs = []
     for s in items or []:
-        text = str(s.get("text", "")).strip()
+        text = re.sub(r"^\s*\d{1,2}\s*[.)]\s+", "", str(s.get("text", ""))).strip()   # AI가 붙인 줄 번호 제거
         if text:
             segs.append({"text": text,
                          "keywords": str(s.get("keywords") or "stock market").strip()[:60],

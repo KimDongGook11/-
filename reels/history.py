@@ -142,8 +142,9 @@ def write_long(ep, material, brand):
    나쁜 예(금지): 감정·추상어("betrayal", "tension", "shock", "drama", "secret plan"), 인물 이름, 로고·브랜드명.
 6. 핵심 숫자가 나오는 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
 7. 주가 흐름을 보여주기 좋은 문장 1~2개에 show_chart: true (상장사일 때만).
-8. hook_title: 18자 이내, 핵심 단어 하나를 [ ]로.
-   thumb_line1, thumb_line2: 유튜브 썸네일 두 줄 문구. 각 줄 띄어쓰기 포함 7자 이내, 강하고 궁금하게 (예: "소니를 버린" / "닌텐도의 결정", "파산 90일 전" / "돌아온 창업자").
+8. topic_keyword: 시청자가 한눈에 알아보는 오늘 주제 키워드 하나. 기업 이야기면 기업명, 게임·제품 이야기면 그 이름 (예: "엔비디아", "스페이스X", "GTA"). 6자 이내.
+   hook_title: 18자 이내, topic_keyword를 반드시 넣고, 핵심 단어 하나를 [ ]로.
+   thumb_line1, thumb_line2: 유튜브 썸네일 두 줄 문구. 각 줄 띄어쓰기 포함 7자 이내, 강하고 궁금하게. 두 줄 중 한 줄에는 topic_keyword를 반드시 그대로 넣어 (예: "소니를 버린" / "닌텐도의 결정", "파산 직전" / "스페이스X", "GTA를 산" / "1998년 결단").
    company: 회사 이름·나라·업종을 한국어로 짧게.
 9. youtube_title: 40자 이내, 호기심을 끄는 제목. description: 3~5줄 소개. tags: 10개 이내.
 
@@ -152,7 +153,7 @@ def write_long(ep, material, brand):
 
 JSON으로만 답해:
 {{
- "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
+ "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
  "intro": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
  "company": {{"name_ko": "닌텐도", "country_ko": "일본", "industry_ko": "게임"}},
  "chapters": [{{"title": "...", "year": 1997, "summary": "핵심 한 줄", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
@@ -171,13 +172,33 @@ JSON으로만 답해:
     if len(chapters) < 3:
         raise ValueError("장편 대본 챕터가 부족합니다")
     chart = d.get("chart") if isinstance(d.get("chart"), dict) and d["chart"].get("ticker") else None
-    return {"hook_title": str(d.get("hook_title", ""))[:30], "thumb_title": str(d.get("thumb_title", ""))[:34],
-            "thumb_line1": str(d.get("thumb_line1") or "")[:10], "thumb_line2": str(d.get("thumb_line2") or "")[:10],
+    kw = str(d.get("topic_keyword") or ep.get("company_ko") or "").strip()[:10]
+    hook = with_keyword(str(d.get("hook_title", ""))[:30], kw)
+    l1, l2 = str(d.get("thumb_line1") or "")[:10], str(d.get("thumb_line2") or "")[:10]
+    if kw and l1 and l2 and not _has_kw(l1 + l2, kw):
+        print(f"  [썸네일] 주제 키워드 '{kw}' 없음 → 첫 줄을 키워드로: {l1}/{l2}")
+        l1 = kw
+    return {"hook_title": hook, "thumb_title": str(d.get("thumb_title", ""))[:34], "topic_keyword": kw,
+            "thumb_line1": l1, "thumb_line2": l2,
             "youtube_title": str(d.get("youtube_title", ""))[:90], "description": str(d.get("description", "")),
             "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
             "intro": norm_segments(d.get("intro")), "chapters": chapters, "chart": chart,
             "company": d.get("company") if isinstance(d.get("company"), dict) else {},
             "key_facts": d.get("key_facts", [])}
+
+
+def _has_kw(text, kw):
+    norm = lambda t: re.sub(r"[\s\[\]]", "", t).lower()
+    return norm(kw) in norm(text)
+
+
+def with_keyword(hook, kw):
+    """제목·썸네일 문구에 그날 주제 키워드(기업·게임·제품명)가 빠졌으면 앞에 붙임 (사용자 요청)."""
+    hook = (hook or "").strip()
+    if not kw or _has_kw(hook, kw):
+        return hook
+    print(f"  [제목] 주제 키워드 '{kw}' 없음 → 앞에 붙임: {hook}")
+    return f"{kw}, {hook}"[:30]
 
 
 def condense_short(long_sc, ep):
@@ -192,7 +213,7 @@ def condense_short(long_sc, ep):
 - segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
 - 마지막 문장은 반드시 "전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요." 같은 안내.
 - keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
-- hook_title 18자 이내, 핵심 단어 하나를 [ ]로.
+- hook_title 18자 이내, 주제 키워드 "{long_sc.get('topic_keyword') or ep.get('company_ko', '')}"를 반드시 넣고, 핵심 단어 하나를 [ ]로.
 
 [장편 대본]
 {chr(10).join(lines)}
@@ -204,4 +225,6 @@ JSON으로만 답해:
     d = llm.ask_json(prompt, temperature=0.6)
     d["chart"] = long_sc.get("chart")
     d["key_facts"] = long_sc.get("key_facts", [])
-    return normalize(d)
+    out = normalize(d)
+    out["hook_title"] = with_keyword(out["hook_title"], long_sc.get("topic_keyword") or ep.get("company_ko", ""))
+    return out

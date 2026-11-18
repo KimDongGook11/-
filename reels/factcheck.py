@@ -189,7 +189,7 @@ def run(sc, mats, skip_last=0):
                 i = int(f.get("i", -1))
                 if i not in problems:
                     continue
-                t = str(f.get("text", "")).strip()
+                t = re.sub(r"^\s*\d{1,3}\s*[.)]\s*", "", str(f.get("text", ""))).strip()   # 줄 번호 제거
                 if t:
                     sc["segments"][i]["text"] = t
                     sc["segments"][i]["number"] = _number(f.get("number"))
