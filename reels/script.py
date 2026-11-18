@@ -28,6 +28,11 @@ def pick_story(candidates, history):
 피해야 할 것: 시장 영향이 불분명한 해외 사건·사고(장애, 파업, 사고 소식만 있는 기사), 개별 기업 홍보성 기사, 칼럼·전망만 있는 기사.
 최근에 이미 다룬 주제(중복 금지):
 {recent}
+[중복 판단 — 엄격하게]
+- 제목·숫자가 달라도 같은 사건이나 같은 원인·같은 기업 이야기면 중복이야.
+  예: 어제 "엔비디아 실적 앞두고 증시 급락"을 다뤘다면 오늘 "엔비디아 실적 앞두고 다우 폭락"도 중복.
+- 최근 3일 안에 다룬 기업·인물(예: 엔비디아, 젠슨 황)이 중심인 뉴스는, 결정적인 새 사실(실적 발표 결과, 공식 발표, 확정된 결정)이 나온 경우에만 골라. 그 외에는 다른 주제를 골라.
+- 후속으로 고를 때는 topic에 '무엇이 새로 나왔는지'를 분명히 적어.
 
 후보:
 {chr(10).join(lines)}
@@ -83,7 +88,7 @@ def gather_materials(pool, main_item, limit=8, want=3):
     return mats
 
 
-def write_script(mats, topic, brand):
+def write_script(mats, topic, brand, recent=None):
     today = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y년 %m월 %d일")
     blocks = []
     for i, m in enumerate(mats):
@@ -91,9 +96,12 @@ def write_script(mats, topic, brand):
         if m.get("body"):
             b += f"\n본문 일부: {m['body'][:3500]}"
         blocks.append(b)
+    rec = "\n".join(f"- {h.get('title_ko', '')} / {h.get('topic', '')}" for h in (recent or [])[-5:])
+    rec_rule = (f"\n최근 며칠 동안 이미 다룬 영상(시청자가 이미 봤음):\n{rec}\n"
+                "→ 위 영상에서 이미 말한 배경·설명·숫자를 되풀이하지 마. 겹치는 기업이 나오면 오늘 새로 나온 사실 중심으로 써.\n") if rec else ""
     prompt = f"""너는 '{brand}'라는 인스타그램 경제 릴스 채널의 작가야. 오늘은 {today}이야.
 주제: {topic}
-
+{rec_rule}
 아래 자료만 근거로 약 1분 20초(80초 안팎)짜리 한국어 릴스 대본을 써.
 
 [규칙]
@@ -180,6 +188,71 @@ JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...], "changed": [�
         print("  [원고 검수] ⚠️ 마지막 문장이 질문이 아니에요")
     print(f"  [원고 검수] 다듬은 문장 {len(changed)}개: {changed}")
     return sc
+
+
+def _seg_lists(sc):
+    """대본 안의 모든 내레이션 문장 목록 (릴스: segments / 장편: intro + 챕터별 segments)."""
+    lists = [sc.get("segments"), sc.get("intro"), sc.get("outro")]
+    lists += [c.get("segments") for c in sc.get("chapters") or []]
+    return [l for l in lists if isinstance(l, list) and l and isinstance(l[0], dict)]
+
+
+def proofread(sc):
+    """자막 맞춤법·오타 검수: 철자, 띄어쓰기, 조사, 오타만 고침. 숫자·사실·표현은 그대로.
+    고친 내역은 sc['proofread'] = [(전, 후), ...] 로 남겨 텔레그램에 함께 보냄."""
+    import difflib
+    from .factcheck import ko_numbers
+    segs = [s for l in _seg_lists(sc) for s in l]
+    sc["proofread"] = []
+    if not segs:
+        return sc
+    lines = "\n".join(f"{i}. {s['text']}" for i, s in enumerate(segs))
+    prompt = f"""너는 한국어 방송 자막 교정 담당이야. 아래 문장들은 영상 자막으로 그대로 화면에 나가.
+맞춤법·띄어쓰기·오타·잘못된 조사·어색하게 깨진 글자만 고쳐.
+
+[규칙]
+- 문장 수와 순서는 그대로. 각 번호의 문장을 같은 번호로 돌려줘.
+- 내용·표현·말투·어순은 바꾸지 마. 더 좋은 표현으로 바꾸는 것도 금지. 틀린 것만 고쳐.
+- 숫자·단위·날짜·인명·기업명·기관명은 절대 바꾸지 마. 단, 같은 회사·사람 이름을 문장마다 다르게 쓴 경우(예: 엔비디아/앤비디아)는 흔히 쓰는 한국어 표기 하나로 맞춰.
+- 영어 약어(AI, CEO 등)는 그대로.
+- 고칠 게 없으면 그대로 돌려줘.
+
+[자막]
+{lines}
+
+JSON으로만: {{"segments": ["0번 문장", "1번 문장", ...]}}"""
+    try:
+        out = [str(t).strip() for t in llm.ask_json(prompt, temperature=0.1).get("segments", [])]
+    except Exception as e:
+        print(f"  [맞춤법] 건너뜀: {e}")
+        return sc
+    if len(out) != len(segs):
+        print(f"  [맞춤법] 문장 수가 달라 적용 안 함 ({len(segs)}→{len(out)})")
+        return sc
+    nums = lambda t: sorted(round(v, 2) for v, _, _ in ko_numbers(t))
+    for s, t in zip(segs, out):
+        old = s["text"]
+        if not t or t == old:
+            continue
+        ratio = difflib.SequenceMatcher(None, old.replace(" ", ""), t.replace(" ", "")).ratio()
+        if nums(t) != nums(old) or ratio < 0.8 or abs(len(t) - len(old)) > 6:
+            print(f"  [맞춤법] 바뀐 폭이 커서 원래대로 둠: {old} → {t}")
+            continue
+        s["text"] = t
+        sc["proofread"].append((old, t))
+    print(f"  [맞춤법] 고친 문장 {len(sc['proofread'])}개")
+    for a, b in sc["proofread"]:
+        print(f"    {a} → {b}")
+    return sc
+
+
+def proofread_summary(sc):
+    fixes = sc.get("proofread")
+    if fixes is None:
+        return ""
+    if not fixes:
+        return "✏️ 맞춤법 검수: 고칠 곳 없음"
+    return "✏️ 맞춤법 검수 " + f"{len(fixes)}곳 고침\n" + "\n".join(f"- {a} → {b}" for a, b in fixes[:12])
 
 
 def add_outro(sc, text):

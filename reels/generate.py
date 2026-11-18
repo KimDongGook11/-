@@ -87,7 +87,7 @@ def _news_script():
     print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
     mats = script.gather_materials(pool, main)
     print("3) 대본 작성")
-    sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME)
+    sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")
     try:
         sc, sc["factcheck"] = factcheck.run(sc, mats, skip_last=1)   # 마지막 질문은 사실 확인 대상이 아님
@@ -97,6 +97,8 @@ def _news_script():
     print("5) 원고 검수 (흐름·마지막 질문 연결)")
     sc = script.polish_flow(sc, config.OUTRO_TEXT)
     sc = script.add_outro(sc, config.OUTRO_TEXT)
+    print("6) 자막 맞춤법 검수")
+    sc = script.proofread(sc)
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
             "links": [m["link"] for m in mats]}
@@ -128,6 +130,10 @@ def _history_scripts():
     if config.HISTORY_SHORT:
         print("3) 60초 요약 대본")
         ssc = history.condense_short(lsc, ep)
+    print("4) 자막 맞춤법 검수")
+    lsc = script.proofread(lsc)
+    if ssc:
+        ssc = script.proofread(ssc)
     return lsc, ssc, ep, links
 
 
@@ -226,7 +232,8 @@ def deliver_long(res, offline=False):
         + (f"■ 원본 영상 다운로드 (1080p)\n{url}\n\n" if url else "")
         + f"■ 제목\n{yt_title}\n\n"
         + f"■ 설명\n{desc}\n\n■ 태그\n{', '.join(lsc.get('tags', []))}\n\n"
-        + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8]),
+        + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8])
+        + (f"\n\n{script.proofread_summary(lsc)}" if script.proofread_summary(lsc) else ""),
         buttons=([("✅ 유튜브 게시 (공개)", f"approve:{yrid}")]
                  + ([("🔁 다른 에피소드로 다시 만들기", f"redo:{yrid}")] if res.get("long_only") else [])
                  + [("❌ 유튜브에는 안 올림", f"reject:{yrid}")])
@@ -287,7 +294,8 @@ def deliver(res, offline=False):
         sc, rid, label = res["script"], res["id"], pending.LABEL[series]
         telegram.send_message(
             f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n{qc.summary(res.get('qc'))}\n"
-            + (factcheck.summary(sc.get("factcheck")) + "\n" if sc.get("factcheck") else "") + "\n"
+            + (factcheck.summary(sc.get("factcheck")) + "\n" if sc.get("factcheck") else "")
+            + (script.proofread_summary(sc) + "\n" if script.proofread_summary(sc) else "") + "\n"
             f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +

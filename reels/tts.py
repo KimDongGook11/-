@@ -158,6 +158,35 @@ def _estimate_words(text, total):
     return out
 
 
+def align_to_script(ws, text):
+    """자막 글자는 항상 대본 원문으로. 음성 엔진이 돌려준 단어(숫자를 한글로 읽은 형태, 철자 변형 등)는
+    타이밍에만 쓰고, 대본 단어를 글자 위치 비율로 그 타이밍에 맞춰 얹음."""
+    toks = text.split()
+    if not toks or not ws:
+        return ws
+    if [w for _, _, w in ws] == toks:
+        return ws
+    if len(ws) == len(toks):
+        return [(s, e, t) for (s, e, _), t in zip(ws, toks)]
+    # 엔진 단어들의 글자 누적 비율 → 시각 대응표
+    lens = [max(1, len(w.replace(" ", ""))) for _, _, w in ws]
+    tot = sum(lens)
+    def at(f):   # 글자 비율 f(0~1) → 시각
+        acc = 0
+        for (s, e, _), n in zip(ws, lens):
+            if acc + n >= f * tot:
+                return s + (e - s) * max(0.0, f * tot - acc) / n
+            acc += n
+        return ws[-1][1]
+    tl = [max(1, len(t)) for t in toks]
+    ttot = sum(tl)
+    out, acc = [], 0
+    for t, n in zip(toks, tl):
+        out.append((at(acc / ttot), at((acc + n) / ttot), t))
+        acc += n
+    return out
+
+
 def _one(text, out_mp3, engine, prev="", nxt=""):
     """음성 한 문장 → (오디오 파일, 단어 타이밍 또는 None)"""
     if engine == "typecast":
@@ -242,6 +271,8 @@ def _synth(texts, workdir, lead, tail, engine):
         speech = d - pre - post
         if not ws:
             ws = _estimate_words(text, speech)
+        else:
+            ws = align_to_script(ws, text)
         for s, e, w in ws:
             words.append((t0 + pre + s, t0 + pre + min(e, speech), w, i))
         wavs.append(wav)
