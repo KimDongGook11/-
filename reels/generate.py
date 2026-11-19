@@ -8,6 +8,7 @@
 import argparse
 import datetime as dt
 import shutil
+import signal
 import sys
 import time
 import traceback
@@ -389,6 +390,10 @@ def main():
     series = a.series
     if series == "news" and not a.offline and not _wait_us_close():
         return
+    def _on_cancel(signum, frame):   # Actions 취소·시간 초과 때도 아래 except로 가서 '오늘 했음' 표시를 되돌림
+        raise RuntimeError(f"작업이 중단됨(신호 {signum}: 취소 또는 시간 초과)")
+    signal.signal(signal.SIGTERM, _on_cancel)
+    signal.signal(signal.SIGINT, _on_cancel)
     if a.once_per_day:
         key = "last_daily" if series == "news" else f"last_daily_{series}"
         prev_mark = load_state(key, {})
