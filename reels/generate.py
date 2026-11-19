@@ -105,9 +105,46 @@ def _news_script():
     return sc, sources, meta
 
 
+def _custom_episode():
+    """jobs/history_custom.json 의 date(한국시간 YYYYMMDD)가 오늘이면 자동 선정 대신 그 에피소드·자료를 씀.
+    이미 같은 날 그 에피소드를 만들었으면(episodes 기록) 다시 쓰지 않음."""
+    import json
+    f = config.ROOT / "jobs" / "history_custom.json"
+    if not f.exists():
+        return None
+    try:
+        c = json.loads(f.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  [지정 에피소드] 읽기 실패: {e}")
+        return None
+    if str(c.get("date")) != _today():
+        return None
+    ep = c["ep"]
+    if any(e.get("date", "").startswith(f"h{c['date']}") and e.get("company") == ep.get("company")
+           for e in load_state("episodes", [])):
+        print("  [지정 에피소드] 오늘 이미 만들었어요 → 자동 선정으로")
+        return None
+    return ep, c["material"], c.get("links", [])
+
+
 def _history_scripts():
     """반환: (장편 대본, 60초 대본, 에피소드, 근거 링크)"""
     used = load_state("episodes", [])
+    custom = _custom_episode()
+    if custom:
+        ep, material, links = custom
+        print(f"1) 지정 에피소드(jobs/history_custom.json): {ep.get('company_ko')} {ep.get('year')}년 — {ep.get('episode_ko')}")
+        print("2) 장편 대본(약 5분)")
+        lsc = history.write_long(ep, material, config.BRAND_NAME)
+        ssc = None
+        if config.HISTORY_SHORT:
+            print("3) 60초 요약 대본")
+            ssc = history.condense_short(lsc, ep)
+        print("4) 자막 맞춤법 검수")
+        lsc = script.proofread(lsc)
+        if ssc:
+            ssc = script.proofread(ssc)
+        return lsc, ssc, ep, links
     tried = []
     print("1) 에피소드 선정(지금 화제인 기업 우선) + 위키백과 근거 수집")
     heads = history.hot_headlines()

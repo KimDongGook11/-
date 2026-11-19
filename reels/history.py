@@ -127,7 +127,7 @@ def write_long(ep, material, brand):
 에피소드: {ep['company_ko']} ({ep['company']}), {ep['year']}년 — {ep['episode_ko']}
 
 아래 [자료]에 있는 사실만 근거로 약 5분 분량의 한국어 내레이션 대본을 써.
-
+{('[이번 편 특별 지시 — 아래 규칙보다 우선]' + chr(10) + ep['extra_rules'] + chr(10)) if ep.get('extra_rules') else ''}
 [규칙]
 1. 연도·금액·숫자·인물·인용은 자료에 있는 것만. 확신 없는 디테일은 빼.
 2. 자료 문장을 그대로 번역하지 말고 이야기처럼 새로 풀어 써. 말투는 친근한 존댓말, 다큐 내레이션처럼.
