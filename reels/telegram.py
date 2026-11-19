@@ -88,6 +88,15 @@ def get_updates(offset=None, timeout=0):
     params = {"timeout": timeout, "allowed_updates": json.dumps(["message", "callback_query"])}
     if offset:
         params["offset"] = offset
-    r = requests.get(_api("getUpdates"), params=params, timeout=timeout + 20)
+    import time
+    r = None
+    # 502/5xx가 이어지면(텔레그램 쪽 일시 장애나 큰 업데이트 때문) 잠깐 쉬었다가, 그다음엔 한 건씩 받아 봄
+    for attempt, limit in enumerate((None, None, 1, 1)):
+        q = dict(params, **({"limit": limit} if limit else {}))
+        r = requests.get(_api("getUpdates"), params=q, timeout=timeout + 20)
+        if r.status_code < 500:
+            break
+        print(f"  [텔레그램] getUpdates {r.status_code} → 다시 시도({attempt + 1}/4)")
+        time.sleep(3 + attempt * 3)
     r.raise_for_status()
     return r.json().get("result", [])
