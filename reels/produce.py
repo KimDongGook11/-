@@ -59,7 +59,8 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
                 end += durs[i + 1]
                 busy.add(i + 1)
             ovs.append({"kind": "seq", "pattern": pat, "frames": frames, "start": max(starts[i] + 0.1, HOOK + 0.1),
-                        "end": end, "x": CARD["x"] + 20, "y": CARD["y"] + (CARD["h"] - h) // 2, "fade_out": 0.25})
+                        "end": end, "x": CARD["x"] + 20, "y": CARD["y"] + (CARD["h"] - h) // 2, "fade_out": 0.25,
+                        "chart": True})
             busy.add(i)
             fx.append((starts[i] + 0.1, "whoosh", 0.18))
     count = 0
