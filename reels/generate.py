@@ -75,18 +75,47 @@ def build_caption(sc, sources, series="news"):
             f"🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n{tags}")
 
 
+def _custom_news():
+    """jobs/news_custom.json 의 date(한국시간 YYYYMMDD)가 오늘이면 자동 선정 대신 그 주제·확정 사실로 원픽을 만듦.
+    (예: 장중 기사로 만든 원고를 폐기하고 종가 확정 기사로 다시 만들 때)"""
+    import json
+    f = config.ROOT / "jobs" / "news_custom.json"
+    if not f.exists():
+        return None
+    try:
+        c = json.loads(f.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  [지정 주제] 읽기 실패: {e}")
+        return None
+    if str(c.get("date")) != _today():
+        return None
+    return c
+
+
 def _news_script():
     history_log = load_state("history", [])
-    print("1) 뉴스 수집")
-    items = news.fetch_all()
-    cands, pool = news.rank(items, history_log)
-    if not cands:
-        raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
-    print("2) 오늘의 뉴스 선정")
-    idx, pick = script.pick_story(cands, history_log)
-    main = cands[idx]
-    print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
-    mats = script.gather_materials(pool, main)
+    custom = _custom_news()
+    if custom:
+        print(f"1~2) 지정 주제(jobs/news_custom.json): {custom['topic']}")
+        main = {"title": custom["title"], "source": custom["source"], "link": custom["link"],
+                "summary": custom.get("summary", ""), "related": []}
+        pick = {"topic": custom["topic"]}
+        mats = script.gather_materials([], main)
+        mats.insert(0, {"title": custom["title"], "source": custom["source"], "link": custom["link"],
+                        "summary": custom.get("summary", ""), "body": custom["facts"]})
+        drop = set(custom.get("drop_history", []))   # 폐기한 영상은 '이미 다룬 영상'에서 뺌
+        history_log = [h for h in history_log if h.get("date") not in drop]
+    else:
+        print("1) 뉴스 수집")
+        items = news.fetch_all()
+        cands, pool = news.rank(items, history_log)
+        if not cands:
+            raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
+        print("2) 오늘의 뉴스 선정")
+        idx, pick = script.pick_story(cands, history_log)
+        main = cands[idx]
+        print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
+        mats = script.gather_materials(pool, main)
     print("3) 대본 작성")
     sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")

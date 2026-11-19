@@ -1,0 +1,13 @@
+{
+  "date": "20261120",
+  "note": "사용자 요청(11/20): 장중 시초가 기사로 만든 원픽(n20261120-063059)을 폐기하고 첫날 종가 확정 기준으로 다시 제작. 이 날짜(한국시간)에만 적용",
+  "topic": "앤트로픽 상장 첫날: 시초가 111.50달러로 34% 급등 출발했지만 장중 밀려 97.17달러(공모가 대비 +17%)로 마감",
+  "title": "Anthropic closes first day at $97.17 per share in landmark moment for AI",
+  "source": "CNBC",
+  "link": "https://www.cnbc.com/2026/11/19/anthropic-ipo-ant-live-updates.html",
+  "summary": "Anthropic (ANT) priced its IPO at $83, opened at $111.50 and closed its first trading day at $97.17, up about 17% from the offer price.",
+  "facts": "[확정 사실 - 2026년 11월 19일(미국) 정규장 마감 기준. 장중 수치를 종가처럼 쓰지 말 것]\n- 앤트로픽(티커 ANT, 나스닥) 공모가: 83달러\n- 시초가: 111.50달러 (공모가 대비 약 34% 높게 출발)\n- 첫날 종가: 97.17달러 (공모가 대비 약 17% 상승, 시초가 대비 약 13% 하락) — 장중 상승 폭을 절반가량 반납하고 마감\n- 종가 기준 기업가치: 약 1조 7,600억 달러 (CNN). 시초가 무렵 거론된 '2조 달러'는 종가 기준이 아님\n- 같은 날 뉴욕 증시도 전반적으로 하락 (Stock Titan: 'Stocks Slide on the Day Anthropic Begins Trading')\n- 출처: CNBC 'Anthropic closes first day at $97.17 per share', Forbes 'Stock Closes Day At $97—Up More Than 17%', CNN 'Anthropic valued at $1.76 trillion after historic first day of trading'\n원고 지침: 결과(종가)가 이미 나왔으므로 '종가는 어떻게 될까', '거래를 시작했다' 같은 진행형·예측 표현을 쓰지 말고, 화려한 출발 → 장중 하락 → 공모가 대비 17% 상승 마감의 흐름으로 쓸 것.",
+  "drop_history": [
+    "n20261120-063059"
+  ]
+}
