@@ -346,7 +346,32 @@ def wait_for_decision(rid, minutes):
     return result
 
 
+def direct_approve(which):
+    """텔레그램 버튼을 못 받을 때(텔레그램 장애 등) 대기 중인 영상을 바로 게시. which: history,youtube,news 쉼표 구분.
+    텔레그램 알림은 보내 보되 실패해도 게시는 계속."""
+    for name in ("send_message", "send_photo", "send_video", "send_document"):
+        f = getattr(telegram, name)
+        def safe(*a, _f=f, _n=name, **k):
+            try:
+                return _f(*a, **k)
+            except Exception as e:
+                print(f"  [텔레그램] {_n} 실패(무시): {e}")
+        setattr(telegram, name, safe)
+    for w in [x.strip() for x in which.split(",") if x.strip()]:
+        p = pending.load(w)
+        if not p:
+            print(f"  [직접 승인] {w}: 대기 중인 영상 없음")
+            continue
+        print(f"  [직접 승인] {w}: {p.get('hook_title')} ({p['id']})")
+        ok = _approve(p)
+        print(f"  [직접 승인] {w}: {'완료' if ok else '실패'}")
+
+
 def main():
+    direct = os.environ.get("APPROVE_DIRECT", "").strip()
+    if direct:
+        direct_approve(direct)
+        return
     if not telegram.enabled():
         print("텔레그램 설정 없음")
         return
