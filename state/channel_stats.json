@@ -1,10 +1,109 @@
 {
-  "collected_at": "2026-11-16T03:24:22+00:00",
+  "collected_at": "2026-11-19T03:23:49+00:00",
   "channel": "경제원픽_기업탐구생활",
-  "subscribers": 3,
-  "total_views": 1863,
-  "video_count": 10,
+  "subscribers": 5,
+  "total_views": 1937,
+  "video_count": 19,
   "videos": [
+    {
+      "id": "nh-bHY8xEwo",
+      "title": "[증시] 앤트로픽 공모가 [83달러], 상장일 잡혔다 | 오늘의 원픽 #004",
+      "published": "2026-11-18T22:42:20Z",
+      "kind": "shorts",
+      "duration_s": 65,
+      "privacy": "public",
+      "views": 21,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "0BK0Fe0tjvY",
+      "title": "월가의 비난 속에서 AI 시대를 연 엔비디아의 2006년 결정",
+      "published": "2026-11-18T10:10:19Z",
+      "kind": "long",
+      "duration_s": 264,
+      "privacy": "public",
+      "views": 4,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "V8wL_cqHSxs",
+      "title": "월가가 비난한 [엔비디아] | 그때 그 결정 EP.6 · 엔비디아",
+      "published": "2026-11-18T10:10:05Z",
+      "kind": "shorts",
+      "duration_s": 32,
+      "privacy": "public",
+      "views": 446,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "IE1iSo3_11s",
+      "title": "[반도체] 미국 규제에 [20% 폭락], AI 주가 흔들리나 | 오늘의 원픽 #003",
+      "published": "2026-11-17T22:30:31Z",
+      "kind": "shorts",
+      "duration_s": 72,
+      "privacy": "public",
+      "views": 118,
+      "likes": 5,
+      "comments": 0
+    },
+    {
+      "id": "Bp39SfNPjUE",
+      "title": "[증시] AI [1.4조 달러] 상장 앞두고 증시 급락 | 오늘의 원픽 #002",
+      "published": "2026-11-16T22:54:37Z",
+      "kind": "shorts",
+      "duration_s": 42,
+      "privacy": "public",
+      "views": 145,
+      "likes": 4,
+      "comments": 0
+    },
+    {
+      "id": "ix2pOZVokqk",
+      "title": "파산 직전 [스페이스X]의 반전 | 그때 그 결정 EP.5 · 스페이스X",
+      "published": "2026-11-16T20:18:55Z",
+      "kind": "shorts",
+      "duration_s": 40,
+      "privacy": "public",
+      "views": 838,
+      "likes": 3,
+      "comments": 0
+    },
+    {
+      "id": "TWADiValXC0",
+      "title": "3연속 실패 후 파산 위기, 전 재산을 쏟아부은 일론 머스크의 결단",
+      "published": "2026-11-16T20:18:09Z",
+      "kind": "long",
+      "duration_s": 276,
+      "privacy": "public",
+      "views": 72,
+      "likes": 4,
+      "comments": 0
+    },
+    {
+      "id": "7fs5lSNSpDs",
+      "title": "파산 직전 애플을 구한 [결단] | 그때 그 결정 EP.4 · 애플",
+      "published": "2026-11-16T07:59:41Z",
+      "kind": "shorts",
+      "duration_s": 43,
+      "privacy": "public",
+      "views": 11,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "i-Zfv03hvWw",
+      "title": "파산 직전 애플을 살려낸 스티브 잡스의 1억 5천만 달러 결단",
+      "published": "2026-11-16T07:58:31Z",
+      "kind": "long",
+      "duration_s": 290,
+      "privacy": "public",
+      "views": 84,
+      "likes": 1,
+      "comments": 0
+    },
     {
       "id": "XKuM53DiUgk",
       "title": "[반도체] 젠슨 황, 엔비디아 [복귀] 논의 | 오늘의 원픽 #001",
@@ -12,7 +111,7 @@
       "kind": "shorts",
       "duration_s": 41,
       "privacy": "public",
-      "views": 2,
+      "views": 4,
       "likes": 1,
       "comments": 0
     },
@@ -23,7 +122,7 @@
       "kind": "shorts",
       "duration_s": 43,
       "privacy": "public",
-      "views": 3,
+      "views": 4,
       "likes": 1,
       "comments": 0
     },
@@ -34,8 +133,8 @@
       "kind": "long",
       "duration_s": 334,
       "privacy": "public",
-      "views": 2,
-      "likes": 1,
+      "views": 6,
+      "likes": 2,
       "comments": 0
     },
     {
@@ -45,7 +144,7 @@
       "kind": "long",
       "duration_s": 339,
       "privacy": "public",
-      "views": 4,
+      "views": 3,
       "likes": 1,
       "comments": 0
     },
@@ -56,7 +155,7 @@
       "kind": "long",
       "duration_s": 222,
       "privacy": "public",
-      "views": 6,
+      "views": 7,
       "likes": 2,
       "comments": 0
     },
@@ -67,7 +166,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 5,
+      "views": 4,
       "likes": 3,
       "comments": 0
     },
@@ -78,7 +177,7 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 4,
+      "views": 3,
       "likes": 1,
       "comments": 0
     },
@@ -89,7 +188,7 @@
       "kind": "shorts",
       "duration_s": 44,
       "privacy": "public",
-      "views": 628,
+      "views": 613,
       "likes": 2,
       "comments": 0
     },
@@ -100,7 +199,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 1210,
+      "views": 1202,
       "likes": 10,
       "comments": 0
     },
@@ -111,7 +210,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 3,
+      "views": 2,
       "likes": 3,
       "comments": 0
     }
