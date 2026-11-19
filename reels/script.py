@@ -302,6 +302,10 @@ def _number(n):
 def norm_segments(items):
     segs = []
     for s in items or []:
+        if isinstance(s, str):   # 가벼운 모델이 문장만 문자열로 돌려줄 때
+            s = {"text": s}
+        if not isinstance(s, dict):
+            continue
         text = re.sub(r"^\s*\d{1,2}\s*[.)]\s+", "", str(s.get("text", ""))).strip()   # AI가 붙인 줄 번호 제거
         if text:
             segs.append({"text": text,
