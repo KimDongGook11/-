@@ -1,0 +1,31 @@
+name: 장편 썸네일 교체
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "장편 보관 태그 (예: long-h20261119-174428)"
+        required: true
+      file:
+        description: "저장소 안의 새 썸네일 파일"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: 썸네일 교체
+        run: python -m reels.thumb_replace "${{ inputs.tag }}" "${{ inputs.file }}"
