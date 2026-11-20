@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: reels-check
@@ -20,7 +21,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 200
+    timeout-minutes: 330
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -33,6 +34,7 @@ jobs:
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
       APPROVE_DIRECT: ${{ inputs.approve }}
+      APPROVAL_WATCH_MIN: "150"   # 대기 영상이 남아 있으면 최대 150분 실시간 확인, 끝나면 다음 작업이 이어 감
       YT_PRIVACY: ${{ vars.YT_PRIVACY }}
       YT_SHORTS_TIME: ${{ vars.YT_SHORTS_TIME }}
       OUTRO_TEXT: ${{ vars.OUTRO_TEXT }}
@@ -84,3 +86,12 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -q -m "state: approval $(date -u +%FT%H%M)"
           for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+      - name: 버튼 감시 이어 가기 (대기 영상이 남아 있으면 승인 확인 작업 시작)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git pull -q --rebase || git rebase --abort || true
+          if python -m reels.approval --need-watch; then
+            gh api -X POST repos/${{ github.repository }}/actions/workflows/approval.yml/dispatches -f ref=main && echo "버튼 감시 작업을 이어서 시작했어요"
+          fi

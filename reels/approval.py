@@ -17,7 +17,7 @@ from .utils import git_push_state, load_state, save_state
 HELP = ("명령어\n/new - 오늘의 경제 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
         "/status - 승인 대기 중인 영상 보기\n/approve - 대기 중인 오늘의 경제 영상 게시 (버튼이 없을 때)\n"
         "/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
-        "영상이 온 뒤 2시간 안에 누른 버튼은 바로 처리되고, 그 뒤에는 최대 30분 안에 처리돼요.")
+        "버튼은 보통 1분 안에 처리돼요. (대기 영상이 남아 있는 동안 계속 확인해요)")
 
 
 def _owner(uid):
@@ -367,6 +367,61 @@ def direct_approve(which):
         print(f"  [직접 승인] {w}: {'완료' if ok else '실패'}")
 
 
+def _sync():
+    """GitHub Actions 안에서만: 다른 작업이 올린 최신 상태(새 대기 영상 등)를 받아옴."""
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return
+    import subprocess
+    git_push_state("state: approval watch")   # 바뀐 게 있으면 먼저 올림(작업 트리를 깨끗하게)
+    if subprocess.run(["git", "pull", "-q", "--rebase"], cwd=config.ROOT).returncode != 0:
+        subprocess.run(["git", "rebase", "--abort"], cwd=config.ROOT)
+
+
+def _other_waiting():
+    return any(p.get("waiting_until") and dt.datetime.fromisoformat(p["waiting_until"]) > _now()
+               for p in pending.all_items())
+
+
+def _open_items(hours=48):
+    """아직 버튼을 안 누른 대기 영상 (너무 오래된 건 제외)."""
+    out = []
+    for p in pending.all_items():
+        try:
+            t = dt.datetime.fromisoformat(p.get("created_at", ""))
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=dt.timezone.utc)
+        except Exception:
+            t = _now()
+        if _now() - t < dt.timedelta(hours=hours):
+            out.append(p)
+    return out
+
+
+def watch(minutes):
+    """대기 영상이 남아 있는 동안 텔레그램을 실시간 확인 (예약 점검이 몇 시간씩 빠져도 버튼이 바로 처리되게).
+    다른 작업이 실시간 대기를 시작하면 버튼을 가로채지 않도록 바로 물러남. 반환: 다시 만들 시리즈 또는 None"""
+    until = _now() + dt.timedelta(minutes=minutes)
+    print(f"  [감시] 대기 영상 {len(_open_items())}개 → 최대 {minutes}분 동안 버튼 확인")
+    while _now() < until:
+        _sync()
+        if _other_waiting():
+            print("  [감시] 다른 작업이 실시간 대기를 시작해서 넘겨줌")
+            return None
+        if not _open_items():
+            print("  [감시] 대기 영상이 모두 처리됨")
+            return None
+        redo, _ = handle(_fetch(timeout=50))
+        if redo:
+            return redo
+    print("  [감시] 시간 끝 (남은 영상은 다음 점검이 이어서 확인)")
+    return None
+
+
+def need_watch():
+    """워크플로 마지막 단계용: 버튼을 기다리는 영상이 남았고 실시간 대기 중인 작업이 없으면 0(이어서 감시 필요)."""
+    return 0 if (_open_items() and not _other_waiting()) else 1
+
+
 def main():
     direct = os.environ.get("APPROVE_DIRECT", "").strip()
     if direct:
@@ -382,6 +437,9 @@ def main():
         print("영상 작업이 실시간 대기 중이라 이번 점검은 건너뜁니다.")
     else:
         redo, _ = handle(_fetch(timeout=0))
+        mins = int(os.environ.get("APPROVAL_WATCH_MIN", "0") or 0)
+        if not redo and mins > 0 and _open_items():
+            redo = watch(mins)
     gh_out = os.environ.get("GITHUB_OUTPUT")
     if gh_out:
         with open(gh_out, "a") as f:
@@ -390,4 +448,7 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+    if "--need-watch" in sys.argv:
+        sys.exit(need_watch())
     main()
