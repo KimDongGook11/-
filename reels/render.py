@@ -289,11 +289,19 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
              "-t", f"{total:.3f}", *v, *a, "-movflags", "+faststart", out], timeout=limit)
     except RuntimeError as e:
         # 11/19~20 그때 그 결정 1분 요약이 주가 차트 겹치기에서 두 번 연속 멈춤 → 차트만 빼고 한 번 더
-        if "시간 초과" not in str(e) or not any(o.get("chart") for o in overlays):
+        # 11/21 원픽: 차트를 빼도 숫자 애니메이션(시간을 미룬 이미지 묶음)이 남아 또 멈춤 → 그다음엔 묶음 겹치기를 모두 빼고 한 번 더
+        if "시간 초과" not in str(e):
             raise
-        print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 주가 차트 없이 다시 렌더")
+        if any(o.get("chart") for o in overlays):
+            print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 주가 차트 없이 다시 렌더")
+            rest = [o for o in overlays if not o.get("chart")]
+        elif any(o["kind"] == "seq" for o in overlays):
+            print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 숫자 애니메이션 없이 다시 렌더")
+            rest = [o for o in overlays if o["kind"] != "seq"]
+        else:
+            raise
         return compose(W=W, H=H, bg=bg, narration=narration, total=total, ass=ass,
-                       overlays=[o for o in overlays if not o.get("chart")], out=out, sfx=sfx, bgm=bgm,
+                       overlays=rest, out=out, sfx=sfx, bgm=bgm,
                        progress=progress, youtube=youtube)
     print(f"  [렌더] 완료: {out} ({total:.1f}초)")
     return out
