@@ -235,6 +235,17 @@ def _approve(p):
     return True
 
 
+def _sent_before(msg, p):
+    """텔레그램 메시지가 대기 영상이 텔레그램에 도착하기 전에 보낸 것인지."""
+    try:
+        sent = dt.datetime.fromisoformat(p.get("sent_at") or p.get("created_at") or "")
+        if sent.tzinfo is None:
+            sent = sent.replace(tzinfo=dt.timezone.utc)
+        return dt.datetime.fromtimestamp(int(msg.get("date", 0)), dt.timezone.utc) < sent
+    except Exception:
+        return False
+
+
 def handle(updates):
     """반환: (다시 만들 시리즈 또는 None, 처리가 끝난 영상 id 집합)"""
     redo, finished = None, set()
@@ -279,6 +290,13 @@ def handle(updates):
             series = "history" if text.startswith(("/history", "/그때")) else "news" if text.startswith("/new") else None
             if series:
                 old = pending.load(series)
+                if old and _sent_before(m, old):
+                    # 11/21: 첫 제작 실패 뒤 보낸 /new가 늦게 처리돼, 그사이 도착한 새 영상을 버리고 다시 만들다 실패
+                    print(f"  [텔레그램] {text[:10]}는 대기 영상보다 먼저 보낸 명령이라 무시")
+                    telegram.send_message(f"ℹ️ 보내신 {text.split()[0]} 명령보다 새 [{pending.LABEL[series]}] 영상이 "
+                                          "나중에 도착해서, 그 영상을 그대로 두었어요. 위 영상의 버튼을 눌러 주세요. "
+                                          f"정말 새로 만들려면 {text.split()[0]} 를 한 번 더 보내 주세요.")
+                    continue
                 if old:
                     _clear(old)
                     finished.add(old["id"])

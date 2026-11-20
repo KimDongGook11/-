@@ -4,6 +4,7 @@
 → 챕터 카드 → 아웃트로 → 진행 바 → 단어별 카라오케 자막, 소리: 내레이션 + 효과음 + 배경음악(자동으로 줄임)
 """
 import wave
+from pathlib import Path
 
 from . import config
 from . import fonts
@@ -230,7 +231,7 @@ def build_sfx(events, total, out):
 
 # ---------------- 합성 ----------------
 def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=None,
-            progress=True, youtube=False):
+            progress=True, youtube=False, safe=False):
     """overlays: dict 목록
        {"kind": "image", "path", "start", "end", "x", "y", "fade_in", "fade_out"}
        {"kind": "seq", "pattern", "frames", "start", "end", "x", "y", "fade_out"}"""
@@ -264,6 +265,7 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
     fd = fonts.fonts_dir()
     fontsdir = f":fontsdir={fd}" if fd else ""
     fc.append(f"[{last}]ass={ass}{fontsdir}[vout]")
+    n_video = len(fc)
 
     fc.append(f"[1:a]apad=whole_dur={total:.3f},aresample=48000,asplit=2[n1][n2]")
     mix = ["[n1]"]
@@ -284,6 +286,8 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
               f"loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[aout]")
     v, a = (YT_VIDEO, YT_AUDIO) if youtube else (IG_VIDEO, IG_AUDIO)
     limit = int(max(600, total * 5))   # 보통 길이의 2~3배. 이보다 오래 걸리면 멈춘 것
+    if safe:
+        return _compose_split(inputs, fc[:n_video], fc[n_video:], total, v, a, out, limit)
     try:
         run(["ffmpeg", "-nostdin", "-y", *inputs, "-filter_complex", ";".join(fc), "-map", "[vout]", "-map", "[aout]",
              "-t", f"{total:.3f}", *v, *a, "-movflags", "+faststart", out], timeout=limit)
@@ -299,11 +303,34 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
             print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 숫자 애니메이션 없이 다시 렌더")
             rest = [o for o in overlays if o["kind"] != "seq"]
         else:
-            raise
+            # 11/21 원픽: 차트·숫자 애니메이션을 다 빼고도 멈춤 → 겹치기 문제가 아님.
+            # 마지막 안전 모드: 배경 영상 시간 정보를 새로 맞추고, 영상·소리를 따로 만든 뒤 합침
+            print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 안전 모드(배경 다시 정리 + 영상·소리 따로 렌더)")
+            clean = Path(str(bg)).with_name("bg_clean.mp4")
+            run(["ffmpeg", "-nostdin", "-y", "-fflags", "+genpts", "-i", bg, "-vf", f"fps={FPS},setpts=N/{FPS}/TB",
+                 "-t", f"{total + 1:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", clean],
+                timeout=limit)
+            return compose(W=W, H=H, bg=clean, narration=narration, total=total, ass=ass,
+                           overlays=overlays, out=out, sfx=sfx, bgm=bgm,
+                           progress=progress, youtube=youtube, safe=True)
         return compose(W=W, H=H, bg=bg, narration=narration, total=total, ass=ass,
                        overlays=rest, out=out, sfx=sfx, bgm=bgm,
                        progress=progress, youtube=youtube)
     print(f"  [렌더] 완료: {out} ({total:.1f}초)")
+    return out
+
+
+def _compose_split(inputs, vfc, afc, total, v, a, out, limit):
+    """안전 모드: 영상(소리 없이)과 소리를 각각 따로 만든 뒤 다시 인코딩 없이 합침."""
+    outp = Path(str(out))
+    vid, aud = outp.with_name(outp.stem + "_v.mp4"), outp.with_name(outp.stem + "_a.m4a")
+    run(["ffmpeg", "-nostdin", "-y", *inputs, "-filter_complex", ";".join(vfc), "-map", "[vout]", "-an",
+         "-t", f"{total:.3f}", *v, vid], timeout=limit)
+    run(["ffmpeg", "-nostdin", "-y", *inputs, "-filter_complex", ";".join(afc), "-map", "[aout]", "-vn",
+         "-t", f"{total:.3f}", *a, aud], timeout=limit)
+    run(["ffmpeg", "-nostdin", "-y", "-i", vid, "-i", aud, "-map", "0:v", "-map", "1:a", "-c", "copy",
+         "-t", f"{total:.3f}", "-movflags", "+faststart", out], timeout=limit)
+    print(f"  [렌더] 안전 모드 완료: {out} ({total:.1f}초)")
     return out
 
 

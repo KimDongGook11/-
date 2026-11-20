@@ -13,7 +13,12 @@ def run(cmd, quiet=True, timeout=RUN_TIMEOUT):
     cmd = [str(c) for c in cmd]
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as e:
+        # 멈춘 지점을 알 수 있게 ffmpeg 마지막 진행 로그를 남김 (frame=…, time=… 줄)
+        err = e.stderr.decode("utf-8", "replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+        tail = "\n".join(err.replace("\r", "\n").strip().splitlines()[-8:])
+        if tail:
+            print(f"  [멈춘 명령 마지막 로그]\n{tail}")
         raise RuntimeError(f"명령 시간 초과({timeout // 60}분, 멈춤): {' '.join(cmd[:6])} ...")
     if p.returncode != 0:
         tail = "\n".join(p.stderr.strip().splitlines()[-25:])

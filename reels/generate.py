@@ -379,7 +379,7 @@ def deliver(res, offline=False):
             res["tg_message_id"] = telegram.send_message(
                 f"⚠️ 영상 파일 전송이 실패해서 링크로 보내요.\n{link}\n\n" + cap, buttons=buttons)
     pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode", "long")}
-                 | {"hook_title": res["script"]["hook_title"], "tag": res["script"].get("tag", ""),
+                 | {"sent_at": dt.datetime.now(dt.timezone.utc).isoformat(), "hook_title": res["script"]["hook_title"], "tag": res["script"].get("tag", ""),
                     "hashtags": res["script"].get("hashtags", []), "brand": res["script"].get("brand", ""),
                     "question": res["script"].get("question") or res["script"]["segments"][-1]["text"]})
 
