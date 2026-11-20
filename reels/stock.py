@@ -1,11 +1,13 @@
 """Pixabay 무료 스톡 영상: 문장마다 2~4초 단위로 컷을 나눠 배경 샷 목록을 만듭니다.
 - 세로 영상(릴스)이면 세로 클립 → 4K/고화질 순으로 우선
-- 같은 클립은 최대한 다시 쓰지 않고, 다시 쓸 때는 다른 구간을 씀"""
+- 같은 클립은 최대한 다시 쓰지 않고, 다시 쓸 때는 다른 구간을 씀
+- 최근 영상들에 쓴 클립·같은 촬영자(같은 배우가 나오는 시리즈)는 피함 (state/clips_used.json)"""
 import random
 
 import requests
 
 from . import config
+from .utils import load_state, save_state
 
 API = "https://pixabay.com/api/videos/"
 FALLBACK_QUERIES = ["business meeting", "stock market screen", "city skyline", "office building", "container port"]
@@ -22,7 +24,7 @@ def _search(q, cache):
         return cache[q]
     try:
         r = requests.get(API, params={"key": config.PIXABAY_API_KEY, "q": q[:100], "video_type": "film",
-                                      "per_page": 40, "safesearch": "true"}, timeout=20)
+                                      "per_page": 100, "safesearch": "true"}, timeout=20)
         r.raise_for_status()
         hits = [h for h in r.json().get("hits", []) if not _blocked(h)]
     except Exception as e:
@@ -107,6 +109,28 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
 
     cache, files, used_ids, plan = {}, {}, set(), []
     clip_count = 0
+    hist = load_state("clips_used", {}) or {}
+    recent_ids = set(hist.get("ids", []))           # 최근 영상들에 쓴 클립
+    recent_users = set(hist.get("users", []))       # 최근 영상들에 쓴 촬영자
+    user_n = {}                                     # 이번 영상에서 촬영자별 클립 수
+    new_ids, new_users = [], []
+
+    def choose(pool):
+        """같은 사람이 반복해서 나오지 않게: 새 클립·새 촬영자 → 최근 촬영자 → 최근 클립 순으로 고름."""
+        fresh = [h for h in pool if h["id"] not in used_ids]
+        tiers = [
+            [h for h in fresh if h["id"] not in recent_ids and h.get("user_id") not in recent_users
+             and user_n.get(h.get("user_id"), 0) < 1],
+            [h for h in fresh if h["id"] not in recent_ids and user_n.get(h.get("user_id"), 0) < 2],
+            [h for h in fresh if user_n.get(h.get("user_id"), 0) < 2],
+            fresh,
+        ]
+        top = {h["id"] for h in pool[:30]}   # 관련도 순 상위 안에서만 (엉뚱한 화면 방지)
+        for k, t in enumerate(tiers):
+            t = [h for h in t if h["id"] in top] or (t if k == len(tiers) - 1 else [])
+            if t:
+                return t[0]
+        return None
     for i, (seg, lens) in enumerate(zip(segments, cuts)):
         kw = (seg.get("keywords") or "business meeting").strip()
         ws = kw.split()
@@ -123,7 +147,7 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 break
         got = []
         for L in lens:
-            hit = next((h for h in pool if h["id"] not in used_ids), None) if clip_count < max_clips else None
+            hit = choose(pool) if clip_count < max_clips else None
             if hit is None and files:            # 새 클립이 없으면 이미 받은 클립의 다른 구간 재사용
                 hid = random.choice(list(files))
                 path, dur = files[hid]
@@ -133,6 +157,9 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 got.append((None, 0.0, L))
                 continue
             used_ids.add(hit["id"])
+            user_n[hit.get("user_id")] = user_n.get(hit.get("user_id"), 0) + 1
+            new_ids.append(hit["id"])
+            new_users.append(hit.get("user_id"))
             v = _rendition(hit, vertical, card)
             if not v:
                 got.append((None, 0.0, L))
@@ -149,5 +176,10 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 got.append((None, 0.0, L))
         plan.extend(got)
         print(f"  [영상] {i+1}번 문장 '{kw}' → 컷 {len(lens)}개")
-    print(f"  [영상] 클립 {clip_count}개, 컷 {len(plan)}개")
+    reused = sum(1 for i in new_ids if i in recent_ids)
+    print(f"  [영상] 클립 {clip_count}개, 컷 {len(plan)}개 (최근 영상과 겹친 클립 {reused}개, 촬영자 {len(set(new_users))}명)")
+    if new_ids:
+        save_state("clips_used", {"ids": (hist.get("ids", []) + new_ids)[-600:],
+                                  "users": [u for u in (hist.get("users", []) + list(dict.fromkeys(new_users)))
+                                            if u is not None][-200:]})
     return plan
