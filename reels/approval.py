@@ -67,9 +67,10 @@ def _local_video(p):
     return path
 
 
-def _publish_at(series="news"):
-    """시리즈별 고정 공개 시각(한국시간, config.YT_SLOTS)이 아직 안 지났으면 그 시각(UTC ISO), 지났으면 None(바로 공개)."""
-    hhmm = (config.YT_SLOTS.get(series) or "").strip()
+def _publish_at(series="news", slot=None):
+    """고정 공개 시각(한국시간)이 아직 안 지났으면 그 시각(UTC ISO), 지났으면 None(바로 공개).
+    slot: 영상마다 정한 시각(주말 12:00 그때 그 결정 등). 없으면 시리즈 기본값(config.YT_SLOTS)."""
+    hhmm = (slot or config.YT_SLOTS.get(series) or "").strip()
     try:
         h, m = (int(x) for x in hhmm.split(":"))
     except ValueError:
@@ -153,7 +154,7 @@ def _upload_short(p):
     """릴스를 유튜브 쇼츠로도 게시. 성공 True."""
     series = p.get("series", "news")
     title, desc, tags = _shorts_meta(p)
-    at = _publish_at(series)
+    at = _publish_at(series, p.get("slot"))
     try:
         vid, st = youtube.upload(_local_video(p), title, desc, tags, category="27" if series == "history" else "25",
                                  publish_at=at, privacy=config.env("YT_PRIVACY", "public"), thumb=_cover(p))
@@ -169,7 +170,7 @@ def _upload_short(p):
         meta = {k: p.get(k) for k in ("hook_title", "brand", "question", "caption", "links", "hashtags",
                                        "yt_title", "title_tags")}
         _link_history(p["id"], short=vid, short_title=title, short_tags=tags, short_meta=meta)
-    when = (f"{config.YT_SLOTS.get(series)} 예약 공개" if at else f"상태: {st}")
+    when = (f"{p.get('slot') or config.YT_SLOTS.get(series)} 예약 공개" if at else f"상태: {st}")
     if series == "history" and config.HISTORY_LONG:
         tip = "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 이번 편 장편을 연결해 두면 장편 조회수에 도움이 돼요."
     else:

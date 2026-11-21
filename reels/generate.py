@@ -473,6 +473,12 @@ def main():
     if a.offline:
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
     series = a.series
+    slot = None
+    if (series == "news" and a.once_per_day and not a.offline and config.WEEKEND_HISTORY
+            and dt.datetime.now(KST).weekday() >= 5):   # 예약 자동 실행만 (주말에 /new로 직접 부르면 원픽)
+        # 주말 12:00 자리는 원픽 대신 그때 그 결정 (주말엔 하루 2편: 12:00 + 18:00)
+        print("주말이라 12:00 자리는 '그때 그 결정'으로 만들어요.")
+        series, slot = "history", config.YT_SLOTS["news"]
     if series == "us" and not a.offline and (not _wait_us_close() or not _us_session_today()):
         return
     if series == "kr" and not a.offline and not _kr_ready():
@@ -482,7 +488,8 @@ def main():
     signal.signal(signal.SIGTERM, _on_cancel)
     signal.signal(signal.SIGINT, _on_cancel)
     if a.once_per_day:
-        key = "last_daily" if series == "news" else f"last_daily_{series}"
+        key = ("last_daily" if series == "news" else "last_daily_history_noon" if slot
+               else f"last_daily_{series}")
         prev_mark = load_state(key, {})
         if prev_mark.get("date") == _today():
             print("오늘 자동 제작은 이미 했어요. 건너뜁니다.")
@@ -494,6 +501,8 @@ def main():
     try:
         while True:
             res = make_reel(series, offline=a.offline)
+            if slot:
+                res["slot"] = slot      # 유튜브 공개 시각을 시리즈 기본값 대신 이 시각으로
             if a.no_deliver:
                 break
             deliver(res, offline=a.offline)
@@ -506,6 +515,7 @@ def main():
             if kind != "redo":
                 break
             series = nxt
+            slot = slot if nxt == "history" else None
     except Exception as e:
         traceback.print_exc()
         if a.once_per_day and not delivered:   # 전송 전에 실패하면 '오늘 했음' 표시를 되돌려 다시 시도할 수 있게

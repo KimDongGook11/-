@@ -26,7 +26,9 @@ IG_ACCESS_TOKEN = env("IG_ACCESS_TOKEN")
 # 앞에서부터 차례로 시도하고, 실패하면 다음 모델로 넘어갑니다.
 GEMINI_MODELS = [m.strip() for m in env(
     "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest").split(",") if m.strip()]
-BRAND_NAME = env("BRAND_NAME", "오늘의 글로벌 경제")
+BRAND_NAME = env("BRAND_NAME", "경제원픽")
+if BRAND_NAME == "오늘의 글로벌 경제":   # 2026-11-21 채널명 변경(경제원픽). 예전 기본값이 Variables에 남아 있어도 새 이름으로
+    BRAND_NAME = "경제원픽"
 TTS_VOICE = env("TTS_VOICE", "ko-KR-SunHiNeural")   # 남성: ko-KR-InJoonNeural
 TTS_RATE = env("TTS_RATE", "+12%")
 TTS_ENGINE = env("TTS_ENGINE", "typecast" if env("TYPECAST_API_KEY") else "edge")   # edge | typecast | gemini | gtts | dummy
@@ -64,6 +66,8 @@ OUTROS = {
     "kr": env("KR_OUTRO_TEXT", "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!"),
 }
 OUTRO_TEXT = OUTROS["news"]
+# 주말(토·일)에는 그때 그 결정을 하루 2편: 12:00(원픽 자리, daily.yml) + 18:00(history.yml). 끄려면 WEEKEND_HISTORY=false
+WEEKEND_HISTORY = env("WEEKEND_HISTORY", "true").lower() == "true"
 # 채널 핸들 (설명란 구독 링크용). 2026-11-21 핸들 변경 완료 → 기본값. 다르게 쓰려면 Variables에 CHANNEL_HANDLE
 CHANNEL_HANDLE = env("CHANNEL_HANDLE", "@econonepick")
 

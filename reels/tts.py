@@ -20,9 +20,9 @@ PAD = 0.25  # 문장 사이 쉬는 시간(초)
 async def _edge(text, out_mp3):
     import edge_tts
     try:
-        com = edge_tts.Communicate(text, config.TTS_VOICE, rate=config.TTS_RATE, boundary="WordBoundary")
+        com = edge_tts.Communicate(text, edge_voice(), rate=config.TTS_RATE, boundary="WordBoundary")
     except TypeError:   # 예전 버전은 boundary 옵션이 없고 기본이 단어 단위
-        com = edge_tts.Communicate(text, config.TTS_VOICE, rate=config.TTS_RATE)
+        com = edge_tts.Communicate(text, edge_voice(), rate=config.TTS_RATE)
     words = []
     with open(out_mp3, "wb") as f:
         async for ch in com.stream():
@@ -47,7 +47,7 @@ def _gemini(text, out_wav):
     models.sort(key=lambda n: ("flash" not in n, n), reverse=False)
     body = {"contents": [{"parts": [{"text": f"차분하고 또렷한 뉴스 내레이터 톤으로 읽어 주세요: {text}"}]}],
             "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {
-                "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": config.env("GEMINI_VOICE", "Kore")}}}}}
+                "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": GEMINI_BY_SERIES.get(_series) or config.env("GEMINI_VOICE", "Kore")}}}}}
     r = requests.post(f"{base}/models/{models[0]}:generateContent", json=body, headers=h, timeout=120)
     r.raise_for_status()
     pcm = base64.b64decode(r.json()["candidates"][0]["content"]["parts"][0]["inlineData"]["data"])
@@ -60,13 +60,23 @@ def _gemini(text, out_wav):
 
 TC_API = "https://api.typecast.ai"
 PILJAE = "tc_68257f68bc6e3c161ab5078d"
-# 시리즈별 목소리 (2026-11-17 사용자 결정: 오늘의 원픽 = 서현, 그때 그 결정 = 필재). ID 또는 한글 이름
+# 시리즈별 목소리 (2026-11-21 사용자 결정: 평일 콘텐츠(미국 마감·원픽·국내 마감) = 여성 서현, 그때 그 결정 = 필재). ID 또는 한글 이름
+DAY_VOICE = "서현"
 VOICE_BY_SERIES = {
-    "news": lambda: config.env("TYPECAST_VOICE_NEWS", "서현"),
-    "us": lambda: config.env("TYPECAST_VOICE_US") or config.env("TYPECAST_VOICE_NEWS", "서현"),
-    "kr": lambda: config.env("TYPECAST_VOICE_KR") or config.env("TYPECAST_VOICE_NEWS", "서현"),
-    "history": lambda: config.env("TYPECAST_VOICE_HISTORY") or config.env("TYPECAST_VOICE", PILJAE),
+    "news": lambda: config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
+    "us": lambda: config.env("TYPECAST_VOICE_US") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
+    "kr": lambda: config.env("TYPECAST_VOICE_KR") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
+    # 예전 TYPECAST_VOICE 변수는 보지 않음: 다른 목소리가 남아 있어도 그때 그 결정은 필재로
+    "history": lambda: config.env("TYPECAST_VOICE_HISTORY", PILJAE),
 }
+# 타입캐스트가 실패해 무료 음성(edge)으로 대체될 때도 같은 성별로: 평일 = 선희(여), 그때 그 결정 = 인준(남)
+EDGE_BY_SERIES = {"history": lambda: config.env("EDGE_VOICE_HISTORY", "ko-KR-InJoonNeural")}
+GEMINI_BY_SERIES = {"history": "Charon"}
+
+
+def edge_voice():
+    f = EDGE_BY_SERIES.get(_series)
+    return f() if f else config.env("EDGE_VOICE_DAY", "ko-KR-SunHiNeural")
 _series = "history"
 _resolved = {}
 
