@@ -16,6 +16,19 @@ BLOCK_TAGS = {"cartoon", "animation", "animated", "emoji", "emoticon", "smiley",
               "render", "rendering", "abstract", "fractal", "kaleidoscope", "tunnel", "particles", "particle",
               "neon", "loop", "pattern", "motion graphics", "background", "wallpaper", "halloween", "spider",
               "monster", "zombie", "horror", "fantasy", "magic", "cgi", "vj", "glitch", "hologram"}
+# 사용자 규칙(2026-11-22): 담배·향정신성 약물·약품, 사회 통념에서 벗어나는 장면(술 취함·선정·폭력·도박 등)은 배경에 쓰지 않음
+SENSITIVE_TAGS = {
+    "cigarette", "cigarettes", "cigar", "cigars", "tobacco", "smoking", "smoker", "smokers", "vape", "vaping",
+    "e-cigarette", "hookah", "shisha", "nicotine", "ashtray",
+    "drug", "drugs", "narcotic", "narcotics", "cocaine", "heroin", "meth", "marijuana", "cannabis", "weed",
+    "hemp", "joint", "psychedelic", "lsd", "mushrooms", "overdose", "addiction", "addict", "syringe",
+    "injection", "needle", "pill", "pills", "capsule", "capsules", "tablet pills", "medicine", "medicines",
+    "medication", "medications", "pharmacy", "pharmaceutical", "prescription", "drugstore", "painkiller",
+    "drunk", "hangover", "alcoholic", "alcoholism", "intoxicated",
+    "sexy", "sensual", "erotic", "nude", "naked", "lingerie", "bikini", "underwear", "stripper", "seductive",
+    "gun", "guns", "pistol", "rifle", "weapon", "weapons", "shooting", "blood", "bloody", "violence",
+    "violent", "corpse", "dead body", "suicide", "knife", "gambling", "casino", "poker", "slot machine",
+}
 MAX_MB = 70
 
 
@@ -62,7 +75,13 @@ def _tags(hit):
 def _blocked(hit):
     tags = _tags(hit)
     words = {w for t in tags for w in t.split()}
-    return bool(tags & BLOCK_TAGS or words & BLOCK_TAGS)
+    bad = BLOCK_TAGS | SENSITIVE_TAGS
+    return bool(tags & bad or words & bad)
+
+
+def _sensitive_query(q):
+    ql = q.lower()
+    return any(w in SENSITIVE_TAGS for w in ql.split()) or any(t in ql for t in SENSITIVE_TAGS if " " in t)
 
 
 def _relevance(hit, query):
@@ -133,6 +152,9 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
         return None
     for i, (seg, lens) in enumerate(zip(segments, cuts)):
         kw = (seg.get("keywords") or "business meeting").strip()
+        if _sensitive_query(kw):
+            print(f"  [영상] {i + 1}번 문장 검색어 '{kw}'는 금지 장면이라 일반 장면으로 바꿈")
+            kw = "business meeting"
         ws = kw.split()
         queries = [kw, " ".join(ws[-2:]), " ".join(ws[:2])] + FALLBACK_QUERIES
         pool, best = [], -1.0

@@ -162,11 +162,18 @@ def _custom_episode():
     if str(c.get("date")) != _today():
         return None
     ep = c["ep"]
+    replaces = set(c.get("replaces", []))   # 지우고 다시 만드는 회차 id (그 회차는 '이미 만듦'으로 치지 않음)
     if any(e.get("date", "").startswith(f"h{c['date']}") and e.get("company") == ep.get("company")
-           for e in load_state("episodes", [])):
+           and e.get("date") not in replaces for e in load_state("episodes", [])):
         print("  [지정 에피소드] 오늘 이미 만들었어요 → 자동 선정으로")
         return None
-    return ep, c["material"], c.get("links", [])
+    if c.get("material"):
+        return ep, c["material"], c.get("links", [])
+    material, links = history.gather(ep, limit=12000)   # 자료를 안 적었으면 위키백과에서 모음
+    if not material:
+        print("  [지정 에피소드] 위키백과 근거가 부족해요 → 자동 선정으로")
+        return None
+    return ep, material, links
 
 
 def _history_scripts():
@@ -178,6 +185,8 @@ def _history_scripts():
         print(f"1) 지정 에피소드(jobs/history_custom.json): {ep.get('company_ko')} {ep.get('year')}년 — {ep.get('episode_ko')}")
         print("2) 장편 대본(약 5분)")
         lsc = history.write_long(ep, material, config.BRAND_NAME)
+        if lsc.get("chart") is None and ep.get("ticker"):
+            lsc["chart"] = {"ticker": ep["ticker"], "label": f"{ep.get('company_ko', '')} 주가 · {ep['year']}년~현재"}
         ssc = None
         if _need_short():
             print("3) 60초 요약 대본")

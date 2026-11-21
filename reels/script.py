@@ -175,7 +175,7 @@ def write_script(mats, topic, brand, recent=None, focus="global"):
 6. 투자 권유(사라/팔아라)는 하지 마.
 7. 각 segment의 keywords는 배경 스톡 영상 검색어야. 그 문장 내용을 **눈으로 보이는 구체적인 장면**으로 바꾼 영어 2~3단어.
    좋은 예: "stock exchange screen", "oil refinery", "shipping containers port", "semiconductor factory", "tokyo street night", "bank building", "gas station price", "supermarket shopping".
-   나쁜 예(금지): 감정·추상어("tension", "shock", "betrayal", "crisis drama", "success"), 특정 인물 이름, 로고·브랜드명.
+   나쁜 예(금지): 감정·추상어("tension", "shock", "betrayal", "crisis drama", "success"), 특정 인물 이름, 로고·브랜드명. 담배·흡연, 약물·알약·주사기 등 약품, 술 취한 모습, 선정적·폭력적 장면, 도박처럼 사회 통념에서 벗어나는 장면도 금지(이야기가 담배·제약 회사여도 공장·건물·사무실 같은 장면으로).
 8. chart는 이 뉴스와 가장 관련 있는 시세 1개. 아래 목록 중에서 고르고, 맞는 게 없으면 null:
 {TICKERS}
 9. show_chart는 차트를 보여주기 좋은 segment 1개에만 true.

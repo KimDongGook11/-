@@ -146,7 +146,7 @@ def write_long(ep, material, brand):
 4. 각 segment는 한 문장 30~60자. 챕터마다 7~10문장. 전체 글자 수 2,000~2,400자 (읽으면 약 5분). 짧게 끝내지 말고 배경·인물·숫자·결과를 충분히 풀어 써.
 5. keywords: 배경 스톡 영상 검색어. 그 문장을 **눈으로 보이는 구체적인 장면**으로 바꾼 영어 2~3단어.
    좋은 예: "video game console", "1990s office computer", "business handshake", "tokyo skyline", "factory assembly line", "newspaper printing", "boardroom meeting", "stock exchange screen".
-   나쁜 예(금지): 감정·추상어("betrayal", "tension", "shock", "drama", "secret plan"), 인물 이름, 로고·브랜드명.
+   나쁜 예(금지): 감정·추상어("betrayal", "tension", "shock", "drama", "secret plan"), 인물 이름, 로고·브랜드명. 담배·흡연, 약물·알약·주사기 등 약품, 술 취한 모습, 선정적·폭력적 장면, 도박처럼 사회 통념에서 벗어나는 장면도 금지(이야기가 담배·제약 회사여도 공장·건물·사무실 같은 장면으로).
 6. 핵심 숫자가 나오는 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
 7. 주가 흐름을 보여주기 좋은 문장 1~2개에 show_chart: true (상장사일 때만).
 8. topic_keyword: 시청자가 한눈에 알아보는 오늘 주제 키워드 하나. 기업 이야기면 기업명, 게임·제품 이야기면 그 이름 (예: "엔비디아", "스페이스X", "GTA"). 6자 이내.
@@ -223,7 +223,7 @@ def condense_short(long_sc, ep, has_long=True):
 - 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지.
 - segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
 {last_rule}
-- keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
+- keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 담배·흡연, 약물·알약·주사기 등 약품, 술 취한 모습, 선정적·폭력적 장면, 도박처럼 사회 통념에서 벗어나는 장면도 금지(이야기가 담배·제약 회사여도 공장·건물·사무실 같은 장면으로). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
 - yt_title: 유튜브 쇼츠 제목 25~40자, 말하듯 쓴 결론형·질문형 (좋은 예: 삼성도 거절한 안드로이드, 구글은 왜 샀을까? / 파산 직전 애플을 살린 1억 5천만 달러). [ ] 기호와 분류 꼬리표는 쓰지 마. 주제 키워드를 꼭 넣어.
 - title_tags: 제목 끝에 붙일 해시태그 정확히 3개 (기업명 1개 + 관련 종목·분야 2개, 예: #구글 #안드로이드 #기업이야기).
 - hook_title 18자 이내, 주제 키워드 "{long_sc.get('topic_keyword') or ep.get('company_ko', '')}"를 반드시 넣고, 핵심 단어 하나를 [ ]로.
