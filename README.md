@@ -102,7 +102,7 @@ AI가 숫자를 잘못 옮길 수 있습니다.
 - **유튜브 제목**: `[증시] … | 오늘의 원픽 #004` 같은 라벨형 대신, 말하듯 쓴 결론형·질문형 제목 + 해시태그 3개. 시리즈 이름과 회차는 설명란으로.
 - **주제 선정**: 국내 투자자 관심사(삼성전자·SK하이닉스·코스피·환율) 연결을 우선하고, 최근 4편이 모두 해외 기업이면 그때 그 결정은 한국 기업 편을 고릅니다.
 - **공개 시각 변경**: Variables `YT_SHORTS_TIME`, `YT_KR_TIME`, `YT_HISTORY_TIME` (한국시간 `HH:MM`).
-- **채널 핸들**: 유튜브에서 핸들을 바꾼 뒤 Variables에 `CHANNEL_HANDLE=@econonepick`을 넣으면 설명란에 구독 링크가 붙습니다.
+- **채널 핸들**: 설명란에 `@econonepick` 구독 링크가 붙습니다. 핸들을 또 바꾸면 Variables에 `CHANNEL_HANDLE`.
 - **성과 수집**: `channel_stats.yml`이 매일 09:13에 `state/channel_stats.json`을 갱신합니다.
 
 ## 실행 시간 바꾸기

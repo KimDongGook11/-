@@ -55,8 +55,8 @@ YT_SLOTS = {
 }
 # 국내 증시 원픽 마무리 멘트
 KR_OUTRO_TEXT = env("KR_OUTRO_TEXT", "매일 저녁 국내 증시 딱 하나, 구독하고 내일 또 만나요!")
-# 채널 핸들 (설명란 구독 링크용). 유튜브에서 핸들을 바꾼 뒤 Variables에 CHANNEL_HANDLE=@econonepick
-CHANNEL_HANDLE = env("CHANNEL_HANDLE", "")
+# 채널 핸들 (설명란 구독 링크용). 2026-11-21 핸들 변경 완료 → 기본값. 다르게 쓰려면 Variables에 CHANNEL_HANDLE
+CHANNEL_HANDLE = env("CHANNEL_HANDLE", "@econonepick")
 
 # --- 영상 규격 ---
 W, H, FPS = 1080, 1920, 30
