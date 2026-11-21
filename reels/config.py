@@ -47,14 +47,23 @@ HISTORY_SHORT = env("HISTORY_SHORT", "true").lower() == "true"
 # 그때 그 결정 5분 장편을 만들어 유튜브에 올릴지. 진단 결과 3~5분 장편의 중앙 조회수가 7회라 기본은 끔(쇼츠 집중).
 # 쇼츠 반응이 좋았던 주제(조회수 500회 이상)로 심층 장편을 만들 때만 Variables에 HISTORY_LONG=true
 HISTORY_LONG = env("HISTORY_LONG", "false").lower() == "true"
+# 하루 운영 (2026-11-21 사용자 결정): 07:00 미국 증시 마감 / 12:00 오늘의 원픽(그날 이슈 하나) / 18:00 국내 마감 브리핑·뉴스 정리
+# 주말: 토 07:00 미국 마감(금요일장), 12:00 원픽, 18:00 그때 그 결정
 # 시리즈별 유튜브 쇼츠 공개 시각(한국시간). 승인이 이 시각 전이면 예약 공개, 지나면 바로 공개. 비우면 바로 공개
+# (예전 YT_SHORTS_TIME 변수는 쓰지 않음: 원픽 시간이 아침→낮으로 바뀌어 예전 값이 남아 있으면 어긋나기 때문)
 YT_SLOTS = {
-    "news": YT_SHORTS_TIME,                          # 오늘의 원픽 (미국·세계 경제) 아침
-    "kr": env("YT_KR_TIME", "18:00"),                # 국내 증시 원픽 (코스피 마감 뒤) 저녁
-    "history": env("YT_HISTORY_TIME", "21:00"),      # 그때 그 결정 쇼츠 밤
+    "us": env("YT_US_TIME", "07:00"),            # 미국 증시 마감 브리핑
+    "news": env("YT_NEWS_TIME", "12:00"),        # 오늘의 원픽
+    "kr": env("YT_KR_TIME", "18:00"),            # 국내 증시 마감 브리핑 + 뉴스 정리
+    "history": env("YT_HISTORY_TIME", "18:00"),  # 그때 그 결정 (주말)
 }
-# 국내 증시 원픽 마무리 멘트
-KR_OUTRO_TEXT = env("KR_OUTRO_TEXT", "매일 저녁 국내 증시 딱 하나, 구독하고 내일 또 만나요!")
+# 시리즈별 마무리 멘트 (예전 OUTRO_TEXT 변수는 '매일 아침' 문구라 쓰지 않음)
+OUTROS = {
+    "us": env("US_OUTRO_TEXT", "매일 아침 7시 미국 증시 정리, 구독하고 내일 또 만나요!"),
+    "news": env("NEWS_OUTRO_TEXT", "매일 낮 12시 경제 이슈 딱 하나, 구독하고 내일 또 만나요!"),
+    "kr": env("KR_OUTRO_TEXT", "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!"),
+}
+OUTRO_TEXT = OUTROS["news"]
 # 채널 핸들 (설명란 구독 링크용). 2026-11-21 핸들 변경 완료 → 기본값. 다르게 쓰려면 Variables에 CHANNEL_HANDLE
 CHANNEL_HANDLE = env("CHANNEL_HANDLE", "@econonepick")
 

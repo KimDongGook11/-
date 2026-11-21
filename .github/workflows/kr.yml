@@ -1,4 +1,4 @@
-name: 국내 증시 원픽 (평일 저녁)
+name: 국내 증시 마감 브리핑 (저녁 6시)
 
 on:
   schedule:
@@ -57,6 +57,11 @@ jobs:
       KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
       CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
       TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
+      YT_US_TIME: ${{ vars.YT_US_TIME }}
+      YT_NEWS_TIME: ${{ vars.YT_NEWS_TIME }}
+      US_OUTRO_TEXT: ${{ vars.US_OUTRO_TEXT }}
+      NEWS_OUTRO_TEXT: ${{ vars.NEWS_OUTRO_TEXT }}
+      TYPECAST_VOICE_US: ${{ vars.TYPECAST_VOICE_US }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -74,7 +79,7 @@ jobs:
           pip install -q -r requirements.txt
           git config user.name "reels-bot"
           git config user.email "reels-bot@users.noreply.github.com"
-      - name: 국내 증시 원픽 생성 → 텔레그램 전송 → 2시간 버튼 대기
+      - name: 국내 증시 마감 브리핑·뉴스 정리 생성 → 텔레그램 전송 → 2시간 버튼 대기
         run: python -m reels.generate --series kr --wait 120 ${{ (github.event_name == 'schedule' || inputs.auto == 'true') && '--once-per-day' || '' }}
       - name: 상태 저장
         if: always()

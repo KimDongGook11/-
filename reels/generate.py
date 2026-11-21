@@ -13,7 +13,7 @@ import sys
 import time
 import traceback
 
-from . import approval, config, factcheck, history, instagram, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
+from . import approval, config, factcheck, history, instagram, market, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -93,7 +93,9 @@ def _custom_news():
 
 
 def _news_script(focus="global"):
-    """focus: global = 오늘의 원픽(세계 경제), kr = 국내 증시 원픽. 두 시리즈는 '이미 다룬 주제' 기록을 함께 써서 겹치지 않음."""
+    """focus: global = 12:00 오늘의 원픽, us = 07:00 미국 증시 마감, kr = 18:00 국내 마감 브리핑·뉴스 정리.
+    세 시리즈는 '이미 다룬 주제' 기록을 함께 써서 하루 안에 같은 이슈가 겹치지 않음."""
+    mk = market.material(focus) if focus in ("us", "kr") else None
     history_log = load_state("history", [])
     custom = _custom_news() if focus == "global" else None
     if custom:
@@ -113,10 +115,17 @@ def _news_script(focus="global"):
         if not cands:
             raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
         print("2) 오늘의 뉴스 선정")
-        idx, pick = script.pick_story(cands, history_log, focus=focus)
+        idx, pick = script.pick_story(cands, history_log, focus=focus, market=mk["body"] if mk else "")
         main = cands[idx]
         print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
         mats = script.gather_materials(pool, main)
+        if focus == "kr":   # 뉴스 정리용: 주 이슈와 다른 화제 뉴스 2개 (제목·요약만, 그 안의 사실만 쓰게 함)
+            others = [c for j, c in enumerate(cands) if j != idx and j not in main.get("related", [])][:2]
+            for c in others:
+                mats.append({"title": "[그밖의 뉴스] " + c["title"], "source": c["source"], "link": c["link"],
+                             "summary": c.get("summary", ""), "body": c.get("summary", "")})
+    if mk:
+        mats.insert(0, {**mk, "title": "[시세 데이터] " + mk["title"]})
     print("3) 대본 작성")
     sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log, focus=focus)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")
@@ -126,7 +135,7 @@ def _news_script(focus="global"):
         print(f"  [팩트체크] 건너뜀: {e}")
         sc["factcheck"] = None
     print("5) 원고 검수 (흐름·마지막 질문 연결)")
-    outro = config.KR_OUTRO_TEXT if focus == "kr" else config.OUTRO_TEXT
+    outro = config.OUTROS.get(focus, config.OUTROS["news"])
     sc = script.polish_flow(sc, outro)
     sc = script.add_outro(sc, outro)
     print("6) 자막 맞춤법 검수")
@@ -217,7 +226,7 @@ def _need_short():
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
-    rid = {"history": "h", "kr": "k"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
+    rid = {"history": "h", "kr": "k", "us": "u"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
     tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
@@ -226,11 +235,11 @@ def make_reel(series="news", offline=False):
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out = config.OUTPUT_DIR / f"reel_{rid}.mp4"
 
-    if series in ("news", "kr"):
+    if series in ("news", "kr", "us"):
         if offline:
             sc, sources, meta = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}
         else:
-            sc, sources, meta = _news_script(focus="kr" if series == "kr" else "global")
+            sc, sources, meta = _news_script(focus=series if series in ("kr", "us") else "global")
         print("영상 제작 (세로 릴스)")
         dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
         info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
@@ -401,7 +410,7 @@ def deliver(res, offline=False):
 
 
 def _wait_us_close(max_min=40):   # 작업 시간 제한(180분) 안에 버튼 대기까지 끝나도록
-    """오늘의 원픽은 미국 장 마감(뉴욕 16:00) + 10분 뒤에만 제작. 장중이면 마감까지 기다림.
+    """미국 증시 마감 브리핑은 미국 장 마감(뉴욕 16:00) + 10분 뒤에만 제작. 장중이면 마감까지 기다림.
     너무 오래 기다려야 하면 False (이번 실행은 건너뜀)."""
     from zoneinfo import ZoneInfo
     ny = dt.datetime.now(ZoneInfo("America/New_York"))
@@ -419,13 +428,31 @@ def _wait_us_close(max_min=40):   # 작업 시간 제한(180분) 안에 버튼 �
 
 
 def _kr_ready():
-    """국내 증시 원픽은 평일 코스피 마감(15:30) 뒤에만 제작. 주말이거나 장 마감 전이면 건너뜀."""
+    """국내 마감 브리핑은 평일 코스피 마감(15:30) 뒤에만, 오늘 장이 열렸을 때만 제작."""
     now = dt.datetime.now(KST)
     if now.weekday() >= 5:
-        print("주말이라 국내 증시 원픽은 쉬어요. 건너뜁니다.")
+        print("주말이라 국내 마감 브리핑은 쉬어요. 건너뜁니다.")
         return False
     if now.hour * 60 + now.minute < 15 * 60 + 40:
         print("코스피 마감(15:30) 전이에요. 15:40 이후에 다시 실행해 주세요. 건너뜁니다.")
+        return False
+    last = market.last_session("^KS11")
+    if last and last != now.date():
+        print(f"오늘은 국내 증시 휴장이에요(마지막 거래일 {last}). 건너뜁니다.")
+        return False
+    return True
+
+
+def _us_session_today():
+    """미국 증시 마감 브리핑: 방금 끝난 뉴욕 거래일이 있을 때만 (주말·미국 휴장이면 건너뜀). 시세를 못 받으면 그대로 진행."""
+    from zoneinfo import ZoneInfo
+    ny = dt.datetime.now(ZoneInfo("America/New_York"))
+    if ny.weekday() >= 5:
+        print("미국 증시가 쉬는 날이에요(주말). 건너뜁니다.")
+        return False
+    last = market.last_session("^GSPC")
+    if last and last != ny.date():
+        print(f"오늘(뉴욕 {ny.date()}) 미국 증시는 휴장이에요(마지막 거래일 {last}). 건너뜁니다.")
         return False
     return True
 
@@ -436,8 +463,8 @@ def _today():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--series", choices=["news", "kr", "history"], default="news",
-                    help="news=오늘의 경제, kr=국내 증시 원픽, history=그때 그 결정")
+    ap.add_argument("--series", choices=["news", "us", "kr", "history"], default="news",
+                    help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=18:00 국내 마감 브리핑, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
     ap.add_argument("--wait", type=int, default=0, help="영상 전송 후 버튼을 실시간으로 기다릴 시간(분)")
@@ -446,7 +473,7 @@ def main():
     if a.offline:
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
     series = a.series
-    if series == "news" and not a.offline and not _wait_us_close():
+    if series == "us" and not a.offline and (not _wait_us_close() or not _us_session_today()):
         return
     if series == "kr" and not a.offline and not _kr_ready():
         return

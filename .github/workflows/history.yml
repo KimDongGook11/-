@@ -2,7 +2,7 @@ name: 그때 그 결정 (기업 역사)
 
 on:
   schedule:
-    - cron: "30 7 * * *"    # 매일 한국시간 16:30 시작 → 17:00쯤 도착 (GitHub 예약은 늦거나 빠질 수 있음)
+    - cron: "30 7 * * 0,6"  # 주말(토·일) 한국시간 16:30 제작 → 18:00 예약 공개 (평일 18:00은 국내 증시 마감 브리핑)
   workflow_dispatch:
     inputs:
       auto:
@@ -62,6 +62,11 @@ jobs:
       KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
       CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
       TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
+      YT_US_TIME: ${{ vars.YT_US_TIME }}
+      YT_NEWS_TIME: ${{ vars.YT_NEWS_TIME }}
+      US_OUTRO_TEXT: ${{ vars.US_OUTRO_TEXT }}
+      NEWS_OUTRO_TEXT: ${{ vars.NEWS_OUTRO_TEXT }}
+      TYPECAST_VOICE_US: ${{ vars.TYPECAST_VOICE_US }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

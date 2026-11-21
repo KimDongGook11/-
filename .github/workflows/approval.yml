@@ -59,6 +59,11 @@ jobs:
       KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
       CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
       TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
+      YT_US_TIME: ${{ vars.YT_US_TIME }}
+      YT_NEWS_TIME: ${{ vars.YT_NEWS_TIME }}
+      US_OUTRO_TEXT: ${{ vars.US_OUTRO_TEXT }}
+      NEWS_OUTRO_TEXT: ${{ vars.NEWS_OUTRO_TEXT }}
+      TYPECAST_VOICE_US: ${{ vars.TYPECAST_VOICE_US }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
