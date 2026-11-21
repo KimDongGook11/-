@@ -43,6 +43,21 @@ YT_SHORTS_TIME = env("YT_SHORTS_TIME", "07:30")
 # (5분 장편 = 유튜브, 1분 요약 = 인스타 릴스 + 유튜브 쇼츠). 끄려면 Variables에 HISTORY_SHORT=false
 HISTORY_SHORT = env("HISTORY_SHORT", "true").lower() == "true"
 
+# --- 채널 성장 운영 설정 (2026-11-21 채널 진단 반영) ---
+# 그때 그 결정 5분 장편을 만들어 유튜브에 올릴지. 진단 결과 3~5분 장편의 중앙 조회수가 7회라 기본은 끔(쇼츠 집중).
+# 쇼츠 반응이 좋았던 주제(조회수 500회 이상)로 심층 장편을 만들 때만 Variables에 HISTORY_LONG=true
+HISTORY_LONG = env("HISTORY_LONG", "false").lower() == "true"
+# 시리즈별 유튜브 쇼츠 공개 시각(한국시간). 승인이 이 시각 전이면 예약 공개, 지나면 바로 공개. 비우면 바로 공개
+YT_SLOTS = {
+    "news": YT_SHORTS_TIME,                          # 오늘의 원픽 (미국·세계 경제) 아침
+    "kr": env("YT_KR_TIME", "18:00"),                # 국내 증시 원픽 (코스피 마감 뒤) 저녁
+    "history": env("YT_HISTORY_TIME", "21:00"),      # 그때 그 결정 쇼츠 밤
+}
+# 국내 증시 원픽 마무리 멘트
+KR_OUTRO_TEXT = env("KR_OUTRO_TEXT", "매일 저녁 국내 증시 딱 하나, 구독하고 내일 또 만나요!")
+# 채널 핸들 (설명란 구독 링크용). 유튜브에서 핸들을 바꾼 뒤 Variables에 CHANNEL_HANDLE=@econonepick
+CHANNEL_HANDLE = env("CHANNEL_HANDLE", "")
+
 # --- 영상 규격 ---
 W, H, FPS = 1080, 1920, 30
 

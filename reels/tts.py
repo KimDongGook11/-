@@ -63,6 +63,7 @@ PILJAE = "tc_68257f68bc6e3c161ab5078d"
 # 시리즈별 목소리 (2026-11-17 사용자 결정: 오늘의 원픽 = 서현, 그때 그 결정 = 필재). ID 또는 한글 이름
 VOICE_BY_SERIES = {
     "news": lambda: config.env("TYPECAST_VOICE_NEWS", "서현"),
+    "kr": lambda: config.env("TYPECAST_VOICE_KR") or config.env("TYPECAST_VOICE_NEWS", "서현"),
     "history": lambda: config.env("TYPECAST_VOICE_HISTORY") or config.env("TYPECAST_VOICE", PILJAE),
 }
 _series = "history"

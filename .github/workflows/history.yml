@@ -39,6 +39,8 @@ jobs:
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
       YT_PRIVACY: ${{ vars.YT_PRIVACY }}
+      YT_SHORTS_TIME: ${{ vars.YT_SHORTS_TIME }}
+      OUTRO_TEXT: ${{ vars.OUTRO_TEXT }}
       BRAND_NAME: ${{ vars.BRAND_NAME }}
       TTS_VOICE: ${{ vars.TTS_VOICE }}
       TTS_RATE: ${{ vars.TTS_RATE }}
@@ -54,6 +56,12 @@ jobs:
       TYPECAST_VOICE_HISTORY: ${{ vars.TYPECAST_VOICE_HISTORY }}
       TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
       TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
+      HISTORY_LONG: ${{ vars.HISTORY_LONG }}
+      YT_KR_TIME: ${{ vars.YT_KR_TIME }}
+      YT_HISTORY_TIME: ${{ vars.YT_HISTORY_TIME }}
+      KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
+      CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
+      TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,7 +79,7 @@ jobs:
           pip install -q -r requirements.txt "rembg[cpu]"
           git config user.name "reels-bot"
           git config user.email "reels-bot@users.noreply.github.com"
-      - name: 장편(5분, 유튜브) 생성 → 텔레그램 전송 → 버튼 대기
+      - name: 그때 그 결정 생성(기본 쇼츠만, HISTORY_LONG=true면 장편도) → 텔레그램 전송 → 버튼 대기
         run: python -m reels.generate --series history --wait ${{ inputs.wait || '120' }} ${{ (github.event_name == 'schedule' || inputs.auto == 'true') && '--once-per-day' || '' }}
       - name: 상태 저장
         if: always()

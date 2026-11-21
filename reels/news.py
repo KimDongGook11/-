@@ -31,6 +31,22 @@ FEEDS = [
     ("매일경제", "https://www.mk.co.kr/rss/30100041/"),
 ]
 
+GN_KR = "https://news.google.com/rss/search?hl=ko&gl=KR&ceid=KR:ko&q="
+# 국내 증시 원픽용 (2026-11-21 채널 진단: 고성장 채널 인기 쇼츠는 삼전·하이닉스·코스피 같은 국내 투자 주제)
+KR_FEEDS = [
+    ("연합뉴스", "https://www.yna.co.kr/rss/economy.xml"),
+    ("연합뉴스", "https://www.yna.co.kr/rss/market.xml"),
+    ("매일경제", "https://www.mk.co.kr/rss/30100041/"),
+    ("매일경제", "https://www.mk.co.kr/rss/50200011/"),
+    ("한국경제", "https://www.hankyung.com/feed/finance"),
+    ("한국경제", "https://www.hankyung.com/feed/economy"),
+    ("Google News KR", "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko"),
+    ("Google News KR", GN_KR + "(코스피+OR+코스닥)+마감+when:1d"),
+    ("Google News KR", GN_KR + "(삼성전자+OR+SK하이닉스)+주가+when:1d"),
+    ("Google News KR", GN_KR + "(환율+OR+원달러)+when:1d"),
+    ("Google News KR", GN_KR + "(배당+OR+공모주+OR+외국인+순매도)+when:1d"),
+]
+
 STOP = set("""the a an and or of to in on for with at by from as is are was were be been this that
 these those it its into over after before about amid says said say new more than will would could
 can may might up down out not but has have had how why what who when where which their they them
@@ -244,7 +260,8 @@ def guardian_search(query, n=3, limit=3500):
 def gnews_search(query, n=6):
     """구글 뉴스 검색(최근 2일)으로 같은 주제의 다른 매체 기사 찾기."""
     try:
-        r = requests.get(GN + requests.utils.quote(query + " when:2d"), headers=config.UA, timeout=15)
-        return parse_feed(r.content, "Google News")[:n]
+        base, name = (GN_KR, "Google News KR") if re.search(r"[가-힣]", query) else (GN, "Google News")
+        r = requests.get(base + requests.utils.quote(query + " when:2d"), headers=config.UA, timeout=15)
+        return parse_feed(r.content, name)[:n]
     except Exception:
         return []

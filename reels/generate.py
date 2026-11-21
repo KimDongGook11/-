@@ -92,9 +92,10 @@ def _custom_news():
     return c
 
 
-def _news_script():
+def _news_script(focus="global"):
+    """focus: global = 오늘의 원픽(세계 경제), kr = 국내 증시 원픽. 두 시리즈는 '이미 다룬 주제' 기록을 함께 써서 겹치지 않음."""
     history_log = load_state("history", [])
-    custom = _custom_news()
+    custom = _custom_news() if focus == "global" else None
     if custom:
         print(f"1~2) 지정 주제(jobs/news_custom.json): {custom['topic']}")
         main = {"title": custom["title"], "source": custom["source"], "link": custom["link"],
@@ -106,18 +107,18 @@ def _news_script():
         drop = set(custom.get("drop_history", []))   # 폐기한 영상은 '이미 다룬 영상'에서 뺌
         history_log = [h for h in history_log if h.get("date") not in drop]
     else:
-        print("1) 뉴스 수집")
-        items = news.fetch_all()
+        print("1) 뉴스 수집" + (" (국내 증시)" if focus == "kr" else ""))
+        items = news.fetch_all(news.KR_FEEDS if focus == "kr" else news.FEEDS)
         cands, pool = news.rank(items, history_log)
         if not cands:
             raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
         print("2) 오늘의 뉴스 선정")
-        idx, pick = script.pick_story(cands, history_log)
+        idx, pick = script.pick_story(cands, history_log, focus=focus)
         main = cands[idx]
         print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
         mats = script.gather_materials(pool, main)
     print("3) 대본 작성")
-    sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log)
+    sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log, focus=focus)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")
     try:
         sc, sc["factcheck"] = factcheck.run(sc, mats, skip_last=1)   # 마지막 질문은 사실 확인 대상이 아님
@@ -125,13 +126,15 @@ def _news_script():
         print(f"  [팩트체크] 건너뜀: {e}")
         sc["factcheck"] = None
     print("5) 원고 검수 (흐름·마지막 질문 연결)")
-    sc = script.polish_flow(sc, config.OUTRO_TEXT)
-    sc = script.add_outro(sc, config.OUTRO_TEXT)
+    outro = config.KR_OUTRO_TEXT if focus == "kr" else config.OUTRO_TEXT
+    sc = script.polish_flow(sc, outro)
+    sc = script.add_outro(sc, outro)
     print("6) 자막 맞춤법 검수")
     sc = script.proofread(sc)
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
-            "links": [m["link"] for m in mats]}
+            "links": [m["link"] for m in mats],
+            "kr": bool(pick.get("kr")) or focus == "kr" or script.is_kr(sc.get("hook_title"))}
     return sc, sources, meta
 
 
@@ -167,11 +170,12 @@ def _history_scripts():
         print("2) 장편 대본(약 5분)")
         lsc = history.write_long(ep, material, config.BRAND_NAME)
         ssc = None
-        if config.HISTORY_SHORT:
+        if _need_short():
             print("3) 60초 요약 대본")
-            ssc = history.condense_short(lsc, ep)
+            ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG)
         print("4) 자막 맞춤법 검수")
-        lsc = script.proofread(lsc)
+        if config.HISTORY_LONG:
+            lsc = script.proofread(lsc)
         if ssc:
             ssc = script.proofread(ssc)
         return lsc, ssc, ep, links
@@ -189,25 +193,31 @@ def _history_scripts():
         tried.append(ep)
     else:
         raise RuntimeError("위키백과에서 충분한 근거 자료를 찾지 못했습니다.")
-    print("2) 장편 대본(약 5분)")
+    print("2) 장편 대본(약 5분)" + ("" if config.HISTORY_LONG else " — 쇼츠 압축용 원고로만 사용"))
     lsc = history.write_long(ep, material, config.BRAND_NAME)
     if lsc.get("chart") is None and ep.get("ticker"):
         lsc["chart"] = {"ticker": ep["ticker"], "label": f"{ep.get('company_ko', '')} 주가 · {ep['year']}년~현재"}
     ssc = None
-    if config.HISTORY_SHORT:
+    if _need_short():
         print("3) 60초 요약 대본")
-        ssc = history.condense_short(lsc, ep)
+        ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG)
     print("4) 자막 맞춤법 검수")
-    lsc = script.proofread(lsc)
+    if config.HISTORY_LONG:
+        lsc = script.proofread(lsc)
     if ssc:
         ssc = script.proofread(ssc)
     return lsc, ssc, ep, links
 
 
+def _need_short():
+    """장편을 안 만들면 쇼츠는 꼭 만듦 (둘 다 꺼져 있어도 쇼츠는 만듦)."""
+    return config.HISTORY_SHORT or not config.HISTORY_LONG
+
+
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
-    rid = ("h" if series == "history" else "n") + now.strftime("%Y%m%d-%H%M%S")
+    rid = {"history": "h", "kr": "k"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
     tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
@@ -216,11 +226,11 @@ def make_reel(series="news", offline=False):
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out = config.OUTPUT_DIR / f"reel_{rid}.mp4"
 
-    if series == "news":
+    if series in ("news", "kr"):
         if offline:
             sc, sources, meta = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}
         else:
-            sc, sources, meta = _news_script()
+            sc, sources, meta = _news_script(focus="kr" if series == "kr" else "global")
         print("영상 제작 (세로 릴스)")
         dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
         info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
@@ -245,11 +255,15 @@ def make_reel(series="news", offline=False):
     copt = {"start_year": ep["year"] - 3, "mark_year": ep["year"]}
     sources = ["Wikipedia"]
 
-    print("영상 제작 ① 장편 (가로 약 5분)")
-    long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
-    ldur, chapters, thumb, linfo = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
-    long_res = {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
-                "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}
+    long_res = None
+    if config.HISTORY_LONG:
+        print("영상 제작 ① 장편 (가로 약 5분)")
+        long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
+        ldur, chapters, thumb, linfo = produce.long(lsc, work / "long", long_out, sources, offline=offline, chart_opts=copt)
+        long_res = {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1), "chapters": chapters,
+                    "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}
+    else:
+        print("영상 제작 ① 장편: 건너뜀 (HISTORY_LONG=false, 쇼츠 집중)")
     base = {"id": rid, "series": series, "created_at": now.isoformat(), "sources": sources,
             "title_en": ep.get("company", ""), "topic": ep.get("episode_ko", ""), "links": links, "episode": ep,
             "long": long_res}
@@ -345,11 +359,11 @@ def deliver(res, offline=False):
         eps = load_state("episodes", [])
         ep = res.get("episode", {})
         eps.append({"date": res["id"], "company": ep.get("company", ""), "year": ep.get("year"),
-                    "episode_ko": ep.get("episode_ko", res.get("topic", ""))})
+                    "country_ko": ep.get("country_ko", ""), "episode_ko": ep.get("episode_ko", res.get("topic", ""))})
         save_state("episodes", eps[-200:])
     else:
         log = load_state("history", [])
-        log.append({"date": res["id"], "title_ko": res["script"]["hook_title"],
+        log.append({"date": res["id"], "series": series, "kr": bool(res.get("kr")), "title_ko": res["script"]["hook_title"],
                     "title_en": res.get("title_en", ""), "topic": res.get("topic", ""), "link": res.get("link", "")})
         save_state("history", log[-60:])
 
@@ -361,7 +375,8 @@ def deliver(res, offline=False):
             f"🎬 [{label}] 릴스(세로) 초안 ({res['duration']}초)\n{qc.summary(res.get('qc'))}\n"
             + (factcheck.summary(sc.get("factcheck")) + "\n" if sc.get("factcheck") else "")
             + (script.proofread_summary(sc) + "\n" if script.proofread_summary(sc) else "") + "\n"
-            f"■ 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n\n■ 대본\n" +
+            f"■ 화면 제목: [{sc.get('tag', '')}] {sc['hook_title']}\n"
+            f"■ 유튜브 제목: {script.youtube_title(sc, sc['hook_title'])}\n\n■ 대본\n" +
             "\n".join(f"{i+1}. {s['text']}" for i, s in enumerate(sc["segments"])) +
             "\n\n■ 사실 검수용 (근거와 대조)\n" + "\n".join(f"- {k}" for k in sc.get("key_facts", [])) +
             "\n\n■ 근거 링크\n" + "\n".join(res.get("links", [])[:4]) +
@@ -381,6 +396,7 @@ def deliver(res, offline=False):
     pending.save(series, {k: v for k, v in res.items() if k not in ("script", "episode", "long")}
                  | {"sent_at": dt.datetime.now(dt.timezone.utc).isoformat(), "hook_title": res["script"]["hook_title"], "tag": res["script"].get("tag", ""),
                     "hashtags": res["script"].get("hashtags", []), "brand": res["script"].get("brand", ""),
+                    "yt_title": res["script"].get("yt_title", ""), "title_tags": res["script"].get("title_tags", []),
                     "question": res["script"].get("question") or res["script"]["segments"][-1]["text"]})
 
 
@@ -402,13 +418,26 @@ def _wait_us_close(max_min=40):   # 작업 시간 제한(180분) 안에 버튼 �
     return True
 
 
+def _kr_ready():
+    """국내 증시 원픽은 평일 코스피 마감(15:30) 뒤에만 제작. 주말이거나 장 마감 전이면 건너뜀."""
+    now = dt.datetime.now(KST)
+    if now.weekday() >= 5:
+        print("주말이라 국내 증시 원픽은 쉬어요. 건너뜁니다.")
+        return False
+    if now.hour * 60 + now.minute < 15 * 60 + 40:
+        print("코스피 마감(15:30) 전이에요. 15:40 이후에 다시 실행해 주세요. 건너뜁니다.")
+        return False
+    return True
+
+
 def _today():
     return dt.datetime.now(KST).strftime("%Y%m%d")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--series", choices=["news", "history"], default="news", help="news=오늘의 경제, history=그때 그 결정")
+    ap.add_argument("--series", choices=["news", "kr", "history"], default="news",
+                    help="news=오늘의 경제, kr=국내 증시 원픽, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
     ap.add_argument("--wait", type=int, default=0, help="영상 전송 후 버튼을 실시간으로 기다릴 시간(분)")
@@ -418,6 +447,8 @@ def main():
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
     series = a.series
     if series == "news" and not a.offline and not _wait_us_close():
+        return
+    if series == "kr" and not a.offline and not _kr_ready():
         return
     def _on_cancel(signum, frame):   # Actions 취소·시간 초과 때도 아래 except로 가서 '오늘 했음' 표시를 되돌림
         raise RuntimeError(f"작업이 중단됨(신호 {signum}: 취소 또는 시간 초과)")

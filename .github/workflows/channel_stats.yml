@@ -1,6 +1,8 @@
 name: 유튜브 채널 성과 수집
 
 on:
+  schedule:
+    - cron: "13 0 * * *"   # 매일 한국시간 09:13 (성과 기록 → 반응 좋은 주제 확인용)
   workflow_dispatch:
 
 permissions:

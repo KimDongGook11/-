@@ -11,12 +11,12 @@ import os
 import tempfile
 import time
 
-from . import config, instagram, pending, storage, telegram, youtube
+from . import config, instagram, pending, script, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
-HELP = ("명령어\n/new - 오늘의 경제 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
+HELP = ("명령어\n/new - 오늘의 경제 새로 만들기\n/kr - 국내 증시 원픽 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
         "/status - 승인 대기 중인 영상 보기\n/approve - 대기 중인 오늘의 경제 영상 게시 (버튼이 없을 때)\n"
-        "/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
+        "/approve kr - 대기 중인 국내 증시 원픽 게시\n/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
         "버튼은 보통 1분 안에 처리돼요. (대기 영상이 남아 있는 동안 계속 확인해요)")
 
 
@@ -39,7 +39,7 @@ def _clear(p, keep_file=False):
 def _published(p):
     """회차 번호 올리기. 같은 에피소드의 릴스·유튜브 장편은 한 회차로 셈 (어느 쪽이 먼저 게시돼도 1번만)."""
     series = "history" if p.get("series") == "youtube" else p.get("series")
-    key = {"news": "news_ep"}.get(series)   # 그때 그 결정은 회차 번호를 세지 않음
+    key = {"news": "news_ep", "kr": "kr_ep"}.get(series)   # 그때 그 결정은 회차 번호를 세지 않음
     if not key:
         return
     rid = str(p.get("id", ""))
@@ -53,8 +53,9 @@ def _published(p):
     save_state(key, c)
 
 
-def _next_news_no():
-    return load_state("news_ep", {"published": 0}).get("published", 0) + 1
+def _next_news_no(series="news"):
+    key = "kr_ep" if series == "kr" else "news_ep"
+    return load_state(key, {"published": 0}).get("published", 0) + 1
 
 
 def _local_video(p):
@@ -66,9 +67,9 @@ def _local_video(p):
     return path
 
 
-def _publish_at():
-    """설정한 공개 시각(한국시간)이 아직 안 지났으면 그 시각(UTC ISO), 지났으면 None(바로 공개)."""
-    hhmm = (config.YT_SHORTS_TIME or "").strip()
+def _publish_at(series="news"):
+    """시리즈별 고정 공개 시각(한국시간, config.YT_SLOTS)이 아직 안 지났으면 그 시각(UTC ISO), 지났으면 None(바로 공개)."""
+    hhmm = (config.YT_SLOTS.get(series) or "").strip()
     try:
         h, m = (int(x) for x in hhmm.split(":"))
     except ValueError:
@@ -81,17 +82,26 @@ def _publish_at():
     return at.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _subscribe_line():
+    h = (config.CHANNEL_HANDLE or "").strip()
+    if not h:
+        return ""
+    return f"🔔 구독: https://www.youtube.com/{h if h.startswith('@') else '@' + h}\n"
+
+
 def _history_meta(p):
     hook = p.get("hook_title", "").strip()
     brand = (p.get("brand") or "").strip()          # 예: "코닥"
-    title = f"{hook} | 그때 그 결정 {brand}".strip()[:100]
+    # 2026-11-21 채널 진단: 라벨형 제목 → 말하듯 쓴 제목 + 해시태그 3개. 시리즈 이름은 설명란으로
+    title = script.youtube_title(p, f"{hook} {brand}".strip(), extra_tags=("#그때그결정",))
     long_id = load_state("history_links", {}).get(p["id"], {}).get("long")
     long_line = (f"▶ 5분 풀버전 보기: https://youtu.be/{long_id}\n\n" if long_id
-                 else "▶ 5분 풀버전은 채널의 '그때 그 결정' 재생목록에서 볼 수 있어요.\n\n")
+                 else "▶ 5분 풀버전은 채널의 '그때 그 결정' 재생목록에서 볼 수 있어요.\n\n" if config.HISTORY_LONG
+                 else "")
     refs = "\n".join(p.get("links", [])[:3])
     desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n{long_line}"
             f"{p.get('caption', '')}\n\n" + (f"📚 참고 자료\n{refs}\n\n" if refs else "")
-            + "📅 기업의 운명을 바꾼 결정적 순간 — 그때 그 결정\n#Shorts")
+            + f"📅 기업의 운명을 바꾼 결정적 순간 — 그때 그 결정 {brand}\n{_subscribe_line()}#Shorts")
     tags = [t.lstrip("#") for t in p.get("hashtags", [])]
     return title, desc, list(dict.fromkeys(tags + ["Shorts", "그때그결정", "기업이야기"]))
 
@@ -99,20 +109,21 @@ def _history_meta(p):
 def _shorts_meta(p):
     if p.get("series") == "history":
         return _history_meta(p)
-    no = _next_news_no()
-    hook = p.get("hook_title", "").strip()
-    tag = (p.get("tag") or "").strip()
-    title = f"[{tag}] {hook}" if tag and not hook.startswith("[") else hook
-    title = f"{title} | 오늘의 원픽 #{no:03d}"
-    if len(title) > 100:
-        title = title[:100]
-    tags = [t.lstrip("#") for t in p.get("hashtags", [])]
+    series = p.get("series", "news")
+    no = _next_news_no(series)
+    name = "국내 증시 원픽" if series == "kr" else "오늘의 원픽"
+    # 2026-11-21 채널 진단: [증시] 같은 분류 꼬리표·회차 번호로 시작하는 제목 → 말하듯 쓴 제목 + 해시태그 3개
+    title = script.youtube_title(p, p.get("hook_title", ""),
+                                 extra_tags=("#국내주식", "#경제뉴스") if series == "kr" else ("#경제뉴스",))
+    tags = [t.lstrip("#") for t in p.get("hashtags", []) + p.get("title_tags", [])]
     links = "\n".join(p.get("links", [])[:3])
+    slogan = ("매일 저녁 국내 증시 뉴스 딱 하나" if series == "kr" else "매일 아침 세계 경제 뉴스 딱 하나")
     desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n"
             f"{p.get('caption', '')}\n\n"
             + (f"🔗 원문 기사\n{links}\n\n" if links else "")
-            + f"📅 매일 아침 세계 경제 뉴스 딱 하나 — 오늘의 원픽 #{no:03d}\n#Shorts")
-    return title, desc, list(dict.fromkeys(tags + ["Shorts", "경제뉴스", "오늘의원픽"]))
+            + f"📅 {slogan} — {name} #{no:03d}\n{_subscribe_line()}#Shorts")
+    extra = ["Shorts", "경제뉴스", "국내주식", "국내증시원픽"] if series == "kr" else ["Shorts", "경제뉴스", "오늘의원픽"]
+    return title, desc, list(dict.fromkeys(tags + extra))
 
 
 def _link_history(rid, **ids):
@@ -140,25 +151,27 @@ def _upload_short(p):
     """릴스를 유튜브 쇼츠로도 게시. 성공 True."""
     series = p.get("series", "news")
     title, desc, tags = _shorts_meta(p)
-    at = _publish_at() if series == "news" else None
+    at = _publish_at(series)
     try:
         vid, st = youtube.upload(_local_video(p), title, desc, tags, category="25" if series == "news" else "27",
                                  publish_at=at, privacy=config.env("YT_PRIVACY", "public"), thumb=_cover(p))
     except Exception as e:
         print(f"  [유튜브 쇼츠] 실패: {e}")
         telegram.send_message(f"⚠️ 유튜브 쇼츠 게시 실패 (인스타는 끝났어요)\n{str(e)[:600]}\n\n"
-                              "해결한 뒤 " + ("/approve history" if series == "history" else "/approve")
+                              "해결한 뒤 " + {"history": "/approve history", "kr": "/approve kr"}.get(series, "/approve")
                               + " 를 보내면 유튜브만 다시 올려요.")
         return False
     p["yt_short_id"] = vid
     pending.save(series, p)
     if series == "history":
-        meta = {k: p.get(k) for k in ("hook_title", "brand", "question", "caption", "links", "hashtags")}
+        meta = {k: p.get(k) for k in ("hook_title", "brand", "question", "caption", "links", "hashtags",
+                                       "yt_title", "title_tags")}
         _link_history(p["id"], short=vid, short_title=title, short_tags=tags, short_meta=meta)
-    when = (f"{config.YT_SHORTS_TIME} 예약 공개" if at else f"상태: {st}")
-    tip = ("💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 이번 편 장편을 연결해 두면 장편 조회수에 도움이 돼요."
-           if series == "history" else
-           "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 '그때 그 결정' 영상을 연결해 두면 장편 조회수에 도움이 돼요.")
+    when = (f"{config.YT_SLOTS.get(series)} 예약 공개" if at else f"상태: {st}")
+    if series == "history" and config.HISTORY_LONG:
+        tip = "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 이번 편 장편을 연결해 두면 장편 조회수에 도움이 돼요."
+    else:
+        tip = "💡 유튜브 앱에서 이 쇼츠를 시리즈 재생목록에 넣고, 고정 댓글로 '내일 다뤘으면 하는 종목'을 물어보세요."
     telegram.send_message(f"🎉 유튜브 쇼츠 게시 완료! ({when})\nhttps://youtube.com/shorts/{vid}\n\n{tip}")
     return True
 
@@ -226,7 +239,7 @@ def _approve(p):
                 return False
         p["ig_done"] = True
         pending.save(series, p)
-    if series in ("news", "history") and youtube.enabled() and not p.get("yt_short_id"):
+    if series in ("news", "kr", "history") and youtube.enabled() and not p.get("yt_short_id"):
         telegram.send_message("⏫ 유튜브 쇼츠로도 올리는 중이에요.")
         if not _upload_short(p):
             return False
@@ -270,7 +283,7 @@ def handle(updates):
                 telegram.answer_callback(cq["id"], "폐기했어요")
                 telegram.send_message("❌ 유튜브에는 올리지 않을게요. 영상 원본은 다운로드 링크로 계속 받을 수 있어요."
                                       if p.get("series") == "youtube" else
-                                      "❌ 폐기했어요. 새로 만들려면 /new 또는 /history 를 보내 주세요.")
+                                      "❌ 폐기했어요. 새로 만들려면 /new, /kr 또는 /history 를 보내 주세요.")
                 _clear(p)
                 finished.add(rid)
             elif action == "redo":
@@ -287,7 +300,8 @@ def handle(updates):
                 continue
             text = (m.get("text") or "").strip().lower()
             print(f"  [텔레그램] 메시지 {text[:20]}")
-            series = "history" if text.startswith(("/history", "/그때")) else "news" if text.startswith("/new") else None
+            series = ("history" if text.startswith(("/history", "/그때")) else "kr" if text.startswith(("/kr", "/국내"))
+                      else "news" if text.startswith("/new") else None)
             if series:
                 old = pending.load(series)
                 if old and _sent_before(m, old):
@@ -304,7 +318,8 @@ def handle(updates):
                 redo = series
             elif text.startswith(("/approve", "/승인")):
                 which = ("youtube" if ("youtube" in text or "유튜브" in text) else
-                         "history" if ("history" in text or "그때" in text) else "news")
+                         "history" if ("history" in text or "그때" in text) else
+                         "kr" if (" kr" in text or "국내" in text) else "news")
                 p = pending.load(which)
                 if not p:
                     telegram.send_message(f"ℹ️ 승인 대기 중인 [{pending.LABEL[which]}] 영상이 없어요.")

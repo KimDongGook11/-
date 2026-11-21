@@ -11,19 +11,42 @@ CL=F(WTI 유가), BZ=F(브렌트유), GC=F(금), SI=F(은), HG=F(구리), BTC-US
 개별 종목(예: NVDA, AAPL, TSLA, MSFT, 005930.KS 삼성전자, 000660.KS SK하이닉스)"""
 
 
-def pick_story(candidates, history):
+KR_WORDS = ("코스피", "코스닥", "삼성", "하이닉스", "현대차", "원/달러", "원달러", "환율", "배당", "한국", "국내",
+            "Korea", "KOSPI", "Samsung", "Hynix", "won")
+
+
+def is_kr(text):
+    """국내 투자자 주제(국내 종목·코스피·환율 등)인지 대략 판단."""
+    return any(w.lower() in str(text or "").lower() for w in KR_WORDS)
+
+
+def pick_story(candidates, history, focus="global"):
+    """focus: global = 오늘의 원픽(세계 경제), kr = 국내 증시 원픽"""
     lines = []
     for i, c in enumerate(candidates):
         lines.append(f"[{i}] (score {c['score']}) {c['title']} — {c['source']}"
                      + (f"\n     {c['summary'][:180]}" if c["summary"] else ""))
     recent = "\n".join(f"- {h.get('title_ko', '')} / {h.get('topic', '')}" for h in history[-14:]) or "(없음)"
-    prompt = f"""너는 글로벌 경제 뉴스 에디터야.
-아래는 지난 24시간 동안의 세계 경제 뉴스 후보야. score는 여러 매체가 동시에 보도한 정도야.
-한국의 20~40대 인스타그램·유튜브 쇼츠 시청자에게 오늘 가장 '핫한' 글로벌 경제 뉴스 1개를 골라.
+    kr_recent = sum(1 for h in history[-5:] if h.get("kr") or is_kr(h.get("title_ko", "")))
+    if focus == "kr":
+        role = ("너는 국내 증시 뉴스 에디터야.\n아래는 오늘 한국 증시·경제 뉴스 후보야. score는 여러 매체가 동시에 보도한 정도야.\n"
+                "한국의 20~40대 개인 투자자에게 오늘 가장 '핫한' 국내 증시 뉴스 1개를 골라 (코스피·코스닥, 삼성전자·SK하이닉스 같은 대형주, "
+                "환율, 외국인·기관 매매, 배당, 공모주, 정책).")
+        first = ("1. 내 계좌 연결: 개인 투자자가 들고 있을 법한 종목·지수·환율과 바로 이어지는가. "
+                 "\"그래서 내 계좌는?\"에 한 문장으로 답할 수 있어야 해.\n"
+                 "2. 누구나 아는 큰 이름: 삼성전자·SK하이닉스·현대차·네이버·카카오, 코스피 지수, 원/달러 환율처럼 이미 아는 주제가 유리해.")
+    else:
+        role = ("너는 글로벌 경제 뉴스 에디터야.\n아래는 지난 24시간 동안의 세계 경제 뉴스 후보야. score는 여러 매체가 동시에 보도한 정도야.\n"
+                "한국의 20~40대 인스타그램·유튜브 쇼츠 시청자에게 오늘 가장 '핫한' 글로벌 경제 뉴스 1개를 골라.")
+        first = ("1. 내 지갑 연결: 한국 시청자의 주식(특히 삼성전자·SK하이닉스·코스피)·환율·기름값·대출 금리·물가·월급 중 하나와 바로 이어지는가. "
+                 "한 문장으로 \"그래서 내 돈이 어떻게 되는데?\"에 답할 수 있어야 해. 한국 증시에 직접 영향을 주는 해외 뉴스(반도체, 환율, 미국 금리)가 가장 유리해.\n"
+                 "2. 누구나 아는 큰 이름: 유가, 환율, 금리(연준), 엔비디아·애플·테슬라·삼성·AI 빅테크, 비트코인처럼 시청자가 이미 아는 주제가 유리해.")
+        if kr_recent < 2:
+            first += "\n※ 최근 영상이 미국·해외 기업 위주였어. 비슷한 화제성이면 한국 증시·환율과 이어지는 뉴스를 골라."
+    prompt = f"""{role}
 
 [선정 기준 — 위에서부터 중요]
-1. 내 지갑 연결: 한국 시청자의 주식·환율·기름값·대출 금리·물가·월급 중 하나와 바로 이어지는가. 한 문장으로 "그래서 내 돈이 어떻게 되는데?"에 답할 수 있어야 해.
-2. 누구나 아는 큰 이름: 유가, 환율, 금리(연준), 엔비디아·애플·테슬라·삼성·AI 빅테크, 비트코인처럼 시청자가 이미 아는 주제가 유리해.
+{first}
 3. 눈에 띄는 숫자: 급등·급락률, 사상 최고·최저, 금액 등 화면에 크게 띄울 숫자가 있는 뉴스가 유리해.
 4. 여러 매체가 동시에 보도한 정도(score).
 피해야 할 것: 시장 영향이 불분명한 해외 사건·사고(장애, 파업, 사고 소식만 있는 기사), 개별 기업 홍보성 기사, 칼럼·전망만 있는 기사.
@@ -38,7 +61,8 @@ def pick_story(candidates, history):
 후보:
 {chr(10).join(lines)}
 
-JSON으로만 답해: {{"pick": 번호, "topic": "영어로 한 줄 주제 요약", "reason": "선정 이유 한 문장(한국어)"}}"""
+JSON으로만 답해: {{"pick": 번호, "topic": "{'한국어' if focus == 'kr' else '영어'}로 한 줄 주제 요약", "reason": "선정 이유 한 문장(한국어)",
+ "kr": 한국 종목·코스피·환율과 직접 이어지면 true 아니면 false}}"""
     res = llm.ask_json(prompt, temperature=0.3)
     idx = int(res.get("pick", 0))
     if not 0 <= idx < len(candidates):
@@ -89,7 +113,7 @@ def gather_materials(pool, main_item, limit=8, want=3):
     return mats
 
 
-def write_script(mats, topic, brand, recent=None):
+def write_script(mats, topic, brand, recent=None, focus="global"):
     today = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y년 %m월 %d일")
     blocks = []
     for i, m in enumerate(mats):
@@ -100,9 +124,11 @@ def write_script(mats, topic, brand, recent=None):
     rec = "\n".join(f"- {h.get('title_ko', '')} / {h.get('topic', '')}" for h in (recent or [])[-5:])
     rec_rule = (f"\n최근 며칠 동안 이미 다룬 영상(시청자가 이미 봤음):\n{rec}\n"
                 "→ 위 영상에서 이미 말한 배경·설명·숫자를 되풀이하지 마. 겹치는 기업이 나오면 오늘 새로 나온 사실 중심으로 써.\n") if rec else ""
+    kr_rule = ("\n이번 영상은 '국내 증시 원픽'이야. 한국 종목·코스피·환율 중심으로, 개인 투자자 눈높이에서 써.\n"
+               if focus == "kr" else "")
     prompt = f"""너는 '{brand}'라는 인스타그램 경제 릴스 채널의 작가야. 오늘은 {today}이야.
 주제: {topic}
-{rec_rule}
+{rec_rule}{kr_rule}
 아래 자료만 근거로 약 1분 20초(80초 안팎)짜리 한국어 릴스 대본을 써.
 
 [규칙]
@@ -111,6 +137,7 @@ def write_script(mats, topic, brand, recent=None):
 3. 말투는 친근한 존댓말(~요, ~죠). 경제 용어는 한 번 쉽게 풀어줘.
 4. 구성: 1번 문장은 3초 안에 멈추게 하는 후킹 → 무슨 일이 있었나 → 왜 이런 일이 생겼나(배경) → 한국/내 지갑에 미치는 영향 → 앞으로 볼 것 → 마지막은 시청자에게 던지는 질문.
    - 길어진 만큼 중간에 지루하지 않게, 3~4문장마다 새 정보(숫자·비교·반전)를 하나씩 넣어.
+   - '내 지갑' 부분에는 "그래서 삼성전자·SK하이닉스·코스피·환율·내 계좌는?"에 답하는 문장을 1~2개 꼭 넣어. 자료에 근거가 있는 연결만 숫자와 함께 쓰고, 근거가 없으면 숫자 없이 일반적인 원리로만 말해 (지어내기 금지).
    - 1번 문장에는 자료에 있는 가장 강한 숫자(등락률·금액·최고/최저 기록)를 꼭 넣어. 숫자가 자료에 없을 때만 숫자 없이 써.
    - 1번 문장에는 1번 segment의 number 카드도 함께 넣어서, 영상 첫 화면부터 큰 숫자가 보이게 해.
    - 마지막 질문은 댓글로 답하기 쉬운 양자택일이나 한 단어 답 질문으로. "여러분은", "오늘도 여러분은"으로 시작하지 말고 한국어 어순대로 "주제 + 질문"으로 끝내. 시청자를 부르고 싶으면 끝에 "여러분은 어떻게 생각하세요?"를 붙여 (좋은 예: "앤트로픽 주가, 오를까요 내릴까요?", "달러, 지금 사실 건가요 기다리실 건가요? 여러분은 어떻게 생각하세요?" / 나쁜 예: "오늘도 여러분은 앤트로픽의 주가가 오를까요? 내릴까요?").
@@ -130,6 +157,8 @@ def write_script(mats, topic, brand, recent=None):
 JSON으로만 답해:
 {{
  "tag": "제목 위 빨간 꼬리표 2~4자 (예: 금리, 환율, 증시, 유가, 반도체, 코인). '속보'라는 말은 절대 쓰지 마",
+ "yt_title": "유튜브 쇼츠 제목, 25~40자. 말하듯 쓴 결론형·질문형·경고형 (좋은 예: 앤트로픽 상장 첫날 34%, 지금 사도 될까? / 환율 1,400원 넘으면 내 해외주식은? / 반도체 규제에 20% 폭락, 삼전닉스는 괜찮을까?). [증시]·[반도체] 같은 분류 꼬리표로 시작하지 말고 [ ] 기호는 쓰지 마. 자료에 숫자가 있으면 가장 강한 숫자 1개를 넣어. '속보', '충격', '??' 같은 과장 금지",
+ "title_tags": ["제목 끝에 붙일 해시태그 정확히 3개: 핵심 기업·종목명 또는 지표 1~2개 + 분야 1개 (예: #삼성전자, #미국주식, #경제뉴스)"],
  "hook_title": "화면 위에 고정할 제목, 18자 이내. 오늘 주제 키워드(핵심 기업·제품·나라 이름 등)를 꼭 넣고, 가장 중요한 단어 하나를 [ ]로 감싸 강조. 자료에 숫자가 있으면 숫자를 넣고, 내 돈과의 연결이 보이게 (좋은 예: 유가 [8% 급락], 기름값 내려가나 / 엔비디아 [4% 급락]). '??', '먹통', '마비'처럼 자료보다 과장된 표현은 금지",
  "segments": [{{"text": "내레이션 문장", "keywords": "english keywords", "show_chart": false,
                "number": null 또는 {{"value": "4.34%", "label": "엔비디아 주가 하락", "dir": "down"}}}}],
@@ -330,6 +359,8 @@ def normalize(data, max_segs=9):
         chart = None
     tags = [t if str(t).startswith("#") else "#" + str(t) for t in data.get("hashtags", [])][:10]
     return {
+        "yt_title": clean_yt_title(data.get("yt_title")),
+        "title_tags": clean_title_tags(data.get("title_tags")),
         "tag": _no_sokbo(data.get("tag"))[:6],
         "hook_title": (_no_sokbo(data.get("hook_title")) or segs[0]["text"])[:30],
         "segments": segs[:max_segs],
@@ -338,3 +369,33 @@ def normalize(data, max_segs=9):
         "caption": str(data.get("caption", "")).strip(),
         "hashtags": tags or ["#경제뉴스", "#글로벌경제"],
     }
+
+
+def clean_yt_title(t):
+    """유튜브 제목 정리: 앞머리 분류 꼬리표([증시] 등)와 [ ] 기호, '속보'를 뺌 (2026-11-21 채널 진단: 라벨형 제목 → 말하듯 쓴 제목)."""
+    t = _no_sokbo(t)
+    t = re.sub(r"^\s*\[[^\]]{1,6}\]\s*", "", t)
+    t = re.sub(r"[\[\]]", "", t)
+    t = re.sub(r"\s+#\S+", "", t)            # 제목 안 해시태그는 title_tags로 따로 붙임
+    return re.sub(r"\s{2,}", " ", t).strip()[:60]
+
+
+def clean_title_tags(tags):
+    out = []
+    for x in tags or []:
+        x = re.sub(r"[^\w가-힣]", "", str(x))
+        if x and ("#" + x) not in out:
+            out.append("#" + x[:12])
+    return out[:3]
+
+
+def youtube_title(sc_like, fallback, extra_tags=()):
+    """유튜브 쇼츠 제목 = 말하듯 쓴 제목 + 해시태그 3개 (100자 이내)."""
+    base = clean_yt_title(sc_like.get("yt_title")) or clean_yt_title(fallback)
+    tags = list(dict.fromkeys(list(sc_like.get("title_tags") or []) + list(extra_tags)))[:3]
+    title = base
+    for tg in tags:
+        if len(title) + 1 + len(tg) > 100:
+            break
+        title += " " + tg
+    return title[:100]

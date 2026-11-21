@@ -56,6 +56,12 @@ def hot_headlines(n=60, hours=72):
 def pick_episode(used, headlines=None):
     done = "\n".join(f"- {u.get('company')} {u.get('year')} {u.get('episode_ko')}" for u in used[-40:]) or "(없음)"
     hot = "\n".join(headlines or []) or "(뉴스를 가져오지 못함)"
+    # 2026-11-21 채널 진단: 미국 빅테크 비중이 높고 국내 투자자 관심사가 약함 → 최근 4편에 한국 기업이 없으면 이번엔 한국 기업
+    kr_recent = sum(1 for u in used[-4:] if u.get("country_ko") == "한국")
+    kr_rule = ("\n[이번 편은 한국 기업]\n최근 에피소드가 해외 기업뿐이었어. 이번에는 한국 시청자에게 친숙한 한국 기업"
+               "(예: 삼성전자, SK하이닉스, 현대차, LG, 포스코, 네이버, 카카오, 셀트리온, 쿠팡)의 결정적 순간을 골라. "
+               "영어 위키백과에 그 사건이 자세히 나오는 것만.\n") if used and kr_recent == 0 else \
+              "\n해외 기업을 고를 때는 한국 기업·한국 시장과 얽힌 이야기(경쟁·협력·납품·투자)가 있으면 더 좋아.\n"
     prompt = f"""너는 경제 다큐멘터리 PD야. 시리즈 '{SERIES_NAME}'의 다음 에피소드를 하나 골라.
 세계 유명 기업의 역사에서 회사의 운명을 바꾼 '결정적 순간' 하나(성공이든 실패든).
 
@@ -68,13 +74,14 @@ def pick_episode(used, headlines=None):
 [최근 뉴스 제목]
 {hot}
 
+{kr_rule}
 조건:
 - 영어 위키백과에 그 사건이 자세히 나와 있을 법한 유명한 사건만
 - 이미 다룬 에피소드와 같은 기업은 피해:
 {done}
 
 JSON으로만 답해:
-{{"company": "영어 기업명", "company_ko": "한국어 기업명", "year": 사건 연도(숫자),
+{{"company": "영어 기업명", "company_ko": "한국어 기업명", "country_ko": "기업 나라(한국어, 예: 한국, 미국, 일본)", "year": 사건 연도(숫자),
  "episode_ko": "에피소드 한 줄 요약(한국어)",
  "hot_reason": "지금 화제인 이유 한 줄(위 뉴스 제목 하나에 분명히 적힌 사실 하나만, 한국어, 25자 안팎의 자연스러운 문장. 실적·주가·신제품·인수합병·규제 같은 사업 소식만. 개인 추문·사퇴설·루머·범죄 의혹 등 사람에 대한 부정적 주장은 절대 쓰지 마. 뉴스 여러 개를 '~등 관련 이슈'로 뭉뚱그리지 마. 확실하지 않으면 빈 문자열). 뉴스와 무관하게 골랐으면 빈 문자열",
  "wiki_titles": ["이 사건이 나올 영어 위키백과 문서 제목 1~3개 (예: History of Apple Inc., Apple Inc.)"],
@@ -201,8 +208,12 @@ def with_keyword(hook, kw):
     return f"{kw}, {hook}"[:30]
 
 
-def condense_short(long_sc, ep):
+def condense_short(long_sc, ep, has_long=True):
     """장편 대본을 60초 이내 세로 릴스로 압축 (이미 근거 확인된 장편 대본만 사용)."""
+    last_rule = ("- 마지막 문장은 반드시 \"전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요.\" 같은 안내." if has_long else
+                 "- 마지막 문장은 이 결정에 대해 시청자에게 던지는 질문. 댓글로 답하기 쉬운 양자택일로, 물음표로 끝내 "
+                 "(예: \"여러분이 사장이었다면, 팔았을까요 버텼을까요?\"). 장편·풀버전 안내는 하지 마.")
+    cap_rule = " (마지막 줄: 풀버전은 유튜브 경제 원픽에서)" if has_long else " (마지막 줄: 댓글로 생각을 남겨 달라는 한 줄)"
     lines = [s["text"] for s in long_sc["intro"]]
     for c in long_sc["chapters"]:
         lines.append(f"[{c['title']}]")
@@ -211,16 +222,18 @@ def condense_short(long_sc, ep):
 규칙:
 - 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지.
 - segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
-- 마지막 문장은 반드시 "전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요." 같은 안내.
+{last_rule}
 - keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
+- yt_title: 유튜브 쇼츠 제목 25~40자, 말하듯 쓴 결론형·질문형 (좋은 예: 삼성도 거절한 안드로이드, 구글은 왜 샀을까? / 파산 직전 애플을 살린 1억 5천만 달러). [ ] 기호와 분류 꼬리표는 쓰지 마. 주제 키워드를 꼭 넣어.
+- title_tags: 제목 끝에 붙일 해시태그 정확히 3개 (기업명 1개 + 관련 종목·분야 2개, 예: #구글 #안드로이드 #기업이야기).
 - hook_title 18자 이내, 주제 키워드 "{long_sc.get('topic_keyword') or ep.get('company_ko', '')}"를 반드시 넣고, 핵심 단어 하나를 [ ]로.
 
 [장편 대본]
 {chr(10).join(lines)}
 
 JSON으로만 답해:
-{{"hook_title": "...", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
- "caption": "인스타 캡션 3~5줄 (마지막 줄: 풀버전은 유튜브 경제 원픽에서)", "hashtags": ["#그때그결정", "#기업역사"]}}"""
+{{"yt_title": "...", "title_tags": ["#..."], "hook_title": "...", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
+ "caption": "인스타 캡션 3~5줄{cap_rule}", "hashtags": ["#그때그결정", "#기업역사"]}}"""
     from .script import normalize
     d = llm.ask_json(prompt, temperature=0.6)
     d["chart"] = long_sc.get("chart")

@@ -53,6 +53,12 @@ jobs:
       TYPECAST_VOICE_HISTORY: ${{ vars.TYPECAST_VOICE_HISTORY }}
       TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
       TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
+      HISTORY_LONG: ${{ vars.HISTORY_LONG }}
+      YT_KR_TIME: ${{ vars.YT_KR_TIME }}
+      YT_HISTORY_TIME: ${{ vars.YT_HISTORY_TIME }}
+      KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
+      CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
+      TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
