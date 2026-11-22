@@ -205,7 +205,7 @@ def write(job, mats):
 7. 모든 segment에 speaker("host" 또는 "panel"). keywords: 배경 스톡 영상 검색어, 그 문장을 눈에 보이는 구체적 장면으로 바꾼 영어 2~3단어
    (좋은 예: "semiconductor factory cleanroom", "data center servers", "stock exchange screen", "seoul skyline night").
    감정·추상어, 인물 이름, 로고·브랜드명 금지. 담배·약물·약품·술 취함·선정·폭력·도박 장면도 금지.
-8. 핵심 숫자가 나오는 패널 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로, "label": 10자 내외, "dir": "up|down|none"}}.
+8. 핵심 숫자가 나오는 패널 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로(가격·수치만), "change": 등락폭이 있으면 따로(예: "-7.95%", "+4.6원", 없으면 ""), "label": 10자 내외, "dir": "up|down|none"}}.
 9. chart: 아래 중 이 대담에 가장 맞는 주가 하나 {json.dumps(job.get('tickers', []), ensure_ascii=False)}. 주가 흐름을 말하는 패널 문장 1~2개에 show_chart: true.
 10. topic_keyword(6자 이내), hook_title(18자 이내, topic_keyword 포함, 핵심 단어 하나를 [ ]로),
     thumb_line1·thumb_line2(썸네일 두 줄, 각 7자 이내, 한 줄에 topic_keyword), youtube_title(40자 이내, 질문형이나 결론형),

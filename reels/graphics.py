@@ -120,8 +120,9 @@ def card_frame(out, W=1080, H=1920):
 NUM_RE = re.compile(r"^([^\d\-+]*)([\-+]?\d[\d,]*\.?\d*)(.*)$")
 
 
-def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16):
-    """숫자가 0에서 목표값까지 올라가는 프레임들. 반환: (파일 패턴, 프레임 수, 폭, 높이)"""
+def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16, change=""):
+    """숫자가 0에서 목표값까지 올라가는 프레임들. 반환: (파일 패턴, 프레임 수, 폭, 높이)
+    change(등락폭)가 있으면 가격 아래 줄에 따로 표시."""
     out_dir.mkdir(parents=True, exist_ok=True)
     col = UP if direction == "up" else DOWN if direction == "down" else YELLOW
     arrow = "▲ " if direction == "up" else "▼ " if direction == "down" else ""
@@ -133,7 +134,15 @@ def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16):
     probe = ImageDraw.Draw(Image.new("RGBA", (8, 8)))
     while size > 20 and probe.textlength(final, font=F("Black", size)) > w * 0.88:
         size -= 2
+    if change:   # 두 줄: 가격은 조금 작게, 등락폭은 그 아래
+        size = min(size, int(h * 0.27))
     big = F("Black", size)
+    cf = None
+    if change:
+        csize = int(size * 0.6)
+        while csize > 16 and probe.textlength(change, font=F("Bold", csize)) > w * 0.8:
+            csize -= 2
+        cf = F("Bold", csize)
     for i in range(frames):
         k = 1 - (1 - (i + 1) / frames) ** 3
         if m:
@@ -152,7 +161,10 @@ def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16):
         lw = d.textlength(label, font=small)
         d.text(((w - lw) / 2, h * 0.14), label, font=small, fill=(205, 212, 228))
         tw = d.textlength(txt, font=big)
-        d.text(((w - tw) / 2, h * 0.36), txt, font=big, fill=col)
+        d.text(((w - tw) / 2, h * (0.31 if cf else 0.36)), txt, font=big, fill=col)
+        if cf:
+            cw = d.textlength(change, font=cf)
+            d.text(((w - cw) / 2, h * 0.31 + big.size * 1.12), change, font=cf, fill=col)
         sc = 0.9 + 0.1 * min(1.0, (i + 1) / (frames * 0.5))
         if sc < 1:
             canvas, _ = _canvas(w, h)

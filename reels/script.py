@@ -179,7 +179,7 @@ def write_script(mats, topic, brand, recent=None, focus="global"):
 8. chart는 이 뉴스와 가장 관련 있는 시세 1개. 아래 목록 중에서 고르고, 맞는 게 없으면 null:
 {TICKERS}
 9. show_chart는 차트를 보여주기 좋은 segment 1개에만 true.
-10. 핵심 숫자가 나오는 segment 2~3개에는 number를 넣어 화면에 큰 숫자 카드로 띄워. value는 자료에 있는 숫자 그대로(예: "4.34%", "1,200억 달러"), label은 10자 내외 설명, dir은 up/down/none. 차트를 보여주는 segment에는 넣지 마.
+10. 핵심 숫자가 나오는 segment 2~3개에는 number를 넣어 화면에 큰 숫자 카드로 띄워. value는 자료에 있는 숫자 그대로(예: "4.34%", "1,200억 달러"), 가격과 등락폭이 함께면 value에는 가격만 넣고 change에 등락폭(예: value "4,869.96", change "-7.95%"), label은 10자 내외 설명, dir은 up/down/none. 차트를 보여주는 segment에는 넣지 마.
 
 [자료]
 {chr(10).join(blocks)}
@@ -350,11 +350,19 @@ def add_outro(sc, text):
     return sc
 
 
+CHANGE_RE = re.compile(r"^(.*?\S)\s*[\(\[,/]?\s*([+\-−▲▼]\s*\d[\d,]*\.?\d*\s*(?:%p|%|bp|원|달러|포인트|p)?)\s*[\)\]]?\s*$")
+
+
 def _number(n):
+    """숫자 카드: value(가격·수치)와 change(등락폭)를 나눠 둠 → 카드에서 두 줄로 표시 (뒷자리 잘림 방지)."""
     if not isinstance(n, dict) or not str(n.get("value", "")).strip():
         return None
     d = str(n.get("dir", "none")).lower()
-    return {"value": str(n["value"]).strip()[:14], "label": str(n.get("label", "")).strip()[:18],
+    value, change = str(n["value"]).strip(), str(n.get("change") or "").strip()
+    m = CHANGE_RE.match(value)
+    if not change and m and re.search(r"\d", m.group(1)):
+        value, change = m.group(1).strip(" ,/("), m.group(2).replace(" ", "")
+    return {"value": value[:18], "change": change[:12], "label": str(n.get("label", "")).strip()[:18],
             "dir": d if d in ("up", "down") else "none"}
 
 

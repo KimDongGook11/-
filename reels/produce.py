@@ -100,8 +100,8 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
         n = s.get("number")
         if not n or i in busy or count >= (3 if len(segs) > 10 else 2):   # 1분 30초 원픽은 숫자 카드 3개까지
             continue
-        pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"),
-                                                   workdir / f"num_{i}", w=CARD["w"] - 100, h=460)
+        pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"), change=n.get("change", ""),
+                                                   out_dir=workdir / f"num_{i}", w=CARD["w"] - 100, h=460)
         st = max(starts[i] + 0.15, HOOK + 0.1)
         en = min(starts[i] + durs[i] - 0.1, st + 2.8)
         if en - st < 1.0:
@@ -189,8 +189,8 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
         n = s.get("number")
         if not n or s["chapter"] == 0:
             continue
-        pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"),
-                                                   workdir / f"num_{i}", w=kw, h=kh)
+        pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"), change=n.get("change", ""),
+                                                   out_dir=workdir / f"num_{i}", w=kw, h=kh)
         st = starts[i] + lead.get(i, 0) + 0.15
         en = starts[i] + durs[i] - 0.05
         if en - st < 1.0:
