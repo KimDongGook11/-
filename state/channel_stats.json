@@ -1,10 +1,153 @@
 {
-  "collected_at": "2026-11-19T03:23:49+00:00",
-  "channel": "경제원픽_기업탐구생활",
-  "subscribers": 5,
-  "total_views": 1937,
-  "video_count": 19,
+  "collected_at": "2026-11-22T04:39:43+00:00",
+  "channel": "경제원픽",
+  "subscribers": 11,
+  "total_views": 6472,
+  "video_count": 32,
   "videos": [
+    {
+      "id": "GDUih5KJX8Y",
+      "title": "망해가던 삼양식품은 어떻게 불닭볶음면으로 대반전을 만들었을까 #삼양식품 #불닭볶음면 #K푸드",
+      "published": "2026-11-22T03:00:30Z",
+      "kind": "shorts",
+      "duration_s": 39,
+      "privacy": "public",
+      "views": 56,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "AVcU8q-Kwc8",
+      "title": "모두가 거절한 SK하이닉스, 30억 달러 승부수가 통했던 이유는? #SK하이닉스 #반도체 #기업분석",
+      "published": "2026-11-21T21:59:18Z",
+      "kind": "shorts",
+      "duration_s": 42,
+      "privacy": "public",
+      "views": 1109,
+      "likes": 5,
+      "comments": 0
+    },
+    {
+      "id": "HnEOP1D_ouE",
+      "title": "[게임] GTA6 [37억 달러] 싹쓸이 | 오늘의 원픽 #006",
+      "published": "2026-11-20T22:52:35Z",
+      "kind": "shorts",
+      "duration_s": 61,
+      "privacy": "public",
+      "views": 237,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "Q5q7S1bj-Qk",
+      "title": "아마존, 2006년 클라우드 인프라를 외부에 개방하다",
+      "published": "2026-11-20T20:42:47Z",
+      "kind": "shorts",
+      "duration_s": 96,
+      "privacy": "public",
+      "views": 2,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "xhyBhkcOOTA",
+      "title": "세상을 바꾼 [아마존]의 결정 | 그때 그 결정 아마존",
+      "published": "2026-11-20T20:42:27Z",
+      "kind": "shorts",
+      "duration_s": 46,
+      "privacy": "public",
+      "views": 400,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "jEqFtB1s674",
+      "title": "단돈 5천만 달러의 인수! 삼성도 거절한 안드로이드를 구글이 사들인 이유",
+      "published": "2026-11-20T01:24:21Z",
+      "kind": "long",
+      "duration_s": 220,
+      "privacy": "public",
+      "views": 46,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "PP5ToGpkGBc",
+      "title": "알파벳 신화의 [5천만달러] 결단 | 그때 그 결정 알파벳",
+      "published": "2026-11-20T01:23:07Z",
+      "kind": "shorts",
+      "duration_s": 42,
+      "privacy": "public",
+      "views": 210,
+      "likes": 0,
+      "comments": 0
+    },
+    {
+      "id": "2g3Fr-hynx4",
+      "title": "인튜이트 최악의 [빅딜] | 그때 그 결정 인튜이트",
+      "published": "2026-11-19T22:45:11Z",
+      "kind": "shorts",
+      "duration_s": 42,
+      "privacy": "public",
+      "views": 225,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "QxXMi8lfEtg",
+      "title": "120억 달러에 인수했던 메일침프의 운명, 인튜이트의 사상 최대 베팅",
+      "published": "2026-11-19T22:43:46Z",
+      "kind": "long",
+      "duration_s": 237,
+      "privacy": "public",
+      "views": 100,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "1DTYUmQlv48",
+      "title": "[증시] 앤트로픽 [34% 급등] 첫날 성적 | 오늘의 원픽 #005",
+      "published": "2026-11-19T22:42:49Z",
+      "kind": "shorts",
+      "duration_s": 74,
+      "privacy": "public",
+      "views": 689,
+      "likes": 4,
+      "comments": 0
+    },
+    {
+      "id": "E-ZPD7nz5sA",
+      "title": "1993년 수능 도입, 대한민국 대입 시험의 대지진",
+      "published": "2026-11-19T09:33:06Z",
+      "kind": "long",
+      "duration_s": 222,
+      "privacy": "public",
+      "views": 26,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "DZ3kXBFVls0",
+      "title": "역대 최대 IPO 추진! 앤트로픽의 놀라운 결정",
+      "published": "2026-11-19T03:43:52Z",
+      "kind": "long",
+      "duration_s": 310,
+      "privacy": "public",
+      "views": 61,
+      "likes": 1,
+      "comments": 0
+    },
+    {
+      "id": "8u4iFeafCYY",
+      "title": "역대급 상장 앞둔 [앤트로픽] | 그때 그 결정 앤트로픽",
+      "published": "2026-11-19T03:42:38Z",
+      "kind": "shorts",
+      "duration_s": 41,
+      "privacy": "public",
+      "views": 427,
+      "likes": 2,
+      "comments": 0
+    },
     {
       "id": "nh-bHY8xEwo",
       "title": "[증시] 앤트로픽 공모가 [83달러], 상장일 잡혔다 | 오늘의 원픽 #004",
@@ -12,8 +155,8 @@
       "kind": "shorts",
       "duration_s": 65,
       "privacy": "public",
-      "views": 21,
-      "likes": 1,
+      "views": 1001,
+      "likes": 7,
       "comments": 0
     },
     {
@@ -23,7 +166,7 @@
       "kind": "long",
       "duration_s": 264,
       "privacy": "public",
-      "views": 4,
+      "views": 12,
       "likes": 1,
       "comments": 0
     },
@@ -34,7 +177,7 @@
       "kind": "shorts",
       "duration_s": 32,
       "privacy": "public",
-      "views": 446,
+      "views": 443,
       "likes": 1,
       "comments": 0
     },
@@ -45,7 +188,7 @@
       "kind": "shorts",
       "duration_s": 72,
       "privacy": "public",
-      "views": 118,
+      "views": 316,
       "likes": 5,
       "comments": 0
     },
@@ -67,7 +210,7 @@
       "kind": "shorts",
       "duration_s": 40,
       "privacy": "public",
-      "views": 838,
+      "views": 830,
       "likes": 3,
       "comments": 0
     },
@@ -78,7 +221,7 @@
       "kind": "long",
       "duration_s": 276,
       "privacy": "public",
-      "views": 72,
+      "views": 146,
       "likes": 4,
       "comments": 0
     },
@@ -89,7 +232,7 @@
       "kind": "shorts",
       "duration_s": 43,
       "privacy": "public",
-      "views": 11,
+      "views": 13,
       "likes": 1,
       "comments": 0
     },
@@ -100,7 +243,7 @@
       "kind": "long",
       "duration_s": 290,
       "privacy": "public",
-      "views": 84,
+      "views": 104,
       "likes": 1,
       "comments": 0
     },
@@ -199,7 +342,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 1202,
+      "views": 1216,
       "likes": 10,
       "comments": 0
     },
