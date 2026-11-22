@@ -160,17 +160,15 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
                     "x": kx, "y": ky, "fade_out": 0.3})
         fx.append((st, "pop", 0.3))
 
-    if speakers:   # 두 캐릭터(말하는 사람 밝게 + 이름표): 사람마다 그림 하나, 그 사람이 말하는 구간마다 켜기
-        for key in speakers:
+    if speakers:   # 말하는 사람 이름표: 사람마다 그림 하나, 그 사람이 말하는 구간마다 켜기 (캐릭터 그림은 쓰지 않음)
+        for key, sp in speakers.items():
             spans = [(starts[i] + lead.get(i, 0), starts[i] + durs[i]) for i, s in enumerate(segs)
                      if s.get("speaker", "panel") == key]
-            if not spans:
-                continue
-            stage = graphics.speaker_stage(speakers, key, workdir / f"stage_{key}.png")
-            from PIL import Image
-            sw, sh = Image.open(stage).size
-            ovs.append({"kind": "image", "ranges": spans, "start": spans[0][0], "end": spans[-1][1], "path": stage,
-                        "x": WINDOW["x"] + WINDOW["w"] - sw - 20, "y": WINDOW["y"] + WINDOW["h"] - sh - 48})
+            if spans:
+                ovs.append({"kind": "image", "ranges": spans, "start": spans[0][0], "end": spans[-1][1],
+                            "path": graphics.speaker_badge(sp["name"], sp["role"], tuple(sp["color"]),
+                                                           workdir / f"badge_{key}.png"),
+                            "x": WINDOW["x"] + 24, "y": WINDOW["y"] + 24})
     ovs.append({"kind": "image", "path": graphics.outro_card(W, H, workdir / "outro.png", vertical=False),
                 "start": total - OUTRO_L, "end": total, "fade_in": 0.4})
     fx.append((total - OUTRO_L, "whoosh", 0.22))

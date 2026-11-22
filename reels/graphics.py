@@ -249,52 +249,13 @@ def open_b(lsc, W, H, out):
 
 
 def speaker_badge(name, role, color, out, w=360, h=84):
-    """대담 특집: 지금 말하는 사람 이름표 (영상 창 왼쪽 위)."""
+    """이슈 뒷담화: 지금 말하는 사람 이름표 (영상 창 왼쪽 위)."""
     img, d = _canvas(w, h)
     d.rounded_rectangle([0, 0, w - 1, h - 1], radius=h // 2, fill=(8, 12, 24, 215), outline=color + (255,), width=3)
     d.ellipse([22, h / 2 - 13, 48, h / 2 + 13], fill=color + (255,))
     rf, nf = F("SemiBold", 26), F("Black", 38)
     d.text((66, h / 2 - 15), role, font=rf, fill=(200, 208, 224))
     d.text((66 + d.textlength(role, font=rf) + 14, h / 2 - 25), name, font=nf, fill=WHITE)
-    img.save(out)
-    return out
-
-
-def speaker_stage(speakers, active, out, h=300):
-    """대담 특집: 영상 창 오른쪽 아래의 두 캐릭터. 말하는 사람은 밝게 + 이름표, 듣는 사람은 어둡게."""
-    from PIL import ImageEnhance
-    keys = list(speakers)
-    ch_h = h - 20
-    figs = []
-    for k in keys:
-        src = config.ASSETS_DIR / "characters" / speakers[k]["image"]
-        im = Image.open(src).convert("RGBA")
-        im = im.resize((int(im.width * ch_h / im.height), ch_h), Image.LANCZOS)
-        if k != active:
-            a = im.getchannel("A")
-            im = ImageEnhance.Brightness(ImageEnhance.Color(im).enhance(0.35)).enhance(0.55)
-            im.putalpha(a.point(lambda v: int(v * 0.8)))
-        figs.append(im)
-    gap = -10
-    w = sum(f.width for f in figs) + gap * (len(figs) - 1) + 20
-    img, d = _canvas(w, h)
-    d.rounded_rectangle([0, 40, w - 1, h - 1], radius=28, fill=(8, 12, 24, 170))
-    x = 10
-    for k, f in zip(keys, figs):
-        img.alpha_composite(f, (x, h - f.height))
-        if k == active:   # 이름표
-            sp = speakers[k]
-            col = tuple(sp["color"])
-            rf, nf = F("SemiBold", 22), F("Black", 30)
-            label_w = int(d.textlength(sp["role"], font=rf) + d.textlength(sp["name"], font=nf) + 64)
-            lx = x + (f.width - label_w) // 2
-            ly = h - 58
-            d.rounded_rectangle([lx, ly, lx + label_w, ly + 46], radius=23, fill=(8, 12, 24, 235),
-                                outline=col + (255,), width=3)
-            d.ellipse([lx + 14, ly + 15, lx + 30, ly + 31], fill=col + (255,))
-            d.text((lx + 38, ly + 10), sp["role"], font=rf, fill=(200, 208, 224))
-            d.text((lx + 44 + d.textlength(sp["role"], font=rf), ly + 5), sp["name"], font=nf, fill=WHITE)
-        x += f.width + gap
     img.save(out)
     return out
 

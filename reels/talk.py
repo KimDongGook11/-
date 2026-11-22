@@ -10,8 +10,8 @@ from .utils import load_state, save_state
 
 SERIES_NAME = "이슈 뒷담화"
 SPEAKERS = {
-    "host": {"name": "서현", "role": "진행", "color": [255, 196, 64], "image": "seohyun.png"},
-    "panel": {"name": "필재", "role": "패널", "color": [96, 170, 255], "image": "piljae.png"},
+    "host": {"name": "서현", "role": "진행", "color": [255, 196, 64]},
+    "panel": {"name": "필재", "role": "패널", "color": [96, 170, 255]},
 }
 
 
