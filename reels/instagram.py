@@ -51,7 +51,17 @@ def publish_reel(video_path, caption):
         print(f"  [인스타] 공개 주소 준비 실패 → 직접 업로드 시도 ({e})")
         return _publish(src, caption)
     try:
-        return _publish_url(url, caption)
+        try:
+            return _publish_url(url, caption)
+        except RuntimeError as e:
+            # 인스타 쪽 처리 실패(예: 2207077·2207053 알 수 없는 업로드 오류)는 새 컨테이너로 한 번 더.
+            # 커버 지정(thumb_offset)도 빼서 시도 — 2026-11-23 테슬라 1분 요약에서 2207077 발생
+            if "인스타 처리 실패" not in str(e) and "처리 시간 초과" not in str(e):
+                raise
+            print(f"  [인스타] 처리 실패 → 30초 뒤 새 컨테이너로 다시 시도: {e}")
+            import time
+            time.sleep(30)
+            return _publish_url(url, caption, cover=False)
     finally:
         cleanup()
 
@@ -114,12 +124,14 @@ def _wait_and_publish(base, uid, tok, cid):
     return mid, link
 
 
-def _publish_url(url, caption):
+def _publish_url(url, caption, cover=True):
     tok, uid = config.IG_ACCESS_TOKEN.strip(), config.IG_USER_ID.strip()
     base = f"https://{graph_host(tok)}/{config.IG_API_VERSION}"
-    r = requests.post(f"{base}/{uid}/media", timeout=60, data={
-        "media_type": "REELS", "video_url": url, "caption": caption[:2200],
-        "share_to_feed": "true", "thumb_offset": str(COVER_MS), "access_token": tok})
+    data = {"media_type": "REELS", "video_url": url, "caption": caption[:2200],
+            "share_to_feed": "true", "access_token": tok}
+    if cover:
+        data["thumb_offset"] = str(COVER_MS)
+    r = requests.post(f"{base}/{uid}/media", timeout=60, data=data)
     if r.status_code != 200:
         raise RuntimeError(f"컨테이너 생성 실패(공개 주소 방식): {r.text[:400]}")
     return _wait_and_publish(base, uid, tok, r.json()["id"])
