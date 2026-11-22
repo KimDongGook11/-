@@ -1,20 +1,20 @@
 {
-  "note": "사용자 요청(11/22): 대담 특집 시험편. 진행 서현, 패널 필재",
-  "topic": "젠슨 황이 물러난 뒤 엔비디아의 AI 전략은 어디로 가나, 그리고 한국과 가장 밀접한 삼성전자와 SK하이닉스의 미래",
-  "label_en": "Nvidia after Jensen Huang, Samsung, SK Hynix",
-  "label_ko": "엔비디아·삼성·하이닉스",
-  "company": {"name_ko": "엔비디아 · 삼성전자 · SK하이닉스", "country_ko": "미국·한국", "industry_ko": "AI 반도체"},
-  "photo_titles": ["Nvidia", "SK Hynix", "Samsung Electronics"],
-  "tickers": ["NVDA", "000660.KS", "005930.KS"],
+  "date": "20261122",
+  "note": "사용자 요청(11/22): 일요일 이슈 뒷담화 샘플을 같은 주제로 이름(진행 지수·패널 정환)과 인사만 바꿔 다시 제작",
+  "topic": "AI 기술주 투매와 미국의 대중국 AI 칩 규제 악재로 글로벌 증시가 급락한 한 주, 코스피에 미친 영향과 다음 주 금통위·미국 PCE 발표를 앞둔 전망",
+  "label_en": "AI selloff and chip curbs hit global stocks",
+  "label_ko": "AI 투매·칩 규제",
+  "company": {"name_ko": "엔비디아 · 삼성전자 · SK하이닉스", "country_ko": "미국·한국", "industry_ko": "AI 반도체 · 증시"},
+  "photo_titles": ["Nvidia", "Korea Exchange", "SK Hynix"],
+  "tickers": ["^KS11", "^SOX", "005930.KS"],
   "queries": [
-    "Nvidia new CEO Jensen Huang successor",
-    "Nvidia AI strategy after Jensen Huang",
-    "Nvidia stock CEO change investors",
-    "SK Hynix HBM Nvidia",
-    "Samsung Electronics HBM4 Nvidia",
-    "엔비디아 젠슨 황 후임",
-    "SK하이닉스 HBM 엔비디아",
-    "삼성전자 HBM4 엔비디아"
-  ],
-  "extra_rules": "챕터 구성: ① 무슨 일이 있었나(젠슨 황이 CEO에서 물러난 사실과 후임·시장 반응. 물러난 이유가 사생활이면 '개인적인 사유로'라고만 하고 자세히 말하지 마) ② 엔비디아의 AI 방향(새 경영진의 전략, 고객·경쟁사 움직임 등 자료에 있는 것) ③ SK하이닉스(HBM에서의 위치와 엔비디아와의 관계) ④ 삼성전자(HBM·파운드리에서의 추격과 과제) ⑤ 정리: 앞으로 지켜볼 점 세 가지. 자료에 없는 전망은 '아직 알 수 없다'고 솔직하게 말해. 숫자는 날짜·기준과 함께."
+    "AI stocks selloff Nvidia China chip export curbs",
+    "Bessent Nvidia China chips",
+    "US restricts remote access AI chips China",
+    "Nasdaq semiconductor selloff week",
+    "코스피 급락 반도체 외국인",
+    "11월 금통위 기준금리 전망",
+    "미국 PCE 발표 다음 주",
+    "Anthropic IPO raise record"
+  ]
 }

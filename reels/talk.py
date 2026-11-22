@@ -13,7 +13,7 @@ SERIES_NAME = "이슈 뒷담화"
 # 패널 이름은 정해지면 여기 name만 바꾸면 됨
 SPEAKERS = {
     "host": {"name": "지수", "voice": "서현", "role": "진행", "color": [255, 196, 64]},
-    "panel": {"name": "필재", "voice": "필재", "role": "패널", "color": [96, 170, 255]},
+    "panel": {"name": "정환", "voice": "필재", "role": "패널", "color": [96, 170, 255]},
 }
 
 
@@ -116,6 +116,22 @@ JSON으로만 답해:
     job["days"] = ed["days"]
     job["sessions"] = ed["sessions"]
     print(f"  [이슈 뒷담화 주제] {job['topic']}")
+    return job
+
+
+def _weekly_custom():
+    """jobs/talk_custom.json 의 date(한국시간 YYYYMMDD)가 오늘이면 그 주제로 정기 편을 만듦 (다시 만들기용)."""
+    try:
+        job = load_job()
+    except Exception:
+        return None
+    today = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y%m%d")
+    if str(job.get("date")) != today:
+        return None
+    ed = _edition()
+    job.setdefault("extra_rules", WEEKLY_RULES)
+    job.update({"days": ed["days"], "sessions": ed["sessions"]})
+    print(f"  [이슈 뒷담화 주제] (지정) {job['topic']}")
     return job
 
 
@@ -234,12 +250,19 @@ JSON으로만 답해:
             "key_facts": d.get("key_facts", [])}
 
 
+PRIVATE = ("스캔들", "추문", "불륜", "외도", "혼외", "성추행", "성희롱", "사생활", "염문")
+
+
 def factcheck_panel(lsc, mats):
     """패널 발언만 팩트체크 (고치거나 뺌). 진행자 문장은 그대로."""
     flat = lsc["intro"] + [s for c in lsc["chapters"] for s in c["segments"]]
     panel = [s for s in flat if s.get("speaker") == "panel"]
     sc = {"segments": panel}
     sc, report = factcheck.run(sc, mats)
+    for s in lsc["intro"] + [x for c in lsc["chapters"] for x in c["segments"]]:
+        if any(w in s.get("text", "") for w in PRIVATE):   # 사생활 이야기는 다루지 않음 (팩트체크가 고치며 넣은 경우 포함)
+            print(f"  [사생활 표현] 문장 뺌: {s['text']}")
+            s["text"] = ""
     lsc["intro"] = [s for s in lsc["intro"] if s.get("text")]
     for c in lsc["chapters"]:
         c["segments"] = [s for s in c["segments"] if s.get("text")]
@@ -263,7 +286,9 @@ def repair_flow(lsc):
 {json.dumps(lines, ensure_ascii=False)}
 JSON으로만: {{"lines": ["문장", ...]}}"""
     try:
-        out = [str(t).strip() for t in llm.ask_json(prompt, temperature=0.3).get("lines", [])]
+        data = llm.ask_json(prompt, temperature=0.3)
+        raw = data.get("lines", []) if isinstance(data, dict) else data   # 배열만 돌려줘도 처리
+        out = [str(t.get("text", "") if isinstance(t, dict) else t).strip() for t in raw]
     except Exception as e:
         print(f"  [대화 흐름] 건너뜀: {e}")
         return lsc
@@ -284,7 +309,10 @@ def build(job_path=None):
     """반환: (장편 대본, 에피소드 정보, 근거 링크, 근거 매체 목록).
     TALK_TOPIC=auto(자동 예약 실행)면 AI가 주제를 고르고, 아니면 jobs/talk_custom.json 을 씀."""
     mode = config.env("TALK_TOPIC", "file")
-    job = pick_weekly() if mode == "weekly" else pick_topic() if mode == "auto" else load_job(job_path)
+    if mode == "weekly":
+        job = _weekly_custom() or pick_weekly()
+    else:
+        job = pick_topic() if mode == "auto" else load_job(job_path)
     print(f"1) 대담 주제: {job['topic']}")
     mats = gather(job)
     if job.get("sessions"):   # 수·일 정기 편: 최근 거래일 지수·환율 등락을 근거 맨 앞에
