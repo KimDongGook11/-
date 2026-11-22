@@ -1,4 +1,4 @@
-name: 대담 캐릭터 시험 제작 (반실사)
+name: 이슈 뒷담화 캐릭터 시험 제작 (반실사)
 
 on:
   workflow_dispatch:

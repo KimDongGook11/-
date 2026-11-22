@@ -11,7 +11,7 @@ import requests
 from . import config, telegram
 
 BASE = "https://generativelanguage.googleapis.com/v1beta"
-COMMON = ("Semi-realistic digital painting portrait for a YouTube economics talk show, bust shot from chest up, "
+COMMON = ("Semi-realistic digital painting portrait for a YouTube economics talk show called 'Issue Backstory', bust shot from chest up, "
           "facing the viewer, soft studio lighting, clean and friendly, high detail, plain solid dark navy "
           "background (#0E1628), no text, no logo, no watermark. Fictional person, not a real celebrity. ")
 PEOPLE = {

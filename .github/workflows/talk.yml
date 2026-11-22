@@ -1,4 +1,4 @@
-name: 대담 특집 (진행 서현 · 패널 필재, 유튜브 장편)
+name: 이슈 뒷담화 (진행 서현 · 패널 필재, 유튜브 장편)
 
 on:
   workflow_dispatch:
@@ -83,7 +83,7 @@ jobs:
           pip install -q -r requirements.txt "rembg[cpu]"
           git config user.name "reels-bot"
           git config user.email "reels-bot@users.noreply.github.com"
-      - name: 대담 특집 생성 (jobs/talk_custom.json) → 텔레그램 전송 → 버튼 대기
+      - name: 이슈 뒷담화 생성 (jobs/talk_custom.json) → 텔레그램 전송 → 버튼 대기
         run: python -m reels.generate --series talk --wait ${{ inputs.wait || '60' }}
       - name: 상태 저장
         if: always()
