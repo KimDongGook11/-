@@ -209,15 +209,7 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
     ovs += _cards(segs, starts, durs, busy, lsc.get("headlines") or [],
                   (lsc.get("hook_title", ""), lsc.get("series_name", "그때 그 결정")), WINDOW, workdir,
                   show_at=(ch_first[0] if ch_first and lsc.get("headlines") else None), lead=lead)
-    if speakers:   # 말하는 사람 이름표: 사람마다 그림 하나, 그 사람이 말하는 구간마다 켜기 (캐릭터 그림은 쓰지 않음)
-        for key, sp in speakers.items():
-            spans = [(starts[i] + lead.get(i, 0), starts[i] + durs[i]) for i, s in enumerate(segs)
-                     if s.get("speaker", "panel") == key]
-            if spans:
-                ovs.append({"kind": "image", "ranges": spans, "start": spans[0][0], "end": spans[-1][1],
-                            "path": graphics.speaker_badge(sp["name"], sp["role"], tuple(sp["color"]),
-                                                           workdir / f"badge_{key}.png"),
-                            "x": WINDOW["x"] + 24, "y": WINDOW["y"] + WINDOW["h"] - 84 - 24})   # 영상 창 왼쪽 아래
+    # 말하는 사람 이름표는 쓰지 않음 (사용자 결정 11/22: 화면이 깔끔하게, 목소리로 구분)
     ovs.append({"kind": "image", "path": graphics.outro_card(W, H, workdir / "outro.png", vertical=False),
                 "start": total - OUTRO_L, "end": total, "fade_in": 0.4})
     fx.append((total - OUTRO_L, "whoosh", 0.22))
