@@ -212,7 +212,7 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
                 ovs.append({"kind": "image", "ranges": spans, "start": spans[0][0], "end": spans[-1][1],
                             "path": graphics.speaker_badge(sp["name"], sp["role"], tuple(sp["color"]),
                                                            workdir / f"badge_{key}.png"),
-                            "x": WINDOW["x"] + 24, "y": WINDOW["y"] + 24})
+                            "x": WINDOW["x"] + 24, "y": WINDOW["y"] + WINDOW["h"] - 84 - 24})   # 영상 창 왼쪽 아래
     ovs.append({"kind": "image", "path": graphics.outro_card(W, H, workdir / "outro.png", vertical=False),
                 "start": total - OUTRO_L, "end": total, "fade_in": 0.4})
     fx.append((total - OUTRO_L, "whoosh", 0.22))

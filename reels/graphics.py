@@ -261,7 +261,7 @@ def open_b(lsc, W, H, out):
 
 
 def speaker_badge(name, role, color, out, w=360, h=84):
-    """이슈 뒷담화: 지금 말하는 사람 이름표 (영상 창 왼쪽 위)."""
+    """이슈 뒷담화: 지금 말하는 사람 이름표 (영상 창 왼쪽 아래)."""
     img, d = _canvas(w, h)
     d.rounded_rectangle([0, 0, w - 1, h - 1], radius=h // 2, fill=(8, 12, 24, 215), outline=color + (255,), width=3)
     d.ellipse([22, h / 2 - 13, 48, h / 2 + 13], fill=color + (255,))
