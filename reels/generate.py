@@ -360,7 +360,8 @@ def deliver_long(res, offline=False):
                                  "release_tag": f"long-{res['id']}", "keep_release": True,
                                  "video_name": f"long-{res['id']}.mp4", "thumb_name": "thumbnail.jpg",
                                  "hook_title": yt_title, "yt_title": yt_title, "yt_description": desc,
-                                 "yt_tags": lsc.get("tags", []), "tg_message_id": msg_id})
+                                 "yt_tags": lsc.get("tags", []), "tg_message_id": msg_id,
+                                 "playlist": talk.SERIES_NAME if is_talk else None})
 
 
 def expire_pending(series):

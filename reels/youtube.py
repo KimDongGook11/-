@@ -100,3 +100,23 @@ def status(vid, tok=None):
 def delete(vid, tok=None):
     tok = tok or _token()
     return requests.delete(f"{API}/videos", params={"id": vid}, headers=_h(tok), timeout=30).status_code
+
+
+def add_to_playlist(vid, title, tok=None):
+    """내 채널에서 이름이 title인 재생목록을 찾아 영상 추가. 성공하면 재생목록 ID, 못 찾거나 실패하면 None."""
+    tok = tok or _token()
+    try:
+        r = requests.get(f"{API}/playlists", params={"part": "snippet", "mine": "true", "maxResults": 50},
+                         headers=_h(tok), timeout=30)
+        r.raise_for_status()
+        pl = next((x["id"] for x in r.json().get("items", []) if x["snippet"]["title"].strip() == title.strip()), None)
+        if not pl:
+            print(f"  [유튜브] 재생목록 '{title}' 없음")
+            return None
+        r = requests.post(f"{API}/playlistItems", params={"part": "snippet"}, headers=_h(tok), timeout=30, json={
+            "snippet": {"playlistId": pl, "resourceId": {"kind": "youtube#video", "videoId": vid}}})
+        r.raise_for_status()
+        return pl
+    except Exception as e:
+        print(f"  [유튜브] 재생목록 추가 실패: {e}")
+        return None

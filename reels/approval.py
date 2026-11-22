@@ -208,8 +208,12 @@ def _approve_youtube(p):
             th = None
         vid, st = youtube.upload(vid_path, p["yt_title"], p.get("yt_description", ""), p.get("yt_tags", []),
                                  privacy=config.env("YT_PRIVACY", "public"), thumb=th)
+        pl_note = ""
+        if p.get("playlist"):   # 이슈 뒷담화 등: 채널의 같은 이름 재생목록에 자동 추가
+            pl_note = (f"\n📂 재생목록 '{p['playlist']}'에 추가했어요." if youtube.add_to_playlist(vid, p["playlist"])
+                       else f"\n⚠️ 재생목록 '{p['playlist']}'에 넣지 못했어요. 앱에서 직접 넣어 주세요.")
         telegram.send_message(f"🎉 유튜브 게시 완료! (상태: {st})\nhttps://youtu.be/{vid}\n\n"
-                              "썸네일·자막 처리는 몇 분 더 걸릴 수 있어요.")
+                              "썸네일·자막 처리는 몇 분 더 걸릴 수 있어요." + pl_note)
         _link_long(p, vid)
         _published(p)
         _clear(p)
