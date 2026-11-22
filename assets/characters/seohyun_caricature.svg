@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 720" width="600" height="720">
+  <!-- 서현 캐리커처: 큰 얼굴, 볼륨 있는 단발, 큰 눈과 활짝 웃는 입, 마이크 든 진행자 -->
+  <g stroke="#2a1a14" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+    <!-- small body -->
+    <path d="M150 720 C160 610 220 575 300 572 C380 575 440 610 450 720 Z" fill="#f3ede2"/>
+    <path d="M262 576 L300 650 L338 576 Z" fill="#1d2a44"/>
+    <circle cx="395" cy="640" r="12" fill="#ffd400"/>
+    <!-- mic -->
+    <path d="M205 700 L235 610" stroke-width="16" stroke="#2a1a14"/>
+    <circle cx="240" cy="592" r="26" fill="#3b3f4a"/>
+    <!-- hair back (big volume) -->
+    <path d="M95 300 C70 120 200 40 300 40 C410 40 535 120 505 300 C520 380 535 450 500 500 C450 470 150 470 100 500 C65 450 80 380 95 300 Z" fill="#4a2f25"/>
+    <!-- neck -->
+    <path d="M270 520 L330 520 L334 580 C318 592 282 592 266 580 Z" fill="#f2c4a0"/>
+    <!-- big face -->
+    <path d="M140 300 C140 170 220 120 300 120 C380 120 460 170 460 300 C460 430 390 530 300 530 C210 530 140 430 140 300 Z" fill="#fbd7b9"/>
+    <!-- bangs: big swoop -->
+    <path d="M135 300 C125 160 230 100 320 108 C410 115 470 180 465 300 C440 230 400 190 350 178 C320 230 230 270 135 300 Z" fill="#5a3a2d"/>
+    <!-- ears/earrings -->
+    <circle cx="140" cy="350" r="10" fill="#ffd400"/><circle cx="460" cy="350" r="10" fill="#ffd400"/>
+  </g>
+  <!-- face details -->
+  <g stroke="#2a1a14" stroke-linecap="round" fill="none">
+    <path d="M200 270 Q235 248 268 266" stroke-width="9"/>
+    <path d="M332 266 Q365 248 400 270" stroke-width="9"/>
+  </g>
+  <ellipse cx="235" cy="320" rx="30" ry="36" fill="#fff" stroke="#2a1a14" stroke-width="5"/>
+  <ellipse cx="365" cy="320" rx="30" ry="36" fill="#fff" stroke="#2a1a14" stroke-width="5"/>
+  <circle cx="240" cy="326" r="19" fill="#3a2418"/><circle cx="360" cy="326" r="19" fill="#3a2418"/>
+  <circle cx="247" cy="317" r="7" fill="#fff"/><circle cx="367" cy="317" r="7" fill="#fff"/>
+  <path d="M205 296 L196 284 M218 289 L212 276 M395 296 L404 284 M382 289 L388 276" stroke="#2a1a14" stroke-width="5" stroke-linecap="round"/>
+  <path d="M300 355 Q288 385 306 390" stroke="#d99a78" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <ellipse cx="195" cy="390" rx="30" ry="16" fill="#f59a92" opacity="0.6"/>
+  <ellipse cx="405" cy="390" rx="30" ry="16" fill="#f59a92" opacity="0.6"/>
+  <!-- big open smile -->
+  <path d="M235 418 Q300 500 365 418 Z" fill="#b3302c" stroke="#2a1a14" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M245 422 Q300 440 355 422 L352 432 Q300 448 248 432 Z" fill="#fff"/>
+  <path d="M265 462 Q300 478 335 462 Q300 452 265 462 Z" fill="#f07b78"/>
+</svg>
