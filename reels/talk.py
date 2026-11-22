@@ -105,6 +105,8 @@ def write(job, mats):
 {('[이번 편 지시 — 아래 규칙보다 우선]' + chr(10) + job['extra_rules'] + chr(10)) if job.get('extra_rules') else ''}
 [대담 규칙]
 1. 숫자·날짜·인명·기업명·발언은 아래 [자료]에 있는 것만. 자료에 없는 수치·사실은 절대 지어내지 마.
+   숫자는 자료 문장에 적힌 그대로 옮겨(단위·기준일 포함). 주가 등락률·시가총액처럼 그럴듯한 숫자를 짐작해서 쓰면 그 문장은 팩트체크에서 통째로 삭제돼.
+   자료에 숫자가 없으면 숫자 없이 "크게 올랐다", "아직 공개된 숫자는 없다"처럼 말해.
 2. 앞으로의 전망은 단정하지 말고 "자료에서 누가 어떻게 봤는지" 또는 "앞으로 지켜볼 점"으로 말해. 투자 권유(사라/팔아라)는 금지.
 3. 사람의 사생활·추문·의혹은 다루지 마. 인물 이야기는 경영·사업 결정만.
 4. 진행자(host): 시청자 대신 궁금한 걸 짧게 묻고, 어려운 말을 쉬운 말로 되짚고, 가끔 반응("와, 그 정도예요?", "잠깐만요, 그러면…")을 해. 한 번에 1~2문장, 각 15~45자.
@@ -176,6 +178,38 @@ def factcheck_panel(lsc, mats):
     return lsc
 
 
+def repair_flow(lsc):
+    """팩트체크로 패널 발언이 빠지거나 바뀐 뒤 대화 흐름 다듬기: 질문만 있고 답이 없는 곳, 앞뒤가 안 맞는 맞장구를 고침.
+    문장 수·순서·말하는 사람은 그대로, 숫자는 글자 그대로 유지 (바뀌면 원래 문장을 둠)."""
+    flat = lsc["intro"] + [s for c in lsc["chapters"] for s in c["segments"]]
+    lines = [{"i": i, "who": SPEAKERS[s.get("speaker", "panel")]["name"], "text": s["text"]} for i, s in enumerate(flat)]
+    prompt = f"""아래는 '{SERIES_NAME}' 토크 대본이야(진행 {SPEAKERS['host']['name']}, 패널 {SPEAKERS['panel']['name']}).
+팩트체크로 일부 문장이 빠져서 대화가 어색하게 끊긴 곳이 있을 수 있어. 소리 내어 들었을 때 자연스럽게 다듬어.
+- 문장 수·순서·말하는 사람은 그대로. 같은 길이의 배열로 돌려줘.
+- 질문에 대한 답이 빠졌으면, 질문을 바로 다음 패널 답과 이어지게 바꾸거나 맞장구로 바꿔.
+- 숫자·사실·인명·기업명은 절대 더하거나 바꾸지 마. 바꿀 수 있는 건 질문·맞장구·접속 표현뿐이야.
+- 진행 문장 45자, 패널 문장 60자 이내. 사람 험담·추측 금지.
+[대본]
+{json.dumps(lines, ensure_ascii=False)}
+JSON으로만: {{"lines": ["문장", ...]}}"""
+    try:
+        out = [str(t).strip() for t in llm.ask_json(prompt, temperature=0.3).get("lines", [])]
+    except Exception as e:
+        print(f"  [대화 흐름] 건너뜀: {e}")
+        return lsc
+    if len(out) != len(flat):
+        print(f"  [대화 흐름] 문장 수가 달라 적용 안 함 ({len(flat)}→{len(out)})")
+        return lsc
+    digits = lambda t: re.findall(r"\d+", t)
+    n = 0
+    for s, t in zip(flat, out):
+        if t and t != s["text"] and digits(t) == digits(s["text"]) and len(t) <= 70:
+            s["text"] = t
+            n += 1
+    print(f"  [대화 흐름] 다듬은 문장 {n}개")
+    return lsc
+
+
 def build(job_path=None):
     """반환: (장편 대본, 에피소드 정보, 근거 링크, 근거 매체 목록).
     TALK_TOPIC=auto(자동 예약 실행)면 AI가 주제를 고르고, 아니면 jobs/talk_custom.json 을 씀."""
@@ -188,6 +222,9 @@ def build(job_path=None):
     lsc = write(job, mats)
     print("3) 팩트체크 (패널 발언)")
     lsc = factcheck_panel(lsc, mats)
+    if (lsc.get("factcheck") or {}).get("fixed", 0) + (lsc.get("factcheck") or {}).get("dropped", 0):
+        print("3-1) 대화 흐름 다듬기 (팩트체크로 고치거나 뺀 문장 주변)")
+        lsc = repair_flow(lsc)
     print("4) 자막 맞춤법 검수")
     lsc = script.proofread(lsc)
     lsc["headlines"] = script.headline_list(mats)
