@@ -141,7 +141,8 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
         for s in ch["segments"]:
             segs.append({**s, "chapter": ci})
     speakers = lsc.get("speakers")   # 대담 특집: {"host": {"name": "서현", ...}, "panel": {...}}
-    voices = [speakers[s.get("speaker", "panel")]["name"] for s in segs] if speakers else None
+    voices = [(lambda sp: sp.get("voice") or sp["name"])(speakers[s.get("speaker", "panel")]) for s in segs] \
+        if speakers else None
     narration, durs, words = tts.synthesize([s["text"] for s in segs], workdir, lead=lead, tail=OUTRO_L,
                                             voices=voices)
     total = sum(durs)
