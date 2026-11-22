@@ -21,6 +21,38 @@ def _starts(durs):
     return out
 
 
+def _cards(segs, starts, durs, busy, headlines, topic, box, workdir, show_at=None, lead=None, after=0.0):
+    """관련 영상이 없는 문장(stock.LAST_MISSING)과 show_at 문장에 헤드라인 카드(없으면 주제 카드)를 띄움.
+    같은 그림은 한 번만 만들고 여러 구간(ranges)으로 켬 → 영상 합성 입력 수를 줄임."""
+    lead = lead or {}
+    want = sorted((set(stock.LAST_MISSING) | ({show_at} if show_at is not None else set())) - set(busy))
+    want = [i for i in want if 0 <= i < len(segs)]
+    if not want:
+        return []
+    cw, ch = box["w"] - 60, min(box["h"] - 60, int((box["w"] - 60) * 0.58))
+    x, y = box["x"] + (box["w"] - cw) // 2, box["y"] + (box["h"] - ch) // 2
+    spans, k = {}, 0
+    for i in want:
+        st = max(starts[i] + lead.get(i, 0), after)
+        en = starts[i] + durs[i]
+        if en - st < 0.8:
+            continue
+        if headlines:
+            key = 0 if i == show_at else (k % len(headlines))
+            if i != show_at:
+                k += 1
+        else:
+            key = "topic"
+        spans.setdefault(key, []).append((st, en))
+    ovs = []
+    for key, rr in spans.items():
+        path = (graphics.headline_card(headlines[key], workdir / f"headline_{key}.png", w=cw, hgt=ch) if key != "topic"
+                else graphics.topic_card(topic[0], topic[1], workdir / "topic.png", w=cw, hgt=ch))
+        ovs.append({"kind": "image", "path": path, "ranges": rr, "start": rr[0][0], "end": rr[-1][1], "x": x, "y": y})
+    print(f"  [그래픽] 헤드라인·주제 카드 {sum(len(r) for r in spans.values())}곳 (관련 영상 없음 {len(stock.LAST_MISSING)}문장)")
+    return ovs
+
+
 def _bgm():
     d = config.ASSETS_DIR / "bgm"
     files = sorted(d.glob("*.mp3")) if d.exists() else []
@@ -77,7 +109,13 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
         ovs.append({"kind": "seq", "pattern": pat, "frames": frames, "start": st, "end": en,
                     "x": CARD["x"] + 50, "y": CARD["y"] + (CARD["h"] - h) // 2, "fade_out": 0.25})
         fx.append((st, "pop", 0.32))
+        busy.add(i)
         count += 1
+    if offline:
+        stock.LAST_MISSING.clear()
+    ovs += _cards(segs, starts, durs, busy | {len(segs) - 1}, sc.get("headlines") or [],
+                  (sc.get("hook_title", ""), sc.get("tag", "")), CARD, workdir,
+                  show_at=1 if sc.get("headlines") and len(segs) > 3 else None, after=HOOK + 0.1)
 
     ovs.append({"kind": "image", "path": graphics.outro_card(W, H, workdir / "outro.png", vertical=True),
                 "start": total - OUTRO_S, "end": total, "fade_in": 0.3})
@@ -160,6 +198,11 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
                     "x": kx, "y": ky, "fade_out": 0.3})
         fx.append((st, "pop", 0.3))
 
+    if offline:
+        stock.LAST_MISSING.clear()
+    ovs += _cards(segs, starts, durs, busy, lsc.get("headlines") or [],
+                  (lsc.get("hook_title", ""), lsc.get("series_name", "그때 그 결정")), WINDOW, workdir,
+                  show_at=(ch_first[0] if ch_first and lsc.get("headlines") else None), lead=lead)
     if speakers:   # 말하는 사람 이름표: 사람마다 그림 하나, 그 사람이 말하는 구간마다 켜기 (캐릭터 그림은 쓰지 않음)
         for key, sp in speakers.items():
             spans = [(starts[i] + lead.get(i, 0), starts[i] + durs[i]) for i, s in enumerate(segs)

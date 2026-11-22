@@ -429,3 +429,38 @@ def youtube_title(sc_like, fallback, extra_tags=()):
             break
         title += " " + tg
     return title[:100]
+
+
+def headline_list(mats, n=4):
+    """근거 기사 헤드라인 카드용: [{"ko", "orig", "source", "date"}]. 영어 제목은 한국어로 짧게 옮김."""
+    items, seen = [], set()
+    for m in mats:
+        t = (m.get("title") or "").strip()
+        if not t or t.startswith("[") or t.lower() in seen:
+            continue
+        seen.add(t.lower())
+        pub = m.get("published")
+        items.append({"orig": t[:160], "source": (m.get("source") or "").strip(),
+                      "date": pub.strftime("%Y-%m-%d") if hasattr(pub, "strftime") else ""})
+        if len(items) >= n:
+            break
+    if not items:
+        return []
+    prompt = ("아래 뉴스 헤드라인을 영상 화면용 한국어 신문 헤드라인으로 만들어. 영어면 짧게(40자 이내) 옮기고, "
+              "한국어면 그대로 써(필요하면 40자 이내로만 다듬기). 뜻을 더하거나 빼지 마. 가장 중요한 단어 하나를 [ ]로 감싸.\n"
+              "화면에서 두 줄로 나눌 자리에 ' / '를 한 번 넣어. 의미가 끊기지 않는 자리(쉼표 뒤, 주어부와 서술부 사이 등)로, "
+              "두 줄 길이가 비슷하게. 짧아서 한 줄이면 넣지 마. "
+              "나쁜 예: 'SK하이닉스, HBM4 양산 / 앞당긴다' (서술어만 혼자 떨어짐) → 좋은 예: 'SK하이닉스, / HBM4 [양산] 앞당긴다'\n"
+              + "\n".join(f"{i}. {h['orig']}" for i, h in enumerate(items))
+              + '\nJSON으로만: {"ko": {"번호": "헤드라인"}}')
+    ko = {}
+    try:
+        ko = {int(k): str(v).strip() for k, v in (llm.ask_json(prompt, temperature=0.2).get("ko") or {}).items()}
+    except Exception as e:
+        print(f"  [헤드라인] 다듬기 건너뜀: {e}")
+    for i, h in enumerate(items):
+        h["ko"] = ko.get(i) or h["orig"]
+        if re.search(r"[가-힣]", h["orig"]) or h["ko"] == h["orig"]:
+            h["orig"] = ""     # 한국어 기사(또는 번역 실패)는 원문을 두 번 쓰지 않음
+    print("  [헤드라인] " + " / ".join(f"{h['source']}: {h['ko']}" for h in items))
+    return items

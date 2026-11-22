@@ -141,6 +141,7 @@ def _news_script(focus="global"):
     sc = script.add_outro(sc, outro)
     print("6) 자막 맞춤법 검수")
     sc = script.proofread(sc)
+    sc["headlines"] = script.headline_list([m for m in mats if not str(m.get("title", "")).startswith("[")])
     sources = list(dict.fromkeys(m["source"] for m in mats))
     meta = {"title_en": main["title"], "link": main["link"], "topic": pick.get("topic", ""),
             "links": [m["link"] for m in mats],

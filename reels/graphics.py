@@ -260,6 +260,89 @@ def speaker_badge(name, role, color, out, w=360, h=84):
     return out
 
 
+def _line_w(d, ln, f):
+    return d.textlength(" ".join(_wtext(x) for x in ln), font=f)
+
+
+def _headline_lines(d, text, max_w, sizes):
+    """헤드라인 줄바꿈: 의미 단위로 끊음 (사용자 요청 11/22).
+    1) AI가 표시한 ' / ' 자리에서 끊고, 각 줄이 들어가는 가장 큰 글자 크기를 고름
+    2) 표시가 없으면 한 줄로 들어가는지 보고, 안 되면 쉼표 뒤 → 두 줄 길이가 비슷한 단어 경계 순으로 두 줄로
+    3) 그래도 안 들어가면 기존 방식(세 줄까지 자동 줄바꿈)"""
+    parts = [p.strip() for p in text.split(" / ") if p.strip()] if " / " in text else None
+    if parts and len(parts) <= 3:
+        lines = [parse_title(p) for p in parts]
+        for size in sizes:
+            f = F("Black", size)
+            if all(_line_w(d, ln, f) <= max_w for ln in lines):
+                return f, lines
+        text = " ".join(parts)
+    words = parse_title(text.replace(" / ", " "))
+    if _line_w(d, words, F("Black", int(sizes[0] * 0.75))) <= max_w:   # 짧으면 한 줄
+        for size in sizes:
+            f = F("Black", size)
+            if _line_w(d, words, f) <= max_w:
+                return f, [words]
+    commas = [k for k in range(1, len(words)) if _wtext(words[k - 1]).endswith((",", "·", ":", "…"))]
+    # 1순위: 쉼표 뒤 (글자를 조금 줄여서라도), 2순위: 두 줄 길이가 비슷한 자리
+    for ks, floor in ((commas, 0.6), (range(1, len(words)), 0.0)):
+        for size in sizes:
+            if size < sizes[0] * floor:
+                break
+            f = F("Black", size)
+            cands = []
+            for k in ks:
+                wa, wb = _line_w(d, words[:k], f), _line_w(d, words[k:], f)
+                if max(wa, wb) <= max_w:
+                    cands.append((len(words) - k == 1, abs(wa - wb), k))   # 마지막 한 단어만 떨어지는 건 피함
+            if cands:
+                k = min(cands)[2]
+                return f, [words[:k], words[k:]]
+    return _fit(d, text.replace(" / ", " "), max_w, sizes, 3)
+
+
+def headline_card(h, out, w=1000, hgt=560):
+    """온라인 기사 헤드라인 카드: 흰 종이 위에 매체·날짜, 한국어 헤드라인(크게), 원문(작게).
+    h = {"ko": 번역, "orig": 원문, "source": 매체, "date": "2026-11-21"}"""
+    img, d = _canvas(w, hgt)
+    d.rounded_rectangle([6, 10, w - 1, hgt - 1], radius=18, fill=(0, 0, 0, 90))            # 그림자
+    d.rounded_rectangle([0, 0, w - 8, hgt - 10], radius=18, fill=(250, 248, 242, 255))
+    pad = 44
+    d.rectangle([pad, 40, pad + 10, 88], fill=RED)
+    sf = F("Black", 40)
+    d.text((pad + 26, 40), h.get("source", "")[:30], font=sf, fill=(20, 20, 24))
+    if h.get("date"):
+        df = F("Medium", 30)
+        d.text((w - 8 - pad - d.textlength(h["date"], font=df), 48), h["date"], font=df, fill=(110, 110, 118))
+    d.line([(pad, 112), (w - 8 - pad, 112)], fill=(20, 20, 24), width=3)
+    ko = h.get("ko") or h.get("orig") or ""
+    orig = h.get("orig") or ""
+    bottom = hgt - 10 - (150 if orig and orig != ko else 80)
+    big = int(min(96, w * 0.085))
+    tf, lines = _headline_lines(d, ko, w - 8 - pad * 2, tuple(range(big, 40, -4)))
+    block = int(tf.size * 1.32) * len(lines)
+    _draw_lines(d, lines, tf, pad, 130 + max(0, (bottom - 130 - block) // 2), fg=(16, 16, 20), hl=RED, lh_ratio=1.32)
+    if orig and orig != ko:
+        ol = _fit(d, orig, w - 8 - pad * 2, (30, 28, 26, 24), 2, weight="Medium")
+        _draw_lines(d, ol[1], ol[0], pad, bottom + 4, fg=(105, 105, 112), hl=(105, 105, 112), lh_ratio=1.3)
+    d.text((pad, hgt - 10 - 50), "온라인 기사 헤드라인", font=F("SemiBold", 24), fill=(150, 150, 156))
+    img.save(out)
+    return out
+
+
+def topic_card(title, sub, out, w=1000, hgt=560):
+    """관련 영상도 헤드라인도 없을 때 채우는 주제 카드 (그때 그 결정 등)."""
+    img, d = _canvas(w, hgt)
+    d.rounded_rectangle([0, 0, w - 1, hgt - 1], radius=22, fill=(14, 22, 42, 245), outline=YELLOW + (200,), width=3)
+    if sub:
+        d.text((48, 44), sub[:40], font=F("Bold", 34), fill=YELLOW)
+    tf, lines = _fit(d, title, w - 96, (84, 72, 62, 54), 3)
+    block = int(tf.size * 1.3) * len(lines)
+    _draw_lines(d, lines, tf, 48, (hgt - block) / 2 + 20)
+    img.save(out)
+    return out
+
+
 # ---------------- 아웃트로 ----------------
 def outro_card(W, H, out, vertical=True):
     img, d = _canvas(W, H)

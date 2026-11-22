@@ -30,6 +30,8 @@ SENSITIVE_TAGS = {
     "violent", "corpse", "dead body", "suicide", "knife", "gambling", "casino", "poker", "slot machine",
 }
 MAX_MB = 70
+MIN_REL = 0.5          # 검색어 단어 중 이 비율 이상이 태그에 있어야 '관련 있는 영상'으로 씀
+LAST_MISSING = set()   # 직전 plan_shots에서 관련 영상을 못 찾은 문장 번호 (그 자리는 그래픽으로 채움)
 
 
 def _search(q, cache):
@@ -127,6 +129,8 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
         return [(None, 0.0, x) for c in cuts for x in c]
 
     cache, files, used_ids, plan = {}, {}, set(), []
+    missing = set()
+    LAST_MISSING.clear()
     clip_count = 0
     hist = load_state("clips_used", {}) or {}
     recent_ids = set(hist.get("ids", []))           # 최근 영상들에 쓴 클립
@@ -156,23 +160,19 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
             print(f"  [영상] {i + 1}번 문장 검색어 '{kw}'는 금지 장면이라 일반 장면으로 바꿈")
             kw = "business meeting"
         ws = kw.split()
-        queries = [kw, " ".join(ws[-2:]), " ".join(ws[:2])] + FALLBACK_QUERIES
-        pool, best = [], -1.0
+        # 일반 장면(FALLBACK_QUERIES)으로 채우지 않음: 멘트와 관련 없는 화면이 나가지 않게 (사용자 요청 11/22)
+        queries = [kw, " ".join(ws[-2:]), " ".join(ws[:2])]
+        pool = []
         for q in dict.fromkeys(q for q in queries if q):
-            cand = sorted(_search(q, cache), key=lambda h: -_score(h, vertical, q))
-            if not cand:
-                continue
-            rel = max(_relevance(h, q) for h in cand[:8])
-            if rel > best:
-                pool, best = cand, rel
-            if rel >= 0.5:          # 태그가 검색어와 충분히 맞으면 그 결과 사용
+            rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL]
+            if rel_hits:
+                pool = sorted(rel_hits, key=lambda h: -_score(h, vertical, q))
                 break
-        got = []
+        got, seg_files = [], []
         for L in lens:
-            hit = choose(pool) if clip_count < max_clips else None
-            if hit is None and files:            # 새 클립이 없으면 이미 받은 클립의 다른 구간 재사용
-                hid = random.choice(list(files))
-                path, dur = files[hid]
+            hit = choose(pool) if clip_count < max_clips and pool else None
+            if hit is None and seg_files:        # 새 클립이 없으면 이 문장에서 받은 클립의 다른 구간 재사용
+                path, dur = random.choice(seg_files)
                 got.append((path, random.uniform(0, max(0.0, dur - L - 0.2)), L))
                 continue
             if hit is None:
@@ -192,12 +192,16 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 clip_count += 1
                 dur = float(hit.get("duration") or 8)
                 files[hit["id"]] = (out, dur)
+                seg_files.append((out, dur))
                 got.append((out, random.uniform(0, max(0.0, min(dur - L - 0.2, dur * 0.5))), L))
             except Exception as e:
                 print(f"  [영상] 다운로드 실패: {e}")
                 got.append((None, 0.0, L))
         plan.extend(got)
-        print(f"  [영상] {i+1}번 문장 '{kw}' → 컷 {len(lens)}개")
+        if any(c is None for c, _, _ in got):
+            missing.add(i)
+        print(f"  [영상] {i+1}번 문장 '{kw}' → " + ("관련 영상 없음 → 그래픽" if i in missing else f"컷 {len(lens)}개"))
+    LAST_MISSING.update(missing)
     reused = sum(1 for i in new_ids if i in recent_ids)
     print(f"  [영상] 클립 {clip_count}개, 컷 {len(plan)}개 (최근 영상과 겹친 클립 {reused}개, 촬영자 {len(set(new_users))}명)")
     if new_ids:

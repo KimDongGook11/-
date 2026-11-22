@@ -190,6 +190,7 @@ def build(job_path=None):
     lsc = factcheck_panel(lsc, mats)
     print("4) 자막 맞춤법 검수")
     lsc = script.proofread(lsc)
+    lsc["headlines"] = script.headline_list(mats)
     lsc.update({"speakers": SPEAKERS, "series_name": SERIES_NAME, "ep": "", "year": None,
                 "open_meta": f"{SERIES_NAME}  ·  진행 {SPEAKERS['host']['name']}  ·  패널 {SPEAKERS['panel']['name']}",
                 "company": job.get("company") or {}, "wiki_titles": job.get("photo_titles", [])})
