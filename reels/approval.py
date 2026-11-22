@@ -206,8 +206,11 @@ def _approve_youtube(p):
             th = storage.download(p["release_tag"], os.path.join(d, "thumb.jpg"), name=p.get("thumb_name", "thumbnail.jpg"))
         except Exception:
             th = None
+        at = _publish_at("youtube", p["slot"]) if p.get("slot") else None   # 이슈 뒷담화: 일요일 20:00 예약 공개
         vid, st = youtube.upload(vid_path, p["yt_title"], p.get("yt_description", ""), p.get("yt_tags", []),
-                                 privacy=config.env("YT_PRIVACY", "public"), thumb=th)
+                                 privacy=config.env("YT_PRIVACY", "public"), thumb=th, publish_at=at)
+        if at:
+            st = f"{p['slot']} 예약 공개"
         pl_note = ""
         if p.get("playlist"):   # 이슈 뒷담화 등: 채널의 같은 이름 재생목록에 자동 추가
             pl_note = (f"\n📂 재생목록 '{p['playlist']}'에 추가했어요." if youtube.add_to_playlist(vid, p["playlist"])

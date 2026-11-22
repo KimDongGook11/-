@@ -53,6 +53,57 @@ JSON으로만 답해:
     return job
 
 
+WEEKLY_RULES = ("이번 편은 일요일 저녁 '한 주 결산 + 다음 주 전망' 편이야. 챕터 구성: "
+                "① 이번 주 무슨 일(이번 주 가장 뜨거웠던 이슈 하나, 언제 무엇이 있었나) "
+                "② 왜 이렇게 커졌나(배경과 쟁점 분석, 자료 속 매체·전문가 시각) "
+                "③ 국내 증시에는(이번 주 코스피·코스닥·환율과 관련 업종·기업에 어떤 영향이 있었는지, [이번 주 시세] 숫자 활용) "
+                "④ 다음 주 전망(자료에 나온 다음 주 예정 일정·발표와 시각. '~하면 ~할 수 있다' 같은 조건부로, "
+                "자료에 없는 예측은 '아직 알 수 없다'고 말해) "
+                "⑤ 정리: 다음 주 지켜볼 점 세 가지(진행자가 정리). "
+                "투자 권유·목표 주가·'오른다/내린다' 단정은 금지. 숫자는 날짜·기준과 함께.")
+
+
+def pick_weekly():
+    """일요일 편: 이번 주 가장 핫한 이슈 하나 (원픽·브리핑에서 다룬 주제 + 최근 뉴스 제목 참고)."""
+    from .history import hot_headlines
+    heads = hot_headlines(n=80, hours=96)
+    week_ago = (dt.datetime.now(dt.timezone(dt.timedelta(hours=9))) - dt.timedelta(days=7)).strftime("%Y%m%d")
+    picks = [f"- {h.get('date', '')[:8]} {h.get('title_ko', '')} / {h.get('topic', '')}"
+             for h in load_state("history", []) if str(h.get("date", ""))[:8] >= week_ago]
+    done = "\n".join(f"- {t.get('date', '')} {t.get('topic', '')}" for t in load_state("talk_history", [])[-8:]) or "(없음)"
+    prompt = f"""너는 경제 유튜브 채널 '경제 원픽'의 PD야. 일요일 저녁 '{SERIES_NAME}'(한 주 결산 + 다음 주 전망)에서 다룰
+이번 주 가장 뜨거웠던 경제 이슈 하나를 골라.
+
+[고르는 기준 — 위에서부터 중요]
+1. 이번 주 여러 날에 걸쳐 크게 다뤄진 이슈 (아래 '이번 주 우리 채널이 다룬 주제'에 여러 번 나왔으면 유력)
+2. 한국 증시(코스피·코스닥)·환율·한국 기업에 영향이 있고, 다음 주에도 이어질 일정이나 쟁점이 있음
+3. 사건·사고만 있는 소식, 사람의 사생활·추문 중심 이야기는 제외. 최근 이슈 뒷담화와 같은 주제는 제외
+
+[이번 주 우리 채널이 다룬 주제]
+{chr(10).join(picks) or '(기록 없음)'}
+
+[최근 뉴스 제목]
+{chr(10).join(heads) or '(뉴스를 가져오지 못함)'}
+
+[최근 이슈 뒷담화 주제(중복 금지)]
+{done}
+
+JSON으로만 답해:
+{{"topic": "이번 주 이슈와 국내 증시 영향·다음 주 전망을 담은 주제 한 문장(한국어)", "label_ko": "짧은 이름 12자 이내",
+ "label_en": "short English label",
+ "company": {{"name_ko": "중심 기업·기관 1~3개", "country_ko": "나라", "industry_ko": "분야"}},
+ "photo_titles": ["썸네일 사진을 찾을 영어 위키백과 문서 제목 1~3개"],
+ "tickers": ["관련 yfinance 티커 1~3개 (예: ^KS11, 005930.KS, NVDA, KRW=X)"],
+ "queries": ["기사 검색어 7~9개: 이번 주 이슈(영어 3 + 한국어 2), 국내 증시 영향(한국어 2), 다음 주 일정·전망(영어 1 + 한국어 1)"]}}"""
+    job = llm.ask_json(prompt, temperature=0.4)
+    if not job.get("topic") or not job.get("queries"):
+        raise ValueError("이슈 뒷담화 주제 선정 실패: " + str(job)[:300])
+    job["extra_rules"] = WEEKLY_RULES
+    job["days"] = 7
+    print(f"  [이슈 뒷담화 주제] {job['topic']}")
+    return job
+
+
 def remember(job):
     hist = load_state("talk_history", [])
     hist.append({"date": dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y%m%d"), "topic": job["topic"]})
@@ -64,7 +115,7 @@ def gather(job, want=10, limit_chars=16000):
     mats, seen = [], set()
     for q in job.get("queries", []):
         got = 0
-        for it in news.guardian_search(q, n=3) + news.gnews_search(q, n=6):
+        for it in news.guardian_search(q, n=3) + news.gnews_search(q, n=6, days=job.get("days", 2)):
             key = re.sub(r"\W+", "", (it.get("title") or "").lower())[:60]
             if not key or key in seen or it.get("link") in seen:
                 continue
@@ -213,9 +264,15 @@ JSON으로만: {{"lines": ["문장", ...]}}"""
 def build(job_path=None):
     """반환: (장편 대본, 에피소드 정보, 근거 링크, 근거 매체 목록).
     TALK_TOPIC=auto(자동 예약 실행)면 AI가 주제를 고르고, 아니면 jobs/talk_custom.json 을 씀."""
-    job = pick_topic() if config.env("TALK_TOPIC", "file") == "auto" else load_job(job_path)
+    mode = config.env("TALK_TOPIC", "file")
+    job = pick_weekly() if mode == "weekly" else pick_topic() if mode == "auto" else load_job(job_path)
     print(f"1) 대담 주제: {job['topic']}")
     mats = gather(job)
+    if job.get("days", 2) >= 7:   # 주간 편: 이번 주 지수·환율 등락을 근거 맨 앞에
+        from . import market
+        wk = market.weekly_material()
+        if wk:
+            mats.insert(0, wk)
     if len(mats) < 3:
         raise RuntimeError(f"대담 근거 기사 본문을 {len(mats)}개밖에 확보하지 못했어요 (최소 3개)")
     print("2) 대담 대본")
@@ -227,7 +284,7 @@ def build(job_path=None):
         lsc = repair_flow(lsc)
     print("4) 자막 맞춤법 검수")
     lsc = script.proofread(lsc)
-    lsc["headlines"] = script.headline_list(mats)
+    lsc["headlines"] = script.headline_list([m for m in mats if m.get("source") != "Yahoo Finance"])
     lsc.update({"speakers": SPEAKERS, "series_name": SERIES_NAME, "ep": "", "year": None,
                 "open_meta": f"{SERIES_NAME}  ·  진행 {SPEAKERS['host']['name']}  ·  패널 {SPEAKERS['panel']['name']}",
                 "company": job.get("company") or {}, "wiki_titles": job.get("photo_titles", [])})

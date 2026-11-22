@@ -257,11 +257,11 @@ def guardian_search(query, n=3, limit=3500):
         return []
 
 
-def gnews_search(query, n=6):
-    """구글 뉴스 검색(최근 2일)으로 같은 주제의 다른 매체 기사 찾기."""
+def gnews_search(query, n=6, days=2):
+    """구글 뉴스 검색(최근 days일)으로 같은 주제의 다른 매체 기사 찾기."""
     try:
         base, name = (GN_KR, "Google News KR") if re.search(r"[가-힣]", query) else (GN, "Google News")
-        r = requests.get(base + requests.utils.quote(query + " when:2d"), headers=config.UA, timeout=15)
+        r = requests.get(base + requests.utils.quote(query + f" when:{days}d"), headers=config.UA, timeout=15)
         return parse_feed(r.content, name)[:n]
     except Exception:
         return []

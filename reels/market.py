@@ -86,3 +86,30 @@ def material(focus):
     print("  " + text.replace("\n", "\n  "))
     return {"title": title, "source": "Yahoo Finance", "link": "https://finance.yahoo.com", "summary": "",
             "body": text, "market": snap}
+
+
+WEEK = [("^KS11", "코스피"), ("^KQ11", "코스닥"), ("KRW=X", "원/달러 환율"), ("005930.KS", "삼성전자"),
+        ("000660.KS", "SK하이닉스"), ("^GSPC", "S&P 500"), ("^IXIC", "나스닥"), ("^SOX", "필라델피아 반도체지수"),
+        ("^TNX", "미국 10년물 국채 금리"), ("CL=F", "WTI 유가")]
+
+
+def weekly_material():
+    """이슈 뒷담화(일요일)용: 최근 5거래일 등락 (마지막 종가 vs 5거래일 전 종가)."""
+    lines = ["[이번 주 시세] (Yahoo Finance 종가 기준, 최근 5거래일 대비. 숫자는 이 표의 값만 그대로 사용)"]
+    for ticker, name in WEEK:
+        b = _bars(ticker)
+        if len(b) < 6:
+            continue
+        (d1, c1), (d0, c0) = b[-1], b[-6]
+        if ticker == "^TNX":
+            lines.append(f"- {name}: {c1:.2f}% ({d0}→{d1} {(c1 - c0) * 100:+.1f}bp)")
+        elif ticker == "KRW=X":
+            lines.append(f"- {name}: {c1:,.1f}원 ({d0}→{d1} {c1 - c0:+,.1f}원)")
+        else:
+            lines.append(f"- {name}: {_num(c1)} ({d0}→{d1} {(c1 - c0) / c0 * 100:+.2f}%)")
+    if len(lines) < 3:
+        return None
+    text = "\n".join(lines)
+    print("  " + text.replace("\n", "\n  "))
+    return {"title": "이번 주 시세", "source": "Yahoo Finance", "link": "https://finance.yahoo.com",
+            "summary": "", "body": text}

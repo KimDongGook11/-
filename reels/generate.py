@@ -267,6 +267,7 @@ def make_reel(series="news", offline=False):
         return {"id": rid, "series": series, "created_at": now.isoformat(), "sources": sources,
                 "title_en": ep["company"], "topic": ep["episode_ko"], "links": links, "episode": ep,
                 "video": None, "script": lsc, "long_only": True, "talk": True,
+                "slot": config.env("YT_TALK_TIME", "20:00") if config.env("TALK_TOPIC", "file") == "weekly" else None,
                 "long": {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1),
                          "chapters": chapters, "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}}
 
@@ -361,7 +362,8 @@ def deliver_long(res, offline=False):
                                  "video_name": f"long-{res['id']}.mp4", "thumb_name": "thumbnail.jpg",
                                  "hook_title": yt_title, "yt_title": yt_title, "yt_description": desc,
                                  "yt_tags": lsc.get("tags", []), "tg_message_id": msg_id,
-                                 "playlist": talk.SERIES_NAME if is_talk else None})
+                                 "playlist": talk.SERIES_NAME if is_talk else None,
+                                 "slot": res.get("slot") if is_talk else None})
 
 
 def expire_pending(series):
