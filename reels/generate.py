@@ -13,6 +13,7 @@ import sys
 import time
 import traceback
 
+from . import talk
 from . import approval, config, factcheck, history, instagram, market, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
 from .utils import git_push_state, load_state, save_state
 
@@ -235,7 +236,7 @@ def _need_short():
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
-    rid = {"history": "h", "kr": "k", "us": "u"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
+    rid = {"history": "h", "kr": "k", "us": "u", "talk": "t"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
     tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
@@ -255,6 +256,18 @@ def make_reel(series="news", offline=False):
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
                 "qc": qc.check(out, info, sc, offline=offline), **meta}
+
+    if series == "talk":   # ---- 대담 특집: 진행 서현 + 패널 필재, 가로 약 5분 (유튜브 장편만) ----
+        lsc, ep, links, sources = talk.build()
+        print("영상 제작: 대담 장편 (가로 약 5분)")
+        long_out = config.OUTPUT_DIR / f"long_{rid}.mp4"
+        ldur, chapters, thumb, linfo = produce.long(lsc, work / "long", long_out, sources, offline=offline,
+                                                    chart_opts={"start_year": now.year - 1})
+        return {"id": rid, "series": series, "created_at": now.isoformat(), "sources": sources,
+                "title_en": ep["company"], "topic": ep["episode_ko"], "links": links, "episode": ep,
+                "video": None, "script": lsc, "long_only": True, "talk": True,
+                "long": {"video": str(long_out), "thumb": str(thumb), "duration": round(ldur, 1),
+                         "chapters": chapters, "script": lsc, "qc": qc.check(long_out, linfo, lsc, offline=offline)}}
 
     # ---- 그때 그 결정: 장편(가로 5분) + 60초 릴스 ----
     if offline:
@@ -302,6 +315,8 @@ def deliver_long(res, offline=False):
     """장편: GitHub Release에 원본·썸네일 보관 → 텔레그램에 썸네일, 미리보기, 유튜브 업로드용 문구."""
     lg, ep = res["long"], res.get("episode", {})
     lsc = lg["script"]
+    is_talk = bool(res.get("talk"))
+    label = talk.SERIES_NAME if is_talk else "그때 그 결정"
     url = None
     if not offline and storage.enabled():
         tag = f"long-{res['id']}"
@@ -312,11 +327,13 @@ def deliver_long(res, offline=False):
     if not telegram.enabled():
         return
     chap = "\n".join(f"{_mmss(t)} {name}" for t, name in lg["chapters"])
-    desc = (f"{lsc.get('description', '')}\n\n⏱ 챕터\n{chap}\n\n📚 참고: Wikipedia\n"
+    desc = (f"{lsc.get('description', '')}\n\n⏱ 챕터\n{chap}\n\n📚 참고: "
+            + (", ".join(res.get("sources", [])[:6]) if is_talk else "Wikipedia") + "\n"
             + "\n".join(res.get("links", [])[:3]) + "\n🎞 영상: Pixabay"
             + (f"\n🖼 썸네일 사진: {lsc['thumb_credit']}" if lsc.get("thumb_credit") else "")
             + "\n🤖 이 콘텐츠는 AI로 제작되었습니다.")
-    telegram.send_photo(lg["thumb"], f"🖼 [그때 그 결정] 유튜브 썸네일 · {ep.get('company_ko', '')} {ep.get('year', '')}년")
+    telegram.send_photo(lg["thumb"], f"🖼 [{label}] 유튜브 썸네일 · {ep.get('company_ko', '')}"
+                        + (f" {ep['year']}년" if ep.get("year") else ""))
     pv = str(lg["video"]).replace(".mp4", "_preview.mp4")
     render.preview(lg["video"], pv)
     telegram.send_video(pv, f"🎬 [유튜브 장편 미리보기 · 저화질] {_mmss(lg['duration'])}\n{qc.summary(lg.get('qc'))}")
@@ -329,10 +346,11 @@ def deliver_long(res, offline=False):
         + (f"■ 원본 영상 다운로드 (1080p)\n{url}\n\n" if url else "")
         + f"■ 제목\n{yt_title}\n\n"
         + f"■ 설명\n{desc}\n\n■ 태그\n{', '.join(lsc.get('tags', []))}\n\n"
+        + (factcheck.summary(lsc["factcheck"]) + "\n\n" if lsc.get("factcheck") else "")
         + "■ 사실 검수용\n" + "\n".join(f"- {k}" for k in lsc.get("key_facts", [])[:8])
         + (f"\n\n{script.proofread_summary(lsc)}" if script.proofread_summary(lsc) else ""),
         buttons=([("✅ 유튜브 게시 (공개)", f"approve:{yrid}")]
-                 + ([("🔁 다른 에피소드로 다시 만들기", f"redo:{yrid}")] if res.get("long_only") else [])
+                 + ([("🔁 다른 에피소드로 다시 만들기", f"redo:{yrid}")] if res.get("long_only") and not is_talk else [])
                  + [("❌ 유튜브에는 안 올림", f"reject:{yrid}")])
         if yt_on else None)
     if yt_on:
@@ -358,6 +376,9 @@ def expire_pending(series):
 def deliver(res, offline=False):
     """보관(GitHub Release) + 텔레그램 미리보기 + 대기 상태 저장."""
     series = res["series"]
+    if res.get("talk"):   # 대담 특집: 유튜브 장편 승인만 (다른 시리즈의 대기 영상은 건드리지 않음)
+        deliver_long(res, offline=offline)
+        return
     expire_pending(series)
     if res.get("long_only"):
         eps = load_state("episodes", [])
@@ -472,7 +493,7 @@ def _today():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--series", choices=["news", "us", "kr", "history"], default="news",
+    ap.add_argument("--series", choices=["news", "us", "kr", "history", "talk"], default="news",
                     help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=18:00 국내 마감 브리핑, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")

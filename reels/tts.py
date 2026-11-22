@@ -17,12 +17,13 @@ from .utils import duration, run
 PAD = 0.25  # 문장 사이 쉬는 시간(초)
 
 
-async def _edge(text, out_mp3):
+async def _edge(text, out_mp3, voice=None):
     import edge_tts
+    voice = voice or edge_voice()
     try:
-        com = edge_tts.Communicate(text, edge_voice(), rate=config.TTS_RATE, boundary="WordBoundary")
+        com = edge_tts.Communicate(text, voice, rate=config.TTS_RATE, boundary="WordBoundary")
     except TypeError:   # 예전 버전은 boundary 옵션이 없고 기본이 단어 단위
-        com = edge_tts.Communicate(text, edge_voice(), rate=config.TTS_RATE)
+        com = edge_tts.Communicate(text, voice, rate=config.TTS_RATE)
     words = []
     with open(out_mp3, "wb") as f:
         async for ch in com.stream():
@@ -72,6 +73,10 @@ VOICE_BY_SERIES = {
 # 타입캐스트가 실패해 무료 음성(edge)으로 대체될 때도 같은 성별로: 평일 = 선희(여), 그때 그 결정 = 인준(남)
 EDGE_BY_SERIES = {"history": lambda: config.env("EDGE_VOICE_HISTORY", "ko-KR-InJoonNeural")}
 GEMINI_BY_SERIES = {"history": "Charon"}
+
+
+# 대담 특집처럼 한 영상에 목소리가 둘일 때: 타입캐스트 이름 → 대체용 edge 목소리(같은 성별)
+EDGE_BY_NAME = {"서현": "ko-KR-SunHiNeural", "필재": "ko-KR-InJoonNeural"}
 
 
 def edge_voice():
@@ -199,13 +204,18 @@ def align_to_script(ws, text):
     return out
 
 
-def _one(text, out_mp3, engine, prev="", nxt=""):
-    """음성 한 문장 → (오디오 파일, 단어 타이밍 또는 None)"""
+def _one(text, out_mp3, engine, prev="", nxt="", voice=None):
+    """음성 한 문장 → (오디오 파일, 단어 타이밍 또는 None). voice: 이 문장만 다른 목소리(타입캐스트 이름 또는 ID)"""
     if engine == "typecast":
         last = None
+        vid = None
+        if voice:
+            vid = resolve_voice(voice) or (PILJAE if voice == "필재" else None)
+            if not vid:
+                raise TypecastFailed(f"목소리 '{voice}'를 찾지 못함")
         for attempt in range(2):
             try:
-                words = _typecast(text, out_mp3, prev, nxt)
+                words = _typecast(text, out_mp3, prev, nxt, voice=vid)
                 if out_mp3.exists() and out_mp3.stat().st_size > 1000:
                     return out_mp3, words or None
             except Exception as e:
@@ -230,7 +240,7 @@ def _one(text, out_mp3, engine, prev="", nxt=""):
     if engine == "edge":
         for attempt in range(3):
             try:
-                words = asyncio.run(_edge(text, out_mp3))
+                words = asyncio.run(_edge(text, out_mp3, EDGE_BY_NAME.get(voice or "")))
                 if out_mp3.exists() and out_mp3.stat().st_size > 1000:
                     return out_mp3, words or None
             except Exception as e:
@@ -241,14 +251,15 @@ def _one(text, out_mp3, engine, prev="", nxt=""):
     return out_mp3, None
 
 
-def synthesize(texts, workdir, lead=None, tail=0.0):
-    """lead: 문장번호 → 문장 앞에 넣을 쉼(초) (장편의 챕터 카드용). tail: 끝에 붙일 쉼(아웃트로용)."""
+def synthesize(texts, workdir, lead=None, tail=0.0, voices=None):
+    """lead: 문장번호 → 문장 앞에 넣을 쉼(초) (장편의 챕터 카드용). tail: 끝에 붙일 쉼(아웃트로용).
+    voices: 문장별 목소리 이름 목록 (대담 특집: 서현/필재). 없으면 시리즈 기본 목소리."""
     workdir.mkdir(parents=True, exist_ok=True)
     lead = lead or {}
     engine = config.TTS_ENGINE
     if engine == "typecast":
         try:
-            return _synth(texts, workdir, lead, tail, engine)
+            return _synth(texts, workdir, lead, tail, engine, voices)
         except TypecastFailed as e:   # 목소리가 섞이지 않게 처음부터 edge로 다시
             print(f"  [음성] 타입캐스트를 쓸 수 없어 전체를 edge 음성으로 다시 만듭니다: {e}")
             global LAST_FALLBACK
@@ -261,20 +272,20 @@ def synthesize(texts, workdir, lead=None, tail=0.0):
                                           f"원인: {LAST_FALLBACK}\n(크레딧 소진이면 타입캐스트 API 플랜을 확인해 주세요)")
             except Exception:
                 pass
-    return _synth(texts, workdir, lead, tail, engine)
+    return _synth(texts, workdir, lead, tail, engine, voices)
 
 
 LAST_FALLBACK = None
 
 
-def _synth(texts, workdir, lead, tail, engine):
+def _synth(texts, workdir, lead, tail, engine, voices=None):
     wavs, durs, words = [], [], []
     t0 = 0.0
     for i, text in enumerate(texts):
         mp3 = workdir / f"tts_{i:02d}.mp3"
         wav = workdir / f"tts_{i:02d}.wav"
         src, ws = _one(text, mp3, engine, prev=" ".join(texts[max(0, i - 3):i]),
-                       nxt=" ".join(texts[i + 1:i + 3]))
+                       nxt=" ".join(texts[i + 1:i + 3]), voice=(voices[i] if voices else None))
         pre = float(lead.get(i, 0.0))
         post = PAD + (tail if i == len(texts) - 1 else 0.0)
         af = (f"adelay={int(pre * 1000)}:all=1," if pre > 0 else "") + f"apad=pad_dur={post}"

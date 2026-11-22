@@ -247,8 +247,9 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
             if o.get("fade_out"):
                 ch += f",fade=t=out:st={o['end'] - o['fade_out']:.3f}:d={o['fade_out']}:alpha=1"
             fc.append(ch + f"[o{k}]")
-            fc.append(f"[{last}][o{k}]overlay=x={x}:y={y}:eof_action=pass:"
-                      f"enable='between(t,{o['start']:.3f},{o['end']:.3f})'[v{k}]")
+            spans = o.get("ranges") or [(o["start"], o["end"])]   # 여러 구간에 같은 그림 (대담 이름표)
+            en = "+".join(f"between(t,{s0:.3f},{s1:.3f})" for s0, s1 in spans)
+            fc.append(f"[{last}][o{k}]overlay=x={x}:y={y}:eof_action=pass:enable='{en}'[v{k}]")
         else:
             inputs += ["-framerate", str(FPS), "-i", o["pattern"]]
             dur = o["end"] - o["start"]

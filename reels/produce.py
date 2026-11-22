@@ -102,7 +102,10 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
         lead[len(segs)] = CHAPTER_GAP
         for s in ch["segments"]:
             segs.append({**s, "chapter": ci})
-    narration, durs, words = tts.synthesize([s["text"] for s in segs], workdir, lead=lead, tail=OUTRO_L)
+    speakers = lsc.get("speakers")   # 대담 특집: {"host": {"name": "서현", ...}, "panel": {...}}
+    voices = [speakers[s.get("speaker", "panel")]["name"] for s in segs] if speakers else None
+    narration, durs, words = tts.synthesize([s["text"] for s in segs], workdir, lead=lead, tail=OUTRO_L,
+                                            voices=voices)
     total = sum(durs)
     starts = _starts(durs)
     shots = [(None, 0.0, d) for d in durs] if offline else \
@@ -157,6 +160,15 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
                     "x": kx, "y": ky, "fade_out": 0.3})
         fx.append((st, "pop", 0.3))
 
+    if speakers:   # 말하는 사람 이름표: 사람마다 그림 하나, 말하는 구간마다 켜기
+        for key, sp in speakers.items():
+            spans = [(starts[i] + lead.get(i, 0), starts[i] + durs[i]) for i, s in enumerate(segs)
+                     if s.get("speaker", "panel") == key]
+            if spans:
+                ovs.append({"kind": "image", "ranges": spans, "start": spans[0][0], "end": spans[-1][1],
+                            "path": graphics.speaker_badge(sp["name"], sp["role"], tuple(sp["color"]),
+                                                           workdir / f"badge_{key}.png"),
+                            "x": WINDOW["x"] + 24, "y": WINDOW["y"] + 24})
     ovs.append({"kind": "image", "path": graphics.outro_card(W, H, workdir / "outro.png", vertical=False),
                 "start": total - OUTRO_L, "end": total, "fade_in": 0.4})
     fx.append((total - OUTRO_L, "whoosh", 0.22))

@@ -174,7 +174,8 @@ def panel_b(lsc, ci, out, W=1920, H=1080):
     img, d = _canvas(W, H)
     ch = lsc["chapters"][ci - 1]
     ep, year = lsc.get("ep", ""), lsc.get("year")
-    d.text((70, 42), f"경제 [원픽]   ·   그때 그 결정 {ep}".rstrip(), font=F("SemiBold", 30), fill=(255, 255, 255, 170))
+    series = lsc.get("series_name", "그때 그 결정")
+    d.text((70, 42), f"경제 [원픽]   ·   {series} {ep}".rstrip(), font=F("SemiBold", 30), fill=(255, 255, 255, 170))
     d.text((PX, 112), f"CHAPTER {ci}", font=F("Bold", 30), fill=YELLOW)
     tf, lines = _fit(d, ch["title"], PW, (64, 56, 50), 2)
     y = _draw_lines(d, lines, tf, PX, 156)
@@ -236,13 +237,25 @@ def open_b(lsc, W, H, out):
     """장편 오프닝 타이틀."""
     img, d = _canvas(W, H)
     d.rectangle([0, 0, W, H], fill=(8, 12, 24, 225))
-    mt = f"그때 그 결정  ·  {lsc.get('ep', '')}  ·  {lsc.get('year', '')}"
+    mt = lsc.get("open_meta") or f"그때 그 결정  ·  {lsc.get('ep', '')}  ·  {lsc.get('year', '')}"
     mf = F("Bold", 40)
     f, lines = _fit(d, lsc["hook_title"], W - 400, (124, 112, 100), 2)
     block = int(f.size * 1.3) * len(lines)
     y0 = (H - block) / 2 + 20
     d.text(((W - d.textlength(mt, font=mf)) / 2, y0 - 90), mt, font=mf, fill=YELLOW)
     _draw_lines(d, lines, f, 0, y0, align="center", width=W)
+    img.save(out)
+    return out
+
+
+def speaker_badge(name, role, color, out, w=360, h=84):
+    """대담 특집: 지금 말하는 사람 이름표 (영상 창 왼쪽 위)."""
+    img, d = _canvas(w, h)
+    d.rounded_rectangle([0, 0, w - 1, h - 1], radius=h // 2, fill=(8, 12, 24, 215), outline=color + (255,), width=3)
+    d.ellipse([22, h / 2 - 13, 48, h / 2 + 13], fill=color + (255,))
+    rf, nf = F("SemiBold", 26), F("Black", 38)
+    d.text((66, h / 2 - 15), role, font=rf, fill=(200, 208, 224))
+    d.text((66 + d.textlength(role, font=rf) + 14, h / 2 - 25), name, font=nf, fill=WHITE)
     img.save(out)
     return out
 
