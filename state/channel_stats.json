@@ -1,10 +1,21 @@
 {
-  "collected_at": "2026-11-22T04:39:43+00:00",
+  "collected_at": "2026-11-22T06:41:33+00:00",
   "channel": "경제원픽",
   "subscribers": 11,
-  "total_views": 6472,
+  "total_views": 6649,
   "video_count": 32,
   "videos": [
+    {
+      "id": "r6hhesg32To",
+      "title": "AI 칩 규제 폭풍에 흔들린 글로벌 증시, 다음 주 코스피 운명은?",
+      "published": "2026-11-22T05:33:46Z",
+      "kind": "long",
+      "duration_s": 270,
+      "privacy": "private",
+      "views": 0,
+      "likes": 0,
+      "comments": 0
+    },
     {
       "id": "GDUih5KJX8Y",
       "title": "망해가던 삼양식품은 어떻게 불닭볶음면으로 대반전을 만들었을까 #삼양식품 #불닭볶음면 #K푸드",
@@ -12,8 +23,8 @@
       "kind": "shorts",
       "duration_s": 39,
       "privacy": "public",
-      "views": 56,
-      "likes": 1,
+      "views": 216,
+      "likes": 4,
       "comments": 0
     },
     {
@@ -23,7 +34,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 1109,
+      "views": 1115,
       "likes": 5,
       "comments": 0
     },
@@ -34,7 +45,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 237,
+      "views": 240,
       "likes": 2,
       "comments": 0
     },
@@ -68,7 +79,7 @@
       "duration_s": 220,
       "privacy": "public",
       "views": 46,
-      "likes": 2,
+      "likes": 3,
       "comments": 0
     },
     {
@@ -100,7 +111,7 @@
       "kind": "long",
       "duration_s": 237,
       "privacy": "public",
-      "views": 100,
+      "views": 109,
       "likes": 2,
       "comments": 0
     },
@@ -133,7 +144,7 @@
       "kind": "long",
       "duration_s": 310,
       "privacy": "public",
-      "views": 61,
+      "views": 62,
       "likes": 1,
       "comments": 0
     },
