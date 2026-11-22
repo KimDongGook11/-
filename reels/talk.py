@@ -206,7 +206,11 @@ def write(job, mats):
    (좋은 예: "semiconductor factory cleanroom", "data center servers", "stock exchange screen", "seoul skyline night").
    감정·추상어, 인물 이름, 로고·브랜드명 금지. 담배·약물·약품·술 취함·선정·폭력·도박 장면도 금지.
 8. 핵심 숫자가 나오는 패널 문장(전체 3~6개)에 number: {{"value": 자료의 숫자 그대로(가격·수치만), "change": 등락폭이 있으면 따로(예: "-7.95%", "+4.6원", 없으면 ""), "label": 10자 내외, "dir": "up|down|none"}}.
-9. chart: 아래 중 이 대담에 가장 맞는 주가 하나 {json.dumps(job.get('tickers', []), ensure_ascii=False)}. 주가 흐름을 말하는 패널 문장 1~2개에 show_chart: true.
+9. 주가 차트(중요): 기업이나 업종을 이야기하는 패널 문장에는 그 기업·업종의 주가 차트를 붙여: "chart": {{"ticker": "...", "label": "기업명 · 최근 1년"}}.
+   대본에 여러 업종(예: 반도체, 자동차, 배터리, 조선)이 나오면 업종마다 대표 기업 차트를 하나씩, 한 편에 3~6개 폭넓게. 같은 차트는 한 번만.
+   티커는 이 목록에서만 골라: {json.dumps(TICKERS, ensure_ascii=False)}
+   (이 주제의 참고 티커: {json.dumps(job.get('tickers', []), ensure_ascii=False)}). 차트를 붙인 문장에는 number를 넣지 마.
+   chart(맨 아래 항목)는 이 대담 전체를 대표하는 주가 하나.
 10. topic_keyword(6자 이내), hook_title(18자 이내, topic_keyword 포함, 핵심 단어 하나를 [ ]로),
     thumb_line1·thumb_line2(썸네일 두 줄, 각 7자 이내, 한 줄에 topic_keyword), youtube_title(40자 이내, 질문형이나 결론형),
     description(3~5줄), tags(10개 이내).
@@ -219,7 +223,7 @@ JSON으로만 답해:
  "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "youtube_title": "...",
  "description": "...", "tags": ["..."],
  "intro": [{{"speaker": "host", "text": "...", "keywords": "...", "show_chart": false, "number": null}}],
- "chapters": [{{"title": "...", "year": null, "summary": "...", "segments": [{{"speaker": "host|panel", "text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],
+ "chapters": [{{"title": "...", "year": null, "summary": "...", "segments": [{{"speaker": "host|panel", "text": "...", "keywords": "...", "chart": null, "number": null}}]}}],
  "chart": {{"ticker": "...", "label": "기업명 주가 · 최근 1년"}},
  "key_facts": ["대본에 쓴 숫자·사실 + 근거 매체"]
 }}"""
@@ -229,6 +233,10 @@ JSON으로만 답해:
         out = script.norm_segments(items)
         for s, raw in zip(out, [x for x in (items or []) if isinstance(x, dict) and str(x.get("text", "")).strip()]):
             s["speaker"] = "host" if str(raw.get("speaker", "")).lower().startswith("h") else "panel"
+            c = raw.get("chart")
+            if isinstance(c, dict) and c.get("ticker") in TICKERS.values():
+                s["chart"] = {"ticker": c["ticker"], "label": str(c.get("label") or c["ticker"])[:30]}
+                s["number"] = None
         return out
 
     chapters = []
@@ -248,6 +256,56 @@ JSON으로만 답해:
             "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
             "intro": segs(d.get("intro")), "chapters": chapters, "chart": chart,
             "key_facts": d.get("key_facts", [])}
+
+
+# 주가 차트용 티커 (대본 AI에게 주는 목록 + 대본에 업종이 나왔는데 차트가 없을 때 자동 보완)
+TICKERS = {
+    "삼성전자": "005930.KS", "SK하이닉스": "000660.KS", "현대차": "005380.KS", "기아": "000270.KS",
+    "현대모비스": "012330.KS", "LG에너지솔루션": "373220.KS", "삼성SDI": "006400.KS", "POSCO홀딩스": "005490.KS",
+    "HD현대중공업": "329180.KS", "한화오션": "042660.KS", "한화에어로스페이스": "012450.KS", "셀트리온": "068270.KS",
+    "삼성바이오로직스": "207940.KS", "네이버": "035420.KS", "카카오": "035720.KS", "KB금융": "105560.KS",
+    "신한지주": "055550.KS", "한국전력": "015760.KS", "S-Oil": "010950.KS", "대한항공": "003490.KS",
+    "LG화학": "051910.KS", "삼성전기": "009150.KS", "한미반도체": "042700.KQ", "에코프로비엠": "247540.KQ",
+    "코스피": "^KS11", "코스닥": "^KQ11", "원/달러 환율": "KRW=X", "엔비디아": "NVDA", "TSMC": "TSM",
+    "AMD": "AMD", "애플": "AAPL", "마이크로소프트": "MSFT", "테슬라": "TSLA", "필라델피아 반도체지수": "^SOX",
+    "나스닥": "^IXIC", "S&P 500": "^GSPC", "WTI 유가": "CL=F", "금": "GC=F", "비트코인": "BTC-USD",
+}
+SECTORS = [   # (대본 속 단어들, 대표 차트 이름)
+    (("자동차", "완성차", "車"), "현대차"), (("배터리", "2차전지", "이차전지"), "LG에너지솔루션"),
+    (("조선",), "HD현대중공업"), (("방산", "방위산업"), "한화에어로스페이스"), (("바이오", "제약"), "삼성바이오로직스"),
+    (("은행", "금융지주"), "KB금융"), (("정유",), "S-Oil"), (("항공사", "항공업"), "대한항공"),
+    (("철강",), "POSCO홀딩스"), (("반도체", "HBM", "메모리"), "SK하이닉스"), (("인터넷", "플랫폼"), "네이버"),
+    (("전력", "한전"), "한국전력"), (("유가", "원유"), "WTI 유가"), (("환율",), "원/달러 환율"),
+]
+MAX_CHARTS = 6
+
+
+def _chart(name):
+    t = TICKERS.get(name)
+    return {"ticker": t, "label": f"{name} · 최근 1년"} if t else None
+
+
+def ensure_charts(lsc):
+    """업종·기업 이야기를 폭넓게 시각화 (사용자 요청 11/22): 대본에 나온 업종인데 차트가 없으면
+    그 업종을 처음 말하는 패널 문장에 대표 종목 차트를 붙임. 한 편에 최대 MAX_CHARTS개."""
+    flat = lsc["intro"] + [x for c in lsc["chapters"] for x in c["segments"]]
+    have = {s["chart"]["ticker"] for s in flat if isinstance(s.get("chart"), dict)}
+    for words, name in SECTORS:
+        if len(have) >= MAX_CHARTS:
+            break
+        ch = _chart(name)
+        if ch and name not in words[0]:
+            ch["label"] = f"{words[0]} 대표 · {name} · 최근 1년"
+        if not ch or ch["ticker"] in have:
+            continue
+        for k, s in enumerate(flat):
+            if s.get("speaker") == "panel" and not s.get("chart") and any(w in s["text"] for w in words):
+                s["chart"] = ch
+                have.add(ch["ticker"])
+                print(f"  [차트 보완] '{name}' → {k + 1}번 문장")
+                break
+    print(f"  [차트] 이번 편 주가 차트 {len(have)}개: " + ", ".join(sorted(have)))
+    return lsc
 
 
 PRIVATE = ("스캔들", "추문", "불륜", "외도", "혼외", "성추행", "성희롱", "사생활", "염문")
@@ -331,6 +389,7 @@ def build(job_path=None):
         lsc = repair_flow(lsc)
     print("4) 자막 맞춤법 검수")
     lsc = script.proofread(lsc)
+    lsc = ensure_charts(lsc)
     lsc["headlines"] = script.headline_list([m for m in mats if m.get("source") != "Yahoo Finance"])
     lsc.update({"speakers": SPEAKERS, "series_name": SERIES_NAME, "ep": "", "year": None,
                 "open_meta": f"{SERIES_NAME}  ·  진행 {SPEAKERS['host']['name']}  ·  패널 {SPEAKERS['panel']['name']}",

@@ -169,20 +169,25 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
         fx.append((st, "whoosh", 0.24))
 
     busy = set()
-    for i in [i for i, s in enumerate(segs) if s.get("show_chart")][:2]:
-        if not lsc.get("chart"):
-            break
-        cf = chart.make_chart_frames(lsc["chart"], workdir / f"chartf_{i}", offline=offline,
+    # 문장별 차트(이슈 뒷담화: 업종·기업마다, 최대 6개) + 기존 방식(대표 차트를 show_chart 문장에, 최대 2개)
+    plan = [(i, s["chart"]) for i, s in enumerate(segs) if isinstance(s.get("chart"), dict)][:6]
+    if not plan and lsc.get("chart"):
+        plan = [(i, lsc["chart"]) for i, s in enumerate(segs) if s.get("show_chart")][:2]
+    for i, ch in plan:
+        if i in busy:
+            continue
+        cf = chart.make_chart_frames(ch, workdir / f"chartf_{i}", offline=offline,
                                      w=WINDOW["w"], h=WINDOW["h"], **(chart_opts or {}))
         if not cf:
-            break
+            continue
         pat, frames, w, h = cf
         end = starts[i] + durs[i]
-        if i + 1 < len(segs) and segs[i + 1]["chapter"] == segs[i]["chapter"]:
+        if (i + 1 < len(segs) and segs[i + 1]["chapter"] == segs[i]["chapter"]
+                and not segs[i + 1].get("chart")):     # 다음 문장에 자기 차트가 없으면 이어서 보여 줌
             end += durs[i + 1]
             busy.add(i + 1)
         ovs.append({"kind": "seq", "pattern": pat, "frames": frames, "start": starts[i] + lead.get(i, 0) + 0.1,
-                    "end": end, "x": WINDOW["x"], "y": WINDOW["y"], "fade_out": 0.3})
+                    "end": end, "x": WINDOW["x"], "y": WINDOW["y"], "fade_out": 0.3, "chart": True})
         busy.add(i)
     kx, ky, kw, kh = graphics.KEY_BOX
     for i, s in enumerate(segs):
