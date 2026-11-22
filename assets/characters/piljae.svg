@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 720" width="600" height="720">
+  <!-- 필재: 패널(경제 해설가). 짧은 머리, 안경, 남색 수트 + 파란 넥타이 -->
+  <defs>
+    <linearGradient id="suit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26355a"/><stop offset="1" stop-color="#141d33"/></linearGradient>
+    <linearGradient id="hair2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2b30"/><stop offset="1" stop-color="#141417"/></linearGradient>
+  </defs>
+  <!-- body / suit -->
+  <path d="M55 720 C65 585 150 535 225 515 L375 515 C450 535 535 585 545 720 Z" fill="url(#suit)"/>
+  <!-- shirt -->
+  <path d="M240 516 L300 640 L360 516 Z" fill="#f3f5f8"/>
+  <!-- tie -->
+  <path d="M286 540 L314 540 L322 565 L308 690 L300 705 L292 690 L278 565 Z" fill="#3f8cff"/>
+  <path d="M284 528 L316 528 L314 548 L286 548 Z" fill="#2f6fd6"/>
+  <!-- lapels -->
+  <path d="M225 515 L300 660 L265 720 L200 720 L210 600 Z" fill="#1c2846"/>
+  <path d="M375 515 L300 660 L335 720 L400 720 L390 600 Z" fill="#1c2846"/>
+  <!-- neck -->
+  <path d="M262 425 L338 425 L342 525 C322 545 278 545 258 525 Z" fill="#e9bb93"/>
+  <path d="M262 465 C285 488 315 488 338 465 L338 435 L262 435 Z" fill="#d8a57d"/>
+  <!-- ears -->
+  <ellipse cx="186" cy="305" rx="18" ry="28" fill="#e9bb93"/>
+  <ellipse cx="414" cy="305" rx="18" ry="28" fill="#e9bb93"/>
+  <!-- face -->
+  <path d="M188 280 C188 180 240 160 300 160 C360 160 412 180 412 280 C412 370 370 440 300 440 C230 440 188 370 188 280 Z" fill="#f3cba6"/>
+  <!-- hair -->
+  <path d="M182 270 C170 150 240 100 305 102 C380 104 432 150 418 270 C410 225 395 205 370 196 C330 210 260 208 222 190 C200 205 188 235 182 270 Z" fill="url(#hair2)"/>
+  <!-- brows -->
+  <path d="M228 252 Q255 240 282 250" stroke="#1d1d22" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M318 250 Q345 240 372 252" stroke="#1d1d22" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <!-- glasses -->
+  <rect x="216" y="268" width="78" height="56" rx="14" fill="#ffffff" fill-opacity="0.12" stroke="#1d1d22" stroke-width="6"/>
+  <rect x="306" y="268" width="78" height="56" rx="14" fill="#ffffff" fill-opacity="0.12" stroke="#1d1d22" stroke-width="6"/>
+  <path d="M294 290 L306 290" stroke="#1d1d22" stroke-width="6"/>
+  <path d="M216 284 L190 278" stroke="#1d1d22" stroke-width="5"/><path d="M384 284 L410 278" stroke="#1d1d22" stroke-width="5"/>
+  <!-- eyes -->
+  <ellipse cx="255" cy="298" rx="11" ry="12" fill="#1d1d22"/><circle cx="259" cy="294" r="3.5" fill="#fff"/>
+  <ellipse cx="345" cy="298" rx="11" ry="12" fill="#1d1d22"/><circle cx="349" cy="294" r="3.5" fill="#fff"/>
+  <!-- nose, mouth -->
+  <path d="M300 318 Q292 348 306 352" stroke="#cf9a72" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M265 382 Q300 404 335 382" stroke="#a0453c" stroke-width="7" fill="none" stroke-linecap="round"/>
+</svg>

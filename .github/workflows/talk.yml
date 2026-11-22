@@ -3,6 +3,10 @@ name: 대담 특집 (진행 서현 · 패널 필재, 유튜브 장편)
 on:
   workflow_dispatch:
     inputs:
+      topic:
+        description: "주제: file(jobs/talk_custom.json) 또는 auto(AI가 최근 뉴스에서 선정)"
+        required: false
+        default: "file"
       wait:
         description: "전송 후 버튼 실시간 대기(분)"
         required: false
@@ -22,6 +26,7 @@ jobs:
     timeout-minutes: 240
     env:
       PYTHONUNBUFFERED: "1"
+      TALK_TOPIC: ${{ inputs.topic || 'file' }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

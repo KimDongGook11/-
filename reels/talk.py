@@ -1,21 +1,62 @@
 """'대담 특집': 진행자(서현)가 묻고 패널(필재)이 답하는 약 5분 가로 장편 (유튜브).
 근거는 최근 뉴스 기사 본문(구글 뉴스·가디언 검색). 주제·검색어·구성은 jobs/talk_custom.json 에서 받음.
 사실은 패널 발언만 팩트체크(진행자의 질문·맞장구는 사실 주장이 아니라서 제외)."""
+import datetime as dt
 import json
 import re
 
 from . import config, factcheck, llm, news, script
+from .utils import load_state, save_state
 
 SERIES_NAME = "대담 특집"
 SPEAKERS = {
-    "host": {"name": "서현", "role": "진행", "color": [255, 196, 64]},
-    "panel": {"name": "필재", "role": "패널", "color": [96, 170, 255]},
+    "host": {"name": "서현", "role": "진행", "color": [255, 196, 64], "image": "seohyun.png"},
+    "panel": {"name": "필재", "role": "패널", "color": [96, 170, 255], "image": "piljae.png"},
 }
 
 
 def load_job(path=None):
     f = config.ROOT / (path or "jobs/talk_custom.json")
     return json.loads(f.read_text(encoding="utf-8"))
+
+
+def pick_topic():
+    """자동 모드: 최근 2~3일 경제 뉴스에서 대담 주제를 AI가 고르고 검색어·챕터 구성까지 정함."""
+    from .history import hot_headlines
+    heads = hot_headlines(n=80, hours=72)
+    done = "\n".join(f"- {t.get('date', '')} {t.get('topic', '')}" for t in load_state("talk_history", [])[-12:]) or "(없음)"
+    prompt = f"""너는 경제 유튜브 채널 '경제 원픽'의 PD야. 진행자와 경제 해설가가 5분 동안 문답하는 '{SERIES_NAME}'의 이번 주제를 하나 골라.
+
+[고르는 기준 — 위에서부터 중요]
+1. 최근 2~3일 동안 여러 매체가 크게 다룬 경제 이슈 (실적, 금리, 환율, 반도체·AI, 무역·관세, 빅테크, 에너지 등)
+2. 한국 시청자와 바로 이어짐: 한국 기업·증시·환율·물가·일자리에 미치는 영향을 이야기할 거리가 있음
+3. 5분 동안 문답할 만큼 배경·쟁점·숫자가 풍부함
+피해야 할 것: 사건·사고만 있는 소식, 사람의 사생활·추문·범죄 의혹이 중심인 이야기, 최근 대담에서 다룬 주제와 같은 이야기.
+
+[최근 대담 주제(중복 금지)]
+{done}
+
+[최근 뉴스 제목]
+{chr(10).join(heads) or '(뉴스를 가져오지 못함)'}
+
+JSON으로만 답해:
+{{"topic": "대담 주제 한 문장(한국어)", "label_ko": "짧은 이름 12자 이내", "label_en": "short English label",
+ "company": {{"name_ko": "중심 기업·기관 1~3개", "country_ko": "나라", "industry_ko": "분야"}},
+ "photo_titles": ["썸네일 사진을 찾을 영어 위키백과 문서 제목 1~3개(기업·기관)"],
+ "tickers": ["관련 yfinance 티커 1~3개 (예: NVDA, 005930.KS, ^KS11, KRW=X)"],
+ "queries": ["같은 주제 기사를 찾을 검색어 6~8개. 영어 4~5개 + 한국어 2~3개, 구체적인 기업·사건 이름 포함"],
+ "extra_rules": "챕터 5개 구성 지시(① 무슨 일 ② 왜 ③ 누가 영향을 받나 ④ 한국에는 ⑤ 지켜볼 점 세 가지 처럼 이 주제에 맞게) + 숫자는 날짜·기준과 함께 말하라는 지시"}}"""
+    job = llm.ask_json(prompt, temperature=0.5)
+    if not job.get("topic") or not job.get("queries"):
+        raise ValueError("대담 주제 선정 실패: " + str(job)[:300])
+    print(f"  [대담 주제] {job['topic']}")
+    return job
+
+
+def remember(job):
+    hist = load_state("talk_history", [])
+    hist.append({"date": dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y%m%d"), "topic": job["topic"]})
+    save_state("talk_history", hist[-50:])
 
 
 def gather(job, want=10, limit_chars=16000):
@@ -133,8 +174,9 @@ def factcheck_panel(lsc, mats):
 
 
 def build(job_path=None):
-    """반환: (장편 대본, 에피소드 정보, 근거 링크, 근거 매체 목록)"""
-    job = load_job(job_path)
+    """반환: (장편 대본, 에피소드 정보, 근거 링크, 근거 매체 목록).
+    TALK_TOPIC=auto(자동 예약 실행)면 AI가 주제를 고르고, 아니면 jobs/talk_custom.json 을 씀."""
+    job = pick_topic() if config.env("TALK_TOPIC", "file") == "auto" else load_job(job_path)
     print(f"1) 대담 주제: {job['topic']}")
     mats = gather(job)
     if len(mats) < 3:
@@ -152,4 +194,5 @@ def build(job_path=None):
           "episode_ko": job["topic"]}
     links = [news.decode_gnews(m["link"]) if "news.google.com" in m["link"] else m["link"] for m in mats]
     sources = list(dict.fromkeys(m["source"] for m in mats))
+    remember(job)
     return lsc, ep, [l for l in links if l], sources
