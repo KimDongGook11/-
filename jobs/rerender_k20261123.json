@@ -6,7 +6,7 @@
   "segments": [
    {
     "text": "오늘 코스피 지수가 3.31% 급락하면서 4,708.53으로 턱걸이 마감했어요.",
-    "keywords": "stock market screen red",
+    "keywords": "stock exchange",
     "show_chart": false,
     "number": {
      "value": "4,708.53",
@@ -17,7 +17,7 @@
    },
    {
     "text": "장중에는 5% 넘게 하락하면서 매도 사이드카까지 발동되는 큰 충격이 있었습니다.",
-    "keywords": "stock trader stress",
+    "keywords": "stressed businessman",
     "show_chart": false,
     "number": null
    },
@@ -34,25 +34,25 @@
    },
    {
     "text": "삼성전자는 3.06% 내렸고 SK하이닉스도 2.52% 떨어지며 대형주가 흔들렸죠.",
-    "keywords": "semiconductor chip wafer",
+    "keywords": "computer chip",
     "show_chart": false,
     "number": null
    },
    {
     "text": "오늘 국내 증시가 크게 휘청인 건 미국 AI 관련 종목들이 급락한 탓인데요.",
-    "keywords": "artificial intelligence technology",
+    "keywords": "robot technology",
     "show_chart": false,
     "number": null
    },
    {
     "text": "미국 증시에서 AI 거품 붕괴 우려가 나오자 외국인의 매도 폭탄이 이어졌습니다.",
-    "keywords": "wall street new york",
+    "keywords": "new york city",
     "show_chart": false,
     "number": null
    },
    {
     "text": "증권가에서는 내년 코스피 목표치를 최저 4,000선까지 낮춰 잡기도 했어요.",
-    "keywords": "financial analyst office",
+    "keywords": "business meeting",
     "show_chart": false,
     "number": null
    },
@@ -87,19 +87,19 @@
    },
    {
     "text": "내일은 미국 증시의 추가 하락 여부와 외국인 수급 복귀를 먼저 확인해야 합니다.",
-    "keywords": "stock market trading screen",
+    "keywords": "stock exchange",
     "show_chart": false,
     "number": null
    },
    {
     "text": "4,700선까지 밀려난 코스피, 지금 사야 할까요? 여러분은 어떻게 생각하세요?",
-    "keywords": "stock market screen",
+    "keywords": "stock market",
     "show_chart": false,
     "number": null
    },
    {
     "text": "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!",
-    "keywords": "city skyline night",
+    "keywords": "seoul city night",
     "show_chart": false,
     "number": null
    }
