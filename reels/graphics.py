@@ -369,6 +369,47 @@ def headline_card(h, out, w=1000, hgt=560):
     return out
 
 
+def _emoji_img(ch, size):
+    """컬러 이모지 한 글자 → RGBA 그림 (Noto Color Emoji는 109px 고정이라 그려서 줄임). 글꼴 없으면 None."""
+    from PIL import ImageFont
+    for path in ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", "/usr/share/fonts/noto/NotoColorEmoji.ttf"):
+        try:
+            f = ImageFont.truetype(path, 109)
+        except Exception:
+            continue
+        im = Image.new("RGBA", (160, 160), (0, 0, 0, 0))
+        ImageDraw.Draw(im).text((10, 10), ch, font=f, embedded_color=True)
+        box = im.getbbox()
+        if not box:
+            return None
+        im = im.crop(box)
+        return im.resize((size, int(size * im.height / im.width)), Image.LANCZOS)
+    return None
+
+
+def point_card(key, sub, emoji, topic, out, w=1000, hgt=560):
+    """요약 카드: 큰 아이콘 + 핵심 키워드 + 한 줄 보조 설명 (내레이션 문장을 그대로 쓰지 않음)."""
+    img, d = _canvas(w, hgt)
+    d.rounded_rectangle([0, 0, w - 1, hgt - 1], radius=22, fill=(14, 22, 42, 245), outline=YELLOW + (200,), width=3)
+    if topic:
+        d.text((44, 34), topic[:34], font=F("SemiBold", 28), fill=(170, 180, 200))
+    x0 = 48
+    em = _emoji_img(emoji, int(hgt * 0.36)) if emoji else None
+    if em:
+        img.alpha_composite(em, (x0, (hgt - em.height) // 2 + 10))
+        x0 += em.width + 44
+    tw = w - x0 - 48
+    kf, kl = _headline_lines(d, key or "", tw, tuple(range(int(min(110, hgt * 0.2)), 40, -4)))
+    sf, sl = (_fit(d, sub, tw, (40, 36, 32, 28), 2, weight="SemiBold") if sub else (None, []))
+    block = int(kf.size * 1.25) * len(kl) + (int(sf.size * 1.35) * len(sl) + 20 if sl else 0)
+    y = (hgt - block) / 2 + 14
+    y = _draw_lines(d, kl, kf, x0, y, lh_ratio=1.25)
+    if sl:
+        _draw_lines(d, sl, sf, x0, y + 20, fg=(205, 212, 228), hl=YELLOW, lh_ratio=1.35)
+    img.save(out)
+    return out
+
+
 def topic_card(title, sub, out, w=1000, hgt=560):
     """관련 영상도 헤드라인도 없을 때 채우는 주제 카드 (그때 그 결정 등)."""
     img, d = _canvas(w, hgt)

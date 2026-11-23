@@ -49,10 +49,20 @@ def _cards(segs, starts, durs, busy, headlines, topic, box, workdir, show_at=Non
             used.add(key)
         spans.setdefault(key, []).append((st, en))
     ovs = []
+    lines = [k[1] for k in spans if isinstance(k, tuple)]
+    pts = {}
+    if lines:   # 요약 카드(11/24 사용자 요청): 문장을 그대로 띄우지 않고 핵심 키워드 + 보조 설명 + 아이콘
+        from . import script
+        pts = dict(zip(lines, script.keypoints([segs[i]["text"] for i in lines], topic[0] if topic else "")))
     for key, rr in spans.items():
-        if isinstance(key, tuple):       # 멘트 카드: 그 문장 내용을 크게 (주제는 위 작은 글씨)
-            path = graphics.topic_card(segs[key[1]]["text"], topic[0] if topic else "", workdir / f"line_{key[1]}.png",
-                                       w=cw, hgt=ch)
+        if isinstance(key, tuple):
+            pt = pts.get(key[1]) or {}
+            if pt.get("key"):
+                path = graphics.point_card(pt["key"], pt.get("sub", ""), pt.get("emoji", ""), topic[0] if topic else "",
+                                           workdir / f"point_{key[1]}.png", w=cw, hgt=ch)
+            else:        # 요약을 못 만들면 주제 카드 (문장 그대로는 쓰지 않음)
+                path = graphics.topic_card(topic[0] if topic else "", topic[1] if topic else "",
+                                           workdir / f"line_{key[1]}.png", w=cw, hgt=ch)
         elif key == "topic":
             path = graphics.topic_card(topic[0], topic[1], workdir / "topic.png", w=cw, hgt=ch)
         else:

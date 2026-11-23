@@ -474,3 +474,35 @@ def headline_list(mats, n=4):
             h["orig"] = ""     # 한국어 기사(또는 번역 실패)는 원문을 두 번 쓰지 않음
     print("  [헤드라인] " + " / ".join(f"{h['source']}: {h['ko']}" for h in items))
     return items
+
+
+POINT_EMOJI = "📈📉💵💰🏦🏭🚗🔋🚢🛢️⛽🌏🇺🇸🇨🇳🇰🇷📦⏰📅🔍💡⚖️🤝🏛️💻📱🧠⚠️🔥❄️🎯🛒🏠✈️⚡"
+
+
+def keypoints(texts, topic=""):
+    """관련 영상이 없는 문장 → 화면 카드용 요약 [{"key", "sub", "emoji"}] (문장을 그대로 옮기지 않음, 사용자 요청 11/24)."""
+    if not texts:
+        return []
+    prompt = (f"아래는 경제 영상 내레이션 문장들이야(주제: {topic}). 자막으로 이미 나가니까, 화면 가운데 카드에는 "
+              "문장을 그대로 쓰지 말고 핵심만 요약해.\n"
+              "- key: 핵심 키워드나 요약 12자 이내. 가장 중요한 단어 하나를 [ ]로 감싸. 예: '[관세] 25% 부과', '반도체 [수출] 회복'\n"
+              "- sub: 보조 설명 22자 이내 (문장의 다른 표현으로, 그대로 복사 금지). 없으면 \"\"\n"
+              f"- emoji: 내용에 맞는 아이콘 하나, 이 중에서만: {POINT_EMOJI}\n"
+              "- 숫자는 그 문장에 있는 것만. 새 사실 추가 금지.\n"
+              + "\n".join(f"{i}. {t}" for i, t in enumerate(texts))
+              + '\nJSON으로만: {"cards": [{"i": 0, "key": "...", "sub": "...", "emoji": "..."}]}')
+    out = [{"key": "", "sub": "", "emoji": ""} for _ in texts]
+    try:
+        data = llm.ask_json(prompt, temperature=0.3)
+        for c in (data.get("cards") if isinstance(data, dict) else data) or []:
+            i = int(c.get("i", -1))
+            if 0 <= i < len(texts):
+                digits = lambda t: set(re.findall(r"\d+", t))
+                key, sub = str(c.get("key", "")).strip()[:24], str(c.get("sub", "")).strip()[:36]
+                if not digits(key + sub) <= digits(texts[i]):     # 문장에 없는 숫자가 끼면 숫자 없는 요약으로
+                    key, sub = re.sub(r"[\d.,%]+", "", key).strip(), ""
+                em = str(c.get("emoji", "")).strip()
+                out[i] = {"key": key, "sub": sub, "emoji": em if em and em in POINT_EMOJI else ""}
+    except Exception as e:
+        print(f"  [요약 카드] AI 요약 실패: {e}")
+    return out
