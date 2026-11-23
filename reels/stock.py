@@ -98,7 +98,7 @@ NATURE_TAGS = {"flower", "flowers", "blossom", "ocean", "sea", "beach", "waves",
 NATURE_TAGS |= {"seagull", "seagulls", "gull", "gulls", "sun", "sunrise", "horizon", "coast", "island", "desert",
                 "tree", "trees", "field", "meadow", "snow", "rain", "lightning", "storm", "moon", "stars", "sand"}
 # 금융 멘트에 나오면 안 되는 엉뚱한 분야 (11/23: '투매는 피하라'에 현미경)
-OFFTOPIC_TAGS = {"microscope", "laboratory", "lab", "science", "scientist", "chemistry", "biology", "dna", "virus",
+OFFTOPIC_TAGS = {"colander", "basket", "plastic", "toy", "toys", "microscope", "laboratory", "lab", "science", "scientist", "chemistry", "biology", "dna", "virus",
                  "cell", "cells", "test tube", "medical", "medicine", "doctor", "hospital", "surgery", "patient",
                  "wedding", "christmas", "halloween", "party", "dance", "dancing", "concert", "fashion", "model",
                  "makeup", "food", "cooking", "kitchen", "sport", "sports", "football", "soccer", "gym", "fitness"}
@@ -115,7 +115,12 @@ FIN_CONTEXT = {"finance", "financial", "money", "cash", "currency", "dollar", "d
                "industry", "industrial", "semiconductor", "chip", "chips", "wafer", "electronics", "technology",
                "robot", "server", "oil", "refinery", "supermarket", "grocery", "apartment", "apartments",
                "real estate", "city", "wall street", "stock market", "exchange rate", "trading floor"}
-AMBIGUOUS = {"bank", "market", "exchange", "interest", "trading", "card", "stock", "rate"}
+AMBIGUOUS = {"bank", "market", "exchange", "interest", "trading", "card", "stock", "rate", "city", "building",
+             "buildings", "price", "prices", "phone", "smartphone"}
+# 증시 검색어(stock market 등)엔 시세·차트가 보이는 클립만 (11/23: 시장 골목·소쿠리·거리 인파가 나온 문제)
+MARKET_WORDS = {"stocks", "chart", "charts", "graph", "graphs", "trader", "traders", "trading floor", "candlestick",
+                "ticker", "screen", "monitor", "finance", "financial", "investment", "investing", "investor",
+                "economy", "money", "data", "analytics", "stock market", "wall street", "stock exchange"}
 FIN_QUERY = FIN_CONTEXT | AMBIGUOUS
 
 
@@ -124,12 +129,15 @@ def _is_fin_query(q):
     return bool(set(ql.split()) & FIN_QUERY) or any(t in ql for t in FIN_QUERY if " " in t)
 
 
-def _fin_ok(hit):
-    """금융 멘트용 클립 검사: 엉뚱한 분야 태그가 없고, 뜻이 분명한 금융 맥락 단어가 하나 이상."""
+def _fin_ok(hit, query=""):
+    """금융 멘트용 클립 검사: 엉뚱한 분야 태그가 없고, 뜻이 분명한 금융 맥락 단어가 하나 이상.
+    증시 검색어면 시세·차트가 보이는 클립만."""
     tags = _tags(hit)
     words = {w for t in tags for w in t.split()}
     if words & OFFTOPIC_TAGS or tags & OFFTOPIC_TAGS or words & NATURE_TAGS:
         return False
+    if "market" in query.lower().split() or "stock" in query.lower().split():
+        return bool((words | tags) & MARKET_WORDS)
     return bool((words | tags) & (FIN_CONTEXT - AMBIGUOUS))
 
 
@@ -245,7 +253,7 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
         pool = []
         fin = bool(topic_q) or _is_fin_query(kw)   # 금융 멘트면 금융 맥락 클립만 (규칙, 11/23)
         for q in dict.fromkeys(q for q in queries if q):
-            rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL and (not fin or _fin_ok(h))]
+            rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL and (not fin or _fin_ok(h, q))]
             if rel_hits:
                 pool = sorted(rel_hits, key=lambda h: -_score(h, vertical, q))
                 break
