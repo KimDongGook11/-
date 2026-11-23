@@ -12,7 +12,7 @@ from .utils import load_state, save_state
 API = "https://pixabay.com/api/videos/"
 FALLBACK_QUERIES = ["business meeting", "stock market screen", "city skyline", "office building", "container port"]
 # 실사 경제 영상과 어울리지 않는 클립(만화·이모지·추상 그래픽 등)은 제외
-BLOCK_TAGS = {"cartoon", "animation", "animated", "emoji", "emoticon", "smiley", "anime", "illustration", "3d",
+BLOCK_TAGS = {"green screen", "greenscreen", "chroma key", "chromakey", "chroma", "mockup", "cartoon", "animation", "animated", "emoji", "emoticon", "smiley", "anime", "illustration", "3d",
               "render", "rendering", "abstract", "fractal", "kaleidoscope", "tunnel", "particles", "particle",
               "neon", "loop", "pattern", "motion graphics", "background", "wallpaper", "halloween", "spider",
               "monster", "zombie", "horror", "fantasy", "magic", "cgi", "vj", "glitch", "hologram"}
