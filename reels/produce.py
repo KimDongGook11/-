@@ -32,23 +32,31 @@ def _cards(segs, starts, durs, busy, headlines, topic, box, workdir, show_at=Non
         return []
     cw, ch = box["w"] - 60, min(box["h"] - 60, int((box["w"] - 60) * 0.58))
     x, y = box["x"] + (box["w"] - cw) // 2, box["y"] + (box["h"] - ch) // 2
-    spans, k = {}, 0
+    # 규칙(11/23): 같은 카드를 바로 이어서 쓰지 않음. 헤드라인을 다 쓰면 그 문장의 멘트 카드로 채움
+    spans, used = {}, set()
+    if show_at is not None and headlines:
+        used.add(0)
     for i in want:
         st = max(starts[i] + lead.get(i, 0), after)
         en = starts[i] + durs[i]
         if en - st < 0.8:
             continue
-        if headlines:
-            key = 0 if i == show_at else (k % len(headlines))
-            if i != show_at:
-                k += 1
+        if i == show_at and headlines:
+            key = 0
         else:
-            key = "topic"
+            free = [j for j in range(len(headlines)) if j not in used]   # 헤드라인은 한 편에 한 번씩만
+            key = free[0] if free else ("line", i)                       # 다 쓰면 그 문장 멘트 카드
+            used.add(key)
         spans.setdefault(key, []).append((st, en))
     ovs = []
     for key, rr in spans.items():
-        path = (graphics.headline_card(headlines[key], workdir / f"headline_{key}.png", w=cw, hgt=ch) if key != "topic"
-                else graphics.topic_card(topic[0], topic[1], workdir / "topic.png", w=cw, hgt=ch))
+        if isinstance(key, tuple):       # 멘트 카드: 그 문장 내용을 크게 (주제는 위 작은 글씨)
+            path = graphics.topic_card(segs[key[1]]["text"], topic[0] if topic else "", workdir / f"line_{key[1]}.png",
+                                       w=cw, hgt=ch)
+        elif key == "topic":
+            path = graphics.topic_card(topic[0], topic[1], workdir / "topic.png", w=cw, hgt=ch)
+        else:
+            path = graphics.headline_card(headlines[key], workdir / f"headline_{key}.png", w=cw, hgt=ch)
         ovs.append({"kind": "image", "path": path, "ranges": rr, "start": rr[0][0], "end": rr[-1][1], "x": x, "y": y})
     print(f"  [그래픽] 헤드라인·주제 카드 {sum(len(r) for r in spans.values())}곳 (관련 영상 없음 {len(stock.LAST_MISSING)}문장)")
     return ovs

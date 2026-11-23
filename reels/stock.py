@@ -95,6 +95,44 @@ NATURE_TAGS = {"flower", "flowers", "blossom", "ocean", "sea", "beach", "waves",
                "grass", "plant", "plants", "nature", "spiral", "shell", "lake", "river", "sky", "sunset", "clouds"}
 
 
+NATURE_TAGS |= {"seagull", "seagulls", "gull", "gulls", "sun", "sunrise", "horizon", "coast", "island", "desert",
+                "tree", "trees", "field", "meadow", "snow", "rain", "lightning", "storm", "moon", "stars", "sand"}
+# 금융 멘트에 나오면 안 되는 엉뚱한 분야 (11/23: '투매는 피하라'에 현미경)
+OFFTOPIC_TAGS = {"microscope", "laboratory", "lab", "science", "scientist", "chemistry", "biology", "dna", "virus",
+                 "cell", "cells", "test tube", "medical", "medicine", "doctor", "hospital", "surgery", "patient",
+                 "wedding", "christmas", "halloween", "party", "dance", "dancing", "concert", "fashion", "model",
+                 "makeup", "food", "cooking", "kitchen", "sport", "sports", "football", "soccer", "gym", "fitness"}
+# 금융 맥락 단어. 금융 멘트의 클립은 이 중 하나 이상이 태그에 있어야 함.
+# 'bank'(강둑)·'market'(시장 골목)·'exchange'·'interest'·'trading'·'card'는 뜻이 여러 개라 이것만으로는 인정 안 함
+FIN_CONTEXT = {"finance", "financial", "money", "cash", "currency", "dollar", "dollars", "won", "euro", "yen",
+               "banknote", "banknotes", "bill", "bills", "coin", "coins", "stocks", "shares", "trader", "traders",
+               "investment", "investor", "investing", "economy", "economic", "business", "businessman",
+               "businesswoman", "businessmen", "office", "corporate", "banking", "chart", "charts", "graph", "graphs",
+               "candlestick", "ticker", "price", "prices", "crypto", "bitcoin", "cryptocurrency", "gold", "loan",
+               "credit", "payment", "wallet", "computer", "laptop", "screen", "monitor", "smartphone", "phone",
+               "data", "analytics", "report", "meeting", "skyline", "skyscraper", "skyscrapers", "downtown",
+               "building", "buildings", "port", "container", "containers", "cargo", "shipping", "freight", "factory",
+               "industry", "industrial", "semiconductor", "chip", "chips", "wafer", "electronics", "technology",
+               "robot", "server", "oil", "refinery", "supermarket", "grocery", "apartment", "apartments",
+               "real estate", "city", "wall street", "stock market", "exchange rate", "trading floor"}
+AMBIGUOUS = {"bank", "market", "exchange", "interest", "trading", "card", "stock", "rate"}
+FIN_QUERY = FIN_CONTEXT | AMBIGUOUS
+
+
+def _is_fin_query(q):
+    ql = q.lower()
+    return bool(set(ql.split()) & FIN_QUERY) or any(t in ql for t in FIN_QUERY if " " in t)
+
+
+def _fin_ok(hit):
+    """금융 멘트용 클립 검사: 엉뚱한 분야 태그가 없고, 뜻이 분명한 금융 맥락 단어가 하나 이상."""
+    tags = _tags(hit)
+    words = {w for t in tags for w in t.split()}
+    if words & OFFTOPIC_TAGS or tags & OFFTOPIC_TAGS or words & NATURE_TAGS:
+        return False
+    return bool((words | tags) & (FIN_CONTEXT - AMBIGUOUS))
+
+
 def _relevance(hit, query):
     """검색어 단어가 클립 태그에 얼마나 들어 있는지 (0~1). 검색어에 없는 자연 풍경 태그가 많으면 0."""
     ql = query.lower().split()
@@ -205,8 +243,9 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
         if topic_q and not _relevance({"tags": kw}, topic_q.split()[0]):
             queries = [topic_q] + queries
         pool = []
+        fin = bool(topic_q) or _is_fin_query(kw)   # 금융 멘트면 금융 맥락 클립만 (규칙, 11/23)
         for q in dict.fromkeys(q for q in queries if q):
-            rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL]
+            rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL and (not fin or _fin_ok(h))]
             if rel_hits:
                 pool = sorted(rel_hits, key=lambda h: -_score(h, vertical, q))
                 break
