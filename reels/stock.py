@@ -86,12 +86,26 @@ def _sensitive_query(q):
     return any(w in SENSITIVE_TAGS for w in ql.split()) or any(t in ql for t in SENSITIVE_TAGS if " " in t)
 
 
+# 'stock'(스톡 영상), 'exchange'(교환) 같은 말은 픽사베이 태그에서 다른 뜻으로 흔해서 관련도 계산에서 뺌
+# (11/23: 'stock exchange'로 바다 절벽·꽃 영상이 나온 문제)
+GENERIC_WORDS = {"stock", "footage", "video", "background", "free", "exchange", "the", "and", "with"}
+NATURE_TAGS = {"flower", "flowers", "blossom", "ocean", "sea", "beach", "waves", "wave", "cliff", "waterfall",
+               "landscape", "forest", "mountain", "mountains", "snail", "insect", "bee", "butterfly", "bird",
+               "birds", "animal", "animals", "dog", "cat", "tomato", "tomatoes", "fruit", "vegetable", "garden",
+               "grass", "plant", "plants", "nature", "spiral", "shell", "lake", "river", "sky", "sunset", "clouds"}
+
+
 def _relevance(hit, query):
-    """검색어 단어가 클립 태그에 얼마나 들어 있는지 (0~1)."""
-    q = {w for w in query.lower().split() if len(w) > 2}
+    """검색어 단어가 클립 태그에 얼마나 들어 있는지 (0~1). 검색어에 없는 자연 풍경 태그가 많으면 0."""
+    ql = query.lower().split()
+    q = {w for w in ql if len(w) > 2 and w not in GENERIC_WORDS}
+    if not q:
+        q = {w for w in ql if len(w) > 2}
     if not q:
         return 0.0
     words = {w for t in _tags(hit) for w in t.split()}
+    if (words & NATURE_TAGS) and not (set(ql) & NATURE_TAGS):
+        return 0.0
     return len(q & words) / len(q)
 
 

@@ -6,7 +6,7 @@
   "segments": [
    {
     "text": "오늘 코스피 지수가 3.31% 급락하면서 4,708.53으로 턱걸이 마감했어요.",
-    "keywords": "stock exchange",
+    "keywords": "stock market trading",
     "show_chart": false,
     "number": {
      "value": "4,708.53",
@@ -81,13 +81,13 @@
    },
    {
     "text": "반면 5대 은행의 중소기업 대출 연체율이 대기업의 3배에 달하는 등 건전성 격차가 더 커졌죠.",
-    "keywords": "bank building",
+    "keywords": "bank finance",
     "show_chart": false,
     "number": null
    },
    {
     "text": "내일은 미국 증시의 추가 하락 여부와 외국인 수급 복귀를 먼저 확인해야 합니다.",
-    "keywords": "stock exchange",
+    "keywords": "stock market trading",
     "show_chart": false,
     "number": null
    },
@@ -99,7 +99,7 @@
    },
    {
     "text": "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!",
-    "keywords": "seoul city night",
+    "keywords": "city night skyline",
     "show_chart": false,
     "number": null
    }
