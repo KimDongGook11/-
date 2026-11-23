@@ -117,6 +117,30 @@ def _download(url, out):
     return out
 
 
+# 멘트 속 경제 용어 → 눈에 보이는 장면 검색어 (먼저 나오는 용어 우선)
+FIN_SCENES = [
+    (("환율", "원·달러", "원/달러", "달러 강세", "달러 약세", "원화"), "currency exchange money"),
+    (("코스피", "코스닥", "증시", "주가", "지수", "나스닥", "다우", "S&P"), "stock market trading screen"),
+    (("금리", "기준금리", "국채", "채권"), "bank interest rate finance"),
+    (("유가", "원유", "기름값", "휘발유"), "oil refinery"),
+    (("반도체", "메모리", "HBM", "칩"), "semiconductor chip wafer"),
+    (("물가", "인플레이션", "장바구니"), "supermarket grocery prices"),
+    (("부동산", "집값", "아파트", "전세"), "apartment buildings city"),
+    (("수출", "무역", "관세"), "cargo container port"),
+    (("비트코인", "가상자산", "코인"), "bitcoin cryptocurrency"),
+    (("금값", "금 가격", "골드"), "gold bars"),
+]
+
+
+def finance_scene(text):
+    best = None
+    for terms, q in FIN_SCENES:
+        pos = [text.find(t) for t in terms if t in text]
+        if pos and (best is None or min(pos) < best[0]):
+            best = (min(pos), q)
+    return best[1] if best else None
+
+
 def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=40, card=False):
     """반환: [(클립경로 또는 None, 클립 안 시작초, 샷 길이초)] — 전체 길이 = sum(durs)."""
     workdir.mkdir(parents=True, exist_ok=True)
@@ -162,6 +186,10 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
         ws = kw.split()
         # 일반 장면(FALLBACK_QUERIES)으로 채우지 않음: 멘트와 관련 없는 화면이 나가지 않게 (사용자 요청 11/22)
         queries = [kw, " ".join(ws[-2:]), " ".join(ws[:2])]
+        # 멘트의 경제 용어에 맞는 장면을 먼저 (11/23: 환율 멘트에 관련 없는 화면)
+        topic_q = finance_scene(seg.get("text", ""))
+        if topic_q and not _relevance({"tags": kw}, topic_q.split()[0]):
+            queries = [topic_q] + queries
         pool = []
         for q in dict.fromkeys(q for q in queries if q):
             rel_hits = [h for h in _search(q, cache) if _relevance(h, q) >= MIN_REL]

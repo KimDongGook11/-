@@ -6,6 +6,7 @@
   python -m reels.generate --offline            # 인터넷/키 없이 샘플로 렌더링만 테스트
 """
 import argparse
+import json
 import datetime as dt
 import shutil
 import signal
@@ -234,6 +235,9 @@ def _need_short():
     return config.HISTORY_SHORT or not config.HISTORY_LONG
 
 
+RERENDER = None   # --rerender: {"series", "script", "sources", "meta"} — 같은 대본으로 영상만 다시
+
+
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
@@ -246,6 +250,15 @@ def make_reel(series="news", offline=False):
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out = config.OUTPUT_DIR / f"reel_{rid}.mp4"
 
+    if series in ("news", "kr", "us") and RERENDER:
+        job = RERENDER
+        sc, sources, meta = job["script"], job.get("sources", []), job.get("meta", {})
+        print(f"같은 대본으로 영상만 다시 제작: {sc.get('hook_title')} (문장 {len(sc['segments'])}개)")
+        dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
+        info["range"] = (70, 110)
+        return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
+                "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
+                "qc": qc.check(out, info, sc, offline=offline), **{k: v for k, v in meta.items() if v is not None}}
     if series in ("news", "kr", "us"):
         if offline:
             sc, sources, meta = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}
@@ -394,6 +407,14 @@ def deliver(res, offline=False):
         return
     if not offline and storage.enabled():
         res["release_tag"] = storage.upload(res["video"], f"reel-{res['id']}", res["script"]["hook_title"])
+        try:   # 대본도 함께 보관 → 나중에 '같은 내용으로 영상만 다시' 가능 (jobs/rerender: --rerender)
+            sj = config.WORK_DIR / f"script_{res['id']}.json"
+            sj.write_text(json.dumps({"series": series, "script": res["script"], "sources": res.get("sources", []),
+                                      "meta": {k: res.get(k) for k in ("title_en", "link", "topic", "links", "kr")}},
+                                     ensure_ascii=False, default=str), encoding="utf-8")
+            storage.add_asset(res["release_tag"], str(sj), "script.json")
+        except Exception as e:
+            print("  [보관] 대본 저장 실패(무시):", e)
         cov = instagram.cover_frame(res["video"], str(res["video"]).replace(".mp4", "_cover.jpg"))
         if cov:   # 유튜브 쇼츠 썸네일 = 인스타 커버 (승인 처리 쪽엔 ffmpeg가 없을 수 있어 미리 보관)
             storage.add_asset(res["release_tag"], cov, "cover.jpg")
@@ -503,7 +524,19 @@ def main():
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
     ap.add_argument("--wait", type=int, default=0, help="영상 전송 후 버튼을 실시간으로 기다릴 시간(분)")
     ap.add_argument("--once-per-day", action="store_true", help="오늘 자동 제작을 이미 했으면 건너뜀")
+    ap.add_argument("--rerender", default="", help="같은 대본으로 영상만 다시: 보관 태그(reel-…) 또는 jobs/*.json")
     a = ap.parse_args()
+    if a.rerender:
+        global RERENDER
+        src = a.rerender
+        if src.startswith("reel-"):
+            p = config.WORK_DIR / "rerender_script.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            storage.download(src, str(p), name="script.json")
+            src = str(p)
+        RERENDER = json.loads(open(src, encoding="utf-8").read())
+        a.series = RERENDER.get("series", a.series)
+        a.once_per_day = False
     if a.offline:
         config.TTS_ENGINE = "dummy" if config.TTS_ENGINE == "edge" and not _has("edge_tts") else config.TTS_ENGINE
     series = a.series
@@ -513,9 +546,9 @@ def main():
         # 주말 12:00 자리는 원픽 대신 그때 그 결정 (주말엔 하루 2편: 12:00 + 18:00)
         print("주말이라 12:00 자리는 '그때 그 결정'으로 만들어요.")
         series, slot = "history", config.YT_SLOTS["news"]
-    if series == "us" and not a.offline and (not _wait_us_close() or not _us_session_today()):
+    if series == "us" and not a.offline and not RERENDER and (not _wait_us_close() or not _us_session_today()):
         return
-    if series == "kr" and not a.offline and not _kr_ready():
+    if series == "kr" and not a.offline and not RERENDER and not _kr_ready():
         return
     def _on_cancel(signum, frame):   # Actions 취소·시간 초과 때도 아래 except로 가서 '오늘 했음' 표시를 되돌림
         raise RuntimeError(f"작업이 중단됨(신호 {signum}: 취소 또는 시간 초과)")

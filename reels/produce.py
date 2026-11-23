@@ -1,6 +1,7 @@
 """대본 → 완성 영상.
 - short(): 세로 1080×1920 릴스, 레이아웃 A(에디토리얼 카드)
 - long():  가로 1920×1080 장편, 레이아웃 B(인포그래픽 분할)"""
+import re
 import random
 
 from . import chart, config, graphics, render, stock, tts
@@ -59,6 +60,25 @@ def _bgm():
     return random.choice(files) if files else None
 
 
+def _digits(t):
+    return re.sub(r"[^0-9]", "", str(t))
+
+
+def number_word_time(value, text, words, seg):
+    """숫자 카드 값이 이 문장에서 말해지는 시각(초). 값이 문장에 없으면 None."""
+    dv = _digits(value)
+    if not dv:
+        return None
+    key = dv[:3]
+    if key not in _digits(text):
+        return None
+    for st, en, w, sg in words:
+        if sg == seg and _digits(w) and (key in _digits(w) or _digits(w) in dv[:len(_digits(w))] and len(_digits(w)) >= 1):
+            return st
+    seg_words = [x for x in words if x[3] == seg]
+    return seg_words[0][0] if seg_words else None
+
+
 def short(sc, workdir, out, sources, offline=False, chart_opts=None):
     """세로 릴스 (레이아웃 A). 반환: (길이초, 품질 점검용 정보)"""
     W, H = 1080, 1920
@@ -100,10 +120,15 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
         n = s.get("number")
         if not n or i in busy or count >= (3 if len(segs) > 10 else 2):   # 1분 30초 원픽은 숫자 카드 3개까지
             continue
+        # 숫자 카드는 그 숫자를 실제로 말하는 순간에 (11/23: 코스닥 멘트 중에 환율 카드가 먼저 뜬 문제)
+        at = number_word_time(n["value"], s["text"], words, i)
+        if at is None:
+            print(f"  [그래픽] {i + 1}번 문장에 숫자 카드 값 '{n['value']}'이 멘트에 없어 카드 생략")
+            continue
         pat, frames, w, h = graphics.number_frames(n["value"], n.get("label", ""), n.get("dir", "none"), change=n.get("change", ""),
                                                    out_dir=workdir / f"num_{i}", w=CARD["w"] - 100, h=460)
-        st = max(starts[i] + 0.15, HOOK + 0.1)
-        en = min(starts[i] + durs[i] - 0.1, st + 2.8)
+        st = max(at - 0.2, starts[i] + 0.1, HOOK + 0.1)
+        en = min(starts[i] + durs[i] + 0.3, st + 2.8)
         if en - st < 1.0:
             continue
         ovs.append({"kind": "seq", "pattern": pat, "frames": frames, "start": st, "end": en,

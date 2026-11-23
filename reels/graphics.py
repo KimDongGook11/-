@@ -29,6 +29,32 @@ def _wtext(word):
     return "".join(t for t, _ in word)
 
 
+# 글꼴(Pretendard)에 없는 기호가 네모(□)로 뭉개지는 문제 (11/23 '4,000∼7,300') → 비슷한 기호로 바꿈
+_SAFE_MAP = str.maketrans({"∼": "~", "～": "~", "〜": "~", "‥": "..", "…": "...", "⋯": "...", "―": "-",
+                           "‒": "-", "−": "-", "﹣": "-", "－": "-", "＋": "+", "％": "%", "＄": "$", "，": ",",
+                           "．": ".", "：": ":", "；": ";", "！": "!", "？": "?", "（": "(", "）": ")",
+                           "「": "'", "」": "'", "『": "'", "』": "'", "〈": "<", "〉": ">", "≒": "≈",
+                           "\u200b": "", "\xa0": " "})
+_CMAP = None
+
+
+def safe_text(t):
+    """글꼴에 없는 글자를 비슷한 글자로 바꾸고, 그래도 없는 글자는 뺌."""
+    global _CMAP
+    t = str(t or "").translate(_SAFE_MAP)
+    if _CMAP is None:
+        try:
+            from fontTools.ttLib import TTFont
+            from . import fonts
+            path = fonts.path("Black")
+            _CMAP = set(TTFont(path, fontNumber=0 if not str(path).endswith(".ttc") else 1).getBestCmap())
+        except Exception:
+            _CMAP = set()
+    if _CMAP:
+        t = "".join(ch if (ord(ch) in _CMAP or ch in " \n[]/") else ("~" if ch in "∽≈" else "") for ch in t)
+    return t
+
+
 def _fit(d, title, max_w, sizes, max_lines, weight="Black"):
     words = parse_title(title)
     for size in sizes:
@@ -79,7 +105,7 @@ def title_a(sc, out, W=1080, H=1920):
     x, max_w = 80, W - 160
     d.text((x, 205), meta_text(sc), font=F("Medium", 34), fill=(255, 255, 255, 200))
     d.rectangle([x, 262, x + 70, 270], fill=YELLOW)
-    f, lines = _fit(d, sc["hook_title"], max_w, (92, 84, 76, 68), 2)
+    f, lines = _fit(d, safe_text(sc["hook_title"]), max_w, (92, 84, 76, 68), 2)
     y = _draw_lines(d, lines, f, x, 292)
     img.save(out)
     return out, int(y)
@@ -89,7 +115,7 @@ def hook_a(sc, out, W=1080, H=1920):
     """첫 1.2초: 어두운 화면 가운데 아주 큰 제목."""
     img, d = _canvas(W, H)
     d.rectangle([0, 0, W, H], fill=(6, 9, 18, 200))
-    f, lines = _fit(d, sc["hook_title"], W - 140, (132, 120, 108, 96), 3)
+    f, lines = _fit(d, safe_text(sc["hook_title"]), W - 140, (132, 120, 108, 96), 3)
     block = int(f.size * 1.3) * len(lines)
     y0 = (H - block) / 2 - 60
     mt = meta_text(sc)
@@ -124,6 +150,7 @@ def number_frames(value, label, direction, out_dir, w=820, h=480, frames=16, cha
     """숫자가 0에서 목표값까지 올라가는 프레임들. 반환: (파일 패턴, 프레임 수, 폭, 높이)
     change(등락폭)가 있으면 가격 아래 줄에 따로 표시."""
     out_dir.mkdir(parents=True, exist_ok=True)
+    value, label, change = safe_text(value), safe_text(label), safe_text(change)
     col = UP if direction == "up" else DOWN if direction == "down" else YELLOW
     arrow = "▲ " if direction == "up" else "▼ " if direction == "down" else ""
     m = NUM_RE.match(str(value).strip())
@@ -322,13 +349,13 @@ def headline_card(h, out, w=1000, hgt=560):
     pad = 44
     d.rectangle([pad, 40, pad + 10, 88], fill=RED)
     sf = F("Black", 40)
-    d.text((pad + 26, 40), h.get("source", "")[:30], font=sf, fill=(20, 20, 24))
+    d.text((pad + 26, 40), safe_text(h.get("source", ""))[:30], font=sf, fill=(20, 20, 24))
     if h.get("date"):
         df = F("Medium", 30)
         d.text((w - 8 - pad - d.textlength(h["date"], font=df), 48), h["date"], font=df, fill=(110, 110, 118))
     d.line([(pad, 112), (w - 8 - pad, 112)], fill=(20, 20, 24), width=3)
-    ko = h.get("ko") or h.get("orig") or ""
-    orig = h.get("orig") or ""
+    ko = safe_text(h.get("ko") or h.get("orig") or "")
+    orig = safe_text(h.get("orig") or "")
     bottom = hgt - 10 - (150 if orig and orig != ko else 80)
     big = int(min(96, w * 0.085))
     tf, lines = _headline_lines(d, ko, w - 8 - pad * 2, tuple(range(big, 40, -4)))
