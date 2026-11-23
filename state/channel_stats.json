@@ -1,19 +1,41 @@
 {
-  "collected_at": "2026-11-22T06:41:33+00:00",
+  "collected_at": "2026-11-23T07:30:03+00:00",
   "channel": "경제원픽",
-  "subscribers": 11,
-  "total_views": 6649,
-  "video_count": 32,
+  "subscribers": 15,
+  "total_views": 7856,
+  "video_count": 35,
   "videos": [
+    {
+      "id": "1-lW5aOY1-M",
+      "title": "테슬라 7.64% 급락! 스페이스X와 대형 합병, 호재일까 악재일까? #테슬라 #스페이스X #미국주식",
+      "published": "2026-11-23T03:00:08Z",
+      "kind": "shorts",
+      "duration_s": 49,
+      "privacy": "public",
+      "views": 182,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "D6Uc5fUCy0E",
+      "title": "중국 규제마저 깨뜨린 테슬라는 어떻게 상하이를 삼켰을까? #테슬라 #전기차 #기가팩토리",
+      "published": "2026-11-22T22:08:44Z",
+      "kind": "shorts",
+      "duration_s": 37,
+      "privacy": "public",
+      "views": 721,
+      "likes": 5,
+      "comments": 0
+    },
     {
       "id": "r6hhesg32To",
       "title": "AI 칩 규제 폭풍에 흔들린 글로벌 증시, 다음 주 코스피 운명은?",
-      "published": "2026-11-22T05:33:46Z",
+      "published": "2026-11-22T10:44:48Z",
       "kind": "long",
       "duration_s": 270,
-      "privacy": "private",
-      "views": 0,
-      "likes": 0,
+      "privacy": "public",
+      "views": 2,
+      "likes": 2,
       "comments": 0
     },
     {
@@ -23,8 +45,8 @@
       "kind": "shorts",
       "duration_s": 39,
       "privacy": "public",
-      "views": 216,
-      "likes": 4,
+      "views": 573,
+      "likes": 10,
       "comments": 0
     },
     {
@@ -34,7 +56,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 1115,
+      "views": 1183,
       "likes": 5,
       "comments": 0
     },
@@ -45,7 +67,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 240,
+      "views": 325,
       "likes": 2,
       "comments": 0
     },
@@ -67,8 +89,8 @@
       "kind": "shorts",
       "duration_s": 46,
       "privacy": "public",
-      "views": 400,
-      "likes": 2,
+      "views": 770,
+      "likes": 5,
       "comments": 0
     },
     {
@@ -78,7 +100,7 @@
       "kind": "long",
       "duration_s": 220,
       "privacy": "public",
-      "views": 46,
+      "views": 48,
       "likes": 3,
       "comments": 0
     },
@@ -89,7 +111,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 210,
+      "views": 209,
       "likes": 0,
       "comments": 0
     },
@@ -100,7 +122,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 225,
+      "views": 222,
       "likes": 1,
       "comments": 0
     },
@@ -111,8 +133,8 @@
       "kind": "long",
       "duration_s": 237,
       "privacy": "public",
-      "views": 109,
-      "likes": 2,
+      "views": 257,
+      "likes": 3,
       "comments": 0
     },
     {
@@ -122,7 +144,7 @@
       "kind": "shorts",
       "duration_s": 74,
       "privacy": "public",
-      "views": 689,
+      "views": 683,
       "likes": 4,
       "comments": 0
     },
@@ -133,7 +155,7 @@
       "kind": "long",
       "duration_s": 222,
       "privacy": "public",
-      "views": 26,
+      "views": 27,
       "likes": 1,
       "comments": 0
     },
@@ -144,7 +166,7 @@
       "kind": "long",
       "duration_s": 310,
       "privacy": "public",
-      "views": 62,
+      "views": 72,
       "likes": 1,
       "comments": 0
     },
@@ -155,7 +177,7 @@
       "kind": "shorts",
       "duration_s": 41,
       "privacy": "public",
-      "views": 427,
+      "views": 428,
       "likes": 2,
       "comments": 0
     },
@@ -287,7 +309,7 @@
       "kind": "long",
       "duration_s": 334,
       "privacy": "public",
-      "views": 6,
+      "views": 7,
       "likes": 2,
       "comments": 0
     },
@@ -353,7 +375,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 1216,
+      "views": 1228,
       "likes": 10,
       "comments": 0
     },
