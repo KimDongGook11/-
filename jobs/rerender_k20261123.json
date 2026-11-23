@@ -1,0 +1,167 @@
+{
+ "series": "kr",
+ "script": {
+  "hook_title": "코스피 [3.31% 급락], 4,700선 턱걸이",
+  "tag": "증시",
+  "segments": [
+   {
+    "text": "오늘 코스피 지수가 3.31% 급락하면서 4,708.53으로 턱걸이 마감했어요.",
+    "keywords": "stock market screen red",
+    "show_chart": false,
+    "number": {
+     "value": "4,708.53",
+     "label": "코스피 종가",
+     "dir": "down",
+     "change": "-3.31%"
+    }
+   },
+   {
+    "text": "장중에는 5% 넘게 하락하면서 매도 사이드카까지 발동되는 큰 충격이 있었습니다.",
+    "keywords": "stock trader stress",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "코스닥도 1.58% 내린 635.49, 원/달러 환율은 8.9원 오른 1,343.7원입니다.",
+    "keywords": "currency exchange money",
+    "show_chart": false,
+    "number": {
+     "value": "1,343.7원",
+     "label": "원/달러 환율",
+     "dir": "up",
+     "change": "+8.9원"
+    }
+   },
+   {
+    "text": "삼성전자는 3.06% 내렸고 SK하이닉스도 2.52% 떨어지며 대형주가 흔들렸죠.",
+    "keywords": "semiconductor chip wafer",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "오늘 국내 증시가 크게 휘청인 건 미국 AI 관련 종목들이 급락한 탓인데요.",
+    "keywords": "artificial intelligence technology",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "미국 증시에서 AI 거품 붕괴 우려가 나오자 외국인의 매도 폭탄이 이어졌습니다.",
+    "keywords": "wall street new york",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "증권가에서는 내년 코스피 목표치를 최저 4,000선까지 낮춰 잡기도 했어요.",
+    "keywords": "financial analyst office",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "하지만 현재 주가는 역사적 저평가 구간이라 과도한 투매는 피하라는 조언입니다.",
+    "keywords": "stock chart analysis",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "내 계좌가 깎여 답답하시겠지만 AI 실적이 살아있다면 반등 가능성은 남아있습니다.",
+    "keywords": "smartphone stock app",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "한편 이달 20일까지 수출액은 774억 달러로 역대 최대 실적을 기록했습니다.",
+    "keywords": "cargo container port",
+    "show_chart": false,
+    "number": {
+     "value": "774억 달러",
+     "label": "11월 1~20일 수출액 (역대 최대)",
+     "dir": "up",
+     "change": ""
+    }
+   },
+   {
+    "text": "반면 5대 은행의 중소기업 대출 연체율이 대기업의 3배에 달하는 등 건전성 격차가 더 커졌죠.",
+    "keywords": "bank building",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "내일은 미국 증시의 추가 하락 여부와 외국인 수급 복귀를 먼저 확인해야 합니다.",
+    "keywords": "stock market trading screen",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "4,700선까지 밀려난 코스피, 지금 사야 할까요? 여러분은 어떻게 생각하세요?",
+    "keywords": "stock market screen",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!",
+    "keywords": "city skyline night",
+    "show_chart": false,
+    "number": null
+   }
+  ],
+  "caption": "📉 코스피가 미국 AI주 급락 영향으로 3.31% 떨어진 4,708.53에 턱걸이 마감했습니다.\n\n외국인의 강한 매도세에 장중 매도 사이드카까지 발동됐는데요. 삼성전자와 SK하이닉스 등 대형 반도체주도 동반 하락했습니다.\n\n증권가에선 내년 지수 하단을 4,000선까지 열어두면서도 현재 PBR 0.95배 수준의 저평가 구간이라 섣부른 투매는 경계하라는 진단을 내놓았습니다.\n\n수출은 역대 최대치를 이어가는 가운데, 여러분은 이번 급락장을 기회로 보시나요, 관망하시나요?",
+  "hashtags": [
+   "#경제뉴스",
+   "#코스피",
+   "#삼성전자",
+   "#SK하이닉스",
+   "#환율",
+   "#주식시장"
+  ],
+  "yt_title": "코스피 3.31% 폭락해 4,700선 턱걸이, 지금 사야 할까?",
+  "title_tags": [
+   "#코스피",
+   "#삼성전자",
+   "#국내증시"
+  ],
+  "question": "4,700선까지 밀려난 코스피, 지금 사야 할까요? 여러분은 어떻게 생각하세요?",
+  "brand": "",
+  "headlines": [
+   {
+    "ko": "유안타증권, 내년 코스피 전망 '4,000∼7,300'으로 [하향]",
+    "orig": "",
+    "source": "연합뉴스",
+    "date": "2026-11-23"
+   }
+  ],
+  "key_facts": [
+   "코스피 4,708.53 (-3.31%) 마감 및 장중 매도 사이드카 발동 (Yahoo Finance, 연합뉴스)",
+   "코스닥 635.49 (-1.58%), 원/달러 환율 1,343.7원 (+8.9원) (Yahoo Finance)",
+   "삼성전자 177,500원 (-3.06%), SK하이닉스 1,085,000원 (-2.52%) (Yahoo Finance)",
+   "유안타증권, 코스피 전망 4,000~7,300선 하향 조정 및 PBR 0.95배 저평가 분석 (연합뉴스)",
+   "이달 1~20일 수출액 774억 달러로 동기간 역대 최대 (연합뉴스)",
+   "5대 은행 10월 연체율 0.48%로 상승 (연합뉴스)"
+  ],
+  "proofread": [],
+  "factcheck": null
+ },
+ "sources": [
+  "Yahoo Finance",
+  "Chosunbiz",
+  "연합뉴스",
+  "YTN",
+  "서울파이낸스"
+ ],
+ "meta": {
+  "title_en": "[속보] 코스피 4700선 겨우 사수…3.31% 하락 마감",
+  "link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQZ1hBU3lqMzlFdG8wN0EtMHA0YWJDMkFVbkQwbmU5TW1JOUdfdDNRVlN0V3VJenRqaWFlX2RRczNrUXdFd1BueHU1SnRlR01yN25wQzU5TmpBYjlSUVRQMHF0RXNud2J6Q19YN0d5aTJ0YUp5bUI5ODItZGpHS0daZER5dHlycWk3?oc=5",
+  "topic": "코스피 3.31% 급락하며 4,700선 턱걸이 마감",
+  "links": [
+   "https://finance.yahoo.com",
+   "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQZ1hBU3lqMzlFdG8wN0EtMHA0YWJDMkFVbkQwbmU5TW1JOUdfdDNRVlN0V3VJenRqaWFlX2RRczNrUXdFd1BueHU1SnRlR01yN25wQzU5TmpBYjlSUVRQMHF0RXNud2J6Q19YN0d5aTJ0YUp5bUI5ODItZGpHS0daZER5dHlycWk3?oc=5",
+   "https://www.yna.co.kr/view/AKR20261123083700008",
+   "https://www.yna.co.kr/view/AKR20261123055600011",
+   "https://www.yna.co.kr/view/AKR20261123038500008",
+   "https://www.yna.co.kr/view/AKR20261123128300008",
+   "https://www.yna.co.kr/view/AKR20261123128200008",
+   "https://news.google.com/rss/articles/CBMiXkFVX3lxTE56WTU5NkJRdWhOQVd5emlIMU5CYTlOMUdwRUlfSHhBOVJlZDA0S0hNODNUZU95aXh5WjZkalBzMlRSWmwxVFB6Y2I2akE1WFBHajZ6QXAzd2Z0WGx1MVE?oc=5",
+   "https://news.google.com/rss/articles/CBMiakFVX3lxTE5tNGxleDYwRElWZEJrcUw5dkVudTJOcjFWMk42NWdKRnF3TW1oaGhaMlJmakdnelVjTDZqMjRLMzhaQm1MSFAwOFY1SWt6N1NYdHdKVDdsUTlacW1yZ2hRdTFEaHhudGxVVVE?oc=5"
+  ],
+  "kr": true
+ }
+}
