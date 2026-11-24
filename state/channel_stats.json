@@ -1,10 +1,43 @@
 {
-  "collected_at": "2026-11-23T07:30:03+00:00",
+  "collected_at": "2026-11-24T08:15:06+00:00",
   "channel": "경제원픽",
-  "subscribers": 15,
-  "total_views": 7856,
-  "video_count": 35,
+  "subscribers": 19,
+  "total_views": 12891,
+  "video_count": 38,
   "videos": [
+    {
+      "id": "Pyal0rqSq2o",
+      "title": "100번째 사이드카 터졌다, 반도체 랠리 지금 타도 될까? #SK하이닉스 #삼성전자 #국내증시",
+      "published": "2026-11-24T03:19:33Z",
+      "kind": "shorts",
+      "duration_s": 71,
+      "privacy": "public",
+      "views": 507,
+      "likes": 8,
+      "comments": 0
+    },
+    {
+      "id": "1-BPxnpgM0o",
+      "title": "엔비디아 주가 31% 폭등, 젠슨 황 복귀에 미 증시 급등 #엔비디아 #미국주식 #증시",
+      "published": "2026-11-23T21:28:28Z",
+      "kind": "shorts",
+      "duration_s": 61,
+      "privacy": "public",
+      "views": 973,
+      "likes": 8,
+      "comments": 0
+    },
+    {
+      "id": "vtHuSh9fsmU",
+      "title": "코스피 3.31% 폭락해 4,700선 턱걸이, 지금 사야 할까? #코스피 #삼성전자 #국내증시",
+      "published": "2026-11-23T09:26:37Z",
+      "kind": "shorts",
+      "duration_s": 77,
+      "privacy": "public",
+      "views": 969,
+      "likes": 11,
+      "comments": 0
+    },
     {
       "id": "1-lW5aOY1-M",
       "title": "테슬라 7.64% 급락! 스페이스X와 대형 합병, 호재일까 악재일까? #테슬라 #스페이스X #미국주식",
@@ -12,8 +45,8 @@
       "kind": "shorts",
       "duration_s": 49,
       "privacy": "public",
-      "views": 182,
-      "likes": 2,
+      "views": 891,
+      "likes": 3,
       "comments": 0
     },
     {
@@ -23,8 +56,8 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 721,
-      "likes": 5,
+      "views": 1027,
+      "likes": 8,
       "comments": 0
     },
     {
@@ -45,9 +78,9 @@
       "kind": "shorts",
       "duration_s": 39,
       "privacy": "public",
-      "views": 573,
-      "likes": 10,
-      "comments": 0
+      "views": 971,
+      "likes": 12,
+      "comments": 1
     },
     {
       "id": "AVcU8q-Kwc8",
@@ -56,7 +89,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 1183,
+      "views": 1191,
       "likes": 5,
       "comments": 0
     },
@@ -67,7 +100,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 325,
+      "views": 323,
       "likes": 2,
       "comments": 0
     },
@@ -89,7 +122,7 @@
       "kind": "shorts",
       "duration_s": 46,
       "privacy": "public",
-      "views": 770,
+      "views": 769,
       "likes": 5,
       "comments": 0
     },
@@ -100,7 +133,7 @@
       "kind": "long",
       "duration_s": 220,
       "privacy": "public",
-      "views": 48,
+      "views": 49,
       "likes": 3,
       "comments": 0
     },
@@ -111,7 +144,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 209,
+      "views": 210,
       "likes": 0,
       "comments": 0
     },
@@ -122,7 +155,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 222,
+      "views": 218,
       "likes": 1,
       "comments": 0
     },
@@ -133,7 +166,7 @@
       "kind": "long",
       "duration_s": 237,
       "privacy": "public",
-      "views": 257,
+      "views": 273,
       "likes": 3,
       "comments": 0
     },
@@ -144,7 +177,7 @@
       "kind": "shorts",
       "duration_s": 74,
       "privacy": "public",
-      "views": 683,
+      "views": 684,
       "likes": 4,
       "comments": 0
     },
@@ -155,7 +188,7 @@
       "kind": "long",
       "duration_s": 222,
       "privacy": "public",
-      "views": 27,
+      "views": 29,
       "likes": 1,
       "comments": 0
     },
@@ -199,7 +232,7 @@
       "kind": "long",
       "duration_s": 264,
       "privacy": "public",
-      "views": 12,
+      "views": 13,
       "likes": 1,
       "comments": 0
     },
@@ -210,7 +243,7 @@
       "kind": "shorts",
       "duration_s": 32,
       "privacy": "public",
-      "views": 443,
+      "views": 444,
       "likes": 1,
       "comments": 0
     },
@@ -276,7 +309,7 @@
       "kind": "long",
       "duration_s": 290,
       "privacy": "public",
-      "views": 104,
+      "views": 103,
       "likes": 1,
       "comments": 0
     },
