@@ -62,6 +62,9 @@ def draw(dates, closes, label, out, w=960, h=580, mark_year=None, upto=1.0):
     base = closes[mi] if mi is not None else closes[0]
     ratio = closes[-1] / base
     chg = (ratio - 1) * 100
+    if mi is None and len(closes) >= 2 and closes[-2]:
+        # 일간 차트: 숫자는 전일 대비 (11/24 사용자 결정: 기간 전체 등락률은 제목 숫자와 반대로 보여 헷갈림)
+        chg = (closes[-1] / closes[-2] - 1) * 100
     col = UP if chg >= 0 else DOWN
 
     fig = plt.figure(figsize=(w / 100, h / 100), dpi=100)
@@ -77,9 +80,9 @@ def draw(dates, closes, label, out, w=960, h=580, mark_year=None, upto=1.0):
     elif mi is not None:
         badge = f"그때 대비 {'▲' if chg >= 0 else '▼'} {abs(chg):.0f}%"
     else:
-        badge = f"{'▲' if chg >= 0 else '▼'} {abs(chg):.2f}%"
+        badge = f"전일 대비 {'▲' if chg >= 0 else '▼'} {abs(chg):.2f}%"
     if upto >= 1.0:
-        fig.text(0.94, 0.78, badge, color=col, ha="right", fontproperties=fp(36 if mi is not None else 40))
+        fig.text(0.94, 0.78, badge, color=col, ha="right", fontproperties=fp(36))
 
     ax = fig.add_axes([0.07, 0.12, 0.86, 0.58])
     ax.set_facecolor("none")
