@@ -162,23 +162,28 @@ def build_background(shots, W, H, workdir, layout="full"):
                   f"eq=brightness=-0.24:saturation=0.55[bg];"
                   f"[b]scale={box['w']}:{box['h']}:force_original_aspect_ratio=increase,crop={box['w']}:{box['h']},"
                   f"{GRADE_BASE},format=rgba[f0];[1:v]format=gray[m];[f0][m]alphamerge[fg];"
-                  f"[bg][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p[v]")
+                  f"[bg][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p,tpad=stop_mode=clone:stop_duration={L:.3f}[v]")
             extra = ["-loop", "1", "-i", mask]
         elif layout == "window":
             fd = min(0.18, L / 4)
             fc = (f"{base},scale={box['w']}:{box['h']}:force_original_aspect_ratio=increase,crop={box['w']}:{box['h']},"
                   f"{GRADE_BASE},format=rgba[f0];[1:v]format=gray[m];[f0][m]alphamerge,"
                   f"fade=t=in:st=0:d={fd:.2f}:alpha=1,fade=t=out:st={max(0, L - fd):.2f}:d={fd:.2f}:alpha=1[fg];"
-                  f"[2:v][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p[v]")
+                  f"[2:v][fg]overlay={box['x']}:{box['y']},setsar=1,format=yuv420p,tpad=stop_mode=clone:stop_duration={L:.3f}[v]")
             extra = ["-loop", "1", "-i", mask, "-f", "lavfi", "-i", f"color=c={NAVY}:s={W}x{H}:r={FPS}"]
         else:
             fc = (f"{base},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
-                  f"{GRADE},setsar=1,format=yuv420p[v]")
+                  f"{GRADE},setsar=1,format=yuv420p,tpad=stop_mode=clone:stop_duration={L:.3f}[v]")
             extra = []
         # 조각마다 시간 단위·화질 설정을 똑같이 (11/24: 단색 배경 조각에서 이어 붙이기가 끊겨 영상이 중간에 멈춤)
         run(["ffmpeg", "-nostdin", "-y", *inp, *extra, "-filter_complex", fc, "-map", "[v]", "-t", f"{L:.3f}", "-an",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-r", str(FPS), "-pix_fmt", "yuv420p",
              "-profile:v", "high", "-video_track_timescale", "15360", p])
+        if _vdur(p) < L - 0.2:
+            print(f"  [배경] {i + 1}번 조각이 짧음({_vdur(p):.2f}<{L:.2f}초) → 단색 배경으로 대체")
+            run(["ffmpeg", "-nostdin", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1D33:s={W}x{H}:r={FPS}", "-t", f"{L:.3f}",
+                 "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+                 "-profile:v", "high", "-video_track_timescale", "15360", p])
         parts.append(p)
     lst = workdir / "shots.txt"
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
@@ -198,13 +203,15 @@ def build_background(shots, W, H, workdir, layout="full"):
 
 
 def _vdur(path):
-    """영상 트랙 길이(초). 모르면 0."""
+    """영상 트랙의 실제 길이(초) = 실제 프레임 수 / FPS (파일에 적힌 길이 정보는 믿지 않음). 모르면 0."""
     import subprocess
-    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
-                          "stream=duration:format=duration", "-of", "default=nw=1:nk=1", str(path)],
-                         capture_output=True, text=True).stdout.split()
-    vals = [float(x) for x in out if x not in ("N/A", "")]
-    return vals[0] if vals else 0.0
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries",
+                          "stream=nb_read_packets", "-of", "default=nw=1:nk=1", str(path)],
+                         capture_output=True, text=True).stdout.strip()
+    try:
+        return int(out.split()[0]) / FPS
+    except Exception:
+        return 0.0
 
 
 # ---------------- 효과음 (직접 합성, 저작권 걱정 없음) ----------------
@@ -356,6 +363,9 @@ def _compose_split(inputs, vfc, afc, total, v, a, out, limit):
          "-t", f"{total:.3f}", *a, aud], timeout=limit)
     run(["ffmpeg", "-nostdin", "-y", "-i", vid, "-i", aud, "-map", "0:v", "-map", "1:a", "-c", "copy",
          "-t", f"{total:.3f}", "-movflags", "+faststart", out], timeout=limit)
+    vd = _vdur(out)
+    if vd < total - 1.0:
+        raise RuntimeError(f"완성 영상의 화면이 {vd:.1f}초에서 끊김 (전체 {total:.1f}초, 안전 모드)")
     print(f"  [렌더] 안전 모드 완료: {out} ({total:.1f}초)")
     return out
 
