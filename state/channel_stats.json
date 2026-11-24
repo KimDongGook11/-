@@ -1,10 +1,21 @@
 {
-  "collected_at": "2026-11-24T08:15:43+00:00",
+  "collected_at": "2026-11-24T09:49:23+00:00",
   "channel": "경제원픽",
-  "subscribers": 20,
+  "subscribers": 21,
   "total_views": 12891,
-  "video_count": 38,
+  "video_count": 39,
   "videos": [
+    {
+      "id": "SKR6_y_boSc",
+      "title": "코스피 6.32% 급등 5000선 회복, 내 계좌는 안전할까? #코스피 #삼성전자 #경제뉴스",
+      "published": "2026-11-24T09:00:37Z",
+      "kind": "shorts",
+      "duration_s": 60,
+      "privacy": "public",
+      "views": 0,
+      "likes": 0,
+      "comments": 0
+    },
     {
       "id": "Pyal0rqSq2o",
       "title": "100번째 사이드카 터졌다, 반도체 랠리 지금 타도 될까? #SK하이닉스 #삼성전자 #국내증시",
@@ -12,8 +23,8 @@
       "kind": "shorts",
       "duration_s": 71,
       "privacy": "public",
-      "views": 507,
-      "likes": 8,
+      "views": 639,
+      "likes": 6,
       "comments": 0
     },
     {
@@ -23,7 +34,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 973,
+      "views": 978,
       "likes": 8,
       "comments": 0
     },
@@ -56,7 +67,7 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 1027,
+      "views": 1084,
       "likes": 8,
       "comments": 0
     },
