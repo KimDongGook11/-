@@ -1,0 +1,95 @@
+{
+  "id": "k20261124-161110",
+  "series": "kr",
+  "created_at": "2026-11-24T16:11:10.817245+09:00",
+  "video": "/home/runner/work/-/-/output/reel_k20261124-161110.mp4",
+  "sources": [
+    "Yahoo Finance",
+    "서울경제TV",
+    "연합뉴스",
+    "Chosunbiz",
+    "서울파이낸스",
+    "DART 공시"
+  ],
+  "caption": "코스피가 6% 넘게 급등하며 드디어 5000선을 탈환했습니다! 삼성전자와 SK하이닉스 등 대형주들도 일제히 강한 상승세를 보였는데요, 내일 증시 흐름은 과연 어떨까요? 댓글로 의견을 남겨주세요! 📈\n\n📰 출처: Yahoo Finance, 서울경제TV, 연합뉴스\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #코스피 #삼성전자 #SK하이닉스 #주식시세",
+  "duration": 79.5,
+  "qc": {
+    "ok": true,
+    "items": [
+      [
+        "길이",
+        true,
+        "80초"
+      ],
+      [
+        "화면 끊김",
+        true,
+        "없음"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 93%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 123개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "코스피, 6.32% 오른 5000선 마감",
+  "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFAwbE5rQmpad19ZUEQ3NXdrSlN5VXMxY1o5d1UyMFo1MDY0dWJhZjh1UExkY2JtQTZsZFkzY3lkVTVZaktZQjRhUkNVVm5iWVhRQWhOVWVpbnRoUXp3Mkh0YkZIcG8?oc=5",
+  "topic": "코스피, 6.32% 오른 5000선 마감",
+  "links": [
+    "https://finance.yahoo.com",
+    "https://news.google.com/rss/articles/CBMiZEFVX3lxTFAwbE5rQmpad19ZUEQ3NXdrSlN5VXMxY1o5d1UyMFo1MDY0dWJhZjh1UExkY2JtQTZsZFkzY3lkVTVZaktZQjRhUkNVVm5iWVhRQWhOVWVpbnRoUXp3Mkh0YkZIcG8?oc=5",
+    "https://www.yna.co.kr/view/AKR20261124074900008",
+    "https://www.yna.co.kr/view/AKR20261124137500008",
+    "https://www.yna.co.kr/view/AKR20261124136900008",
+    "https://www.yna.co.kr/view/AKR20261124046000008",
+    "https://www.yna.co.kr/view/AKR20261124038100008",
+    "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPR2QxV3dmYjZ6VWVuVk9URHdaRk52UU1BVXNfeE0zZzFGQW1zTUdfdHJEUVZJQnVTcWwxeGxZVzNvdTJjUnh5Y1pVQVdaRGoxOVM4azZZUEVWa2o3UV9iajBJb0lXQUptNHlFc0pGaGpmR1BxUHRkT21NcDVpbXU2ZkhjTjFQcWMy?oc=5",
+    "https://news.google.com/rss/articles/CBMiakFVX3lxTFBKOWxtLVJ2ZnQ0cTc3Nk4wSVlhVWxuZzI3dlRSRHpTdWUwcHpiNTN6TzFkZE9HdndjT29WaG5DbVNsUDNnX081YTc2aFkwZi1mbkU0VkFBYW16VF9jVnV4TWNEUkwzTzJpbGc?oc=5",
+    "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261124900555",
+    "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261124000236"
+  ],
+  "kr": true,
+  "release_tag": "reel-k20261124-161110",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 351,
+  "sent_at": "2026-11-24T07:17:58.123796+00:00",
+  "hook_title": "코스피 [6.32% 급등] 5000선",
+  "tag": "국내증시",
+  "hashtags": [
+    "#경제뉴스",
+    "#코스피",
+    "#삼성전자",
+    "#SK하이닉스",
+    "#주식시세"
+  ],
+  "brand": "",
+  "yt_title": "코스피 6.32% 오른 5000선 마감, 내 계좌는?",
+  "title_tags": [
+    "#코스피",
+    "#삼성전자",
+    "#증시"
+  ],
+  "question": "오늘 급등한 증시, 내일도 계속 달릴까요 멈출까요? 여러분은 어떻게 생각하세요?",
+  "waiting_until": "2026-11-24T09:10:58.124428+00:00"
+}
