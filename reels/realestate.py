@@ -1,4 +1,5 @@
-"""주간 부동산(토요일 12:00) 근거 숫자: 공공데이터포털 무료 API (Secrets: DATA_GO_KR_KEY, 일반 인증키 Decoding).
+"""주간 부동산(토요일 12:00) 근거 숫자: 공공데이터포털 무료 API (일반 인증키 Decoding).
+Secrets: DATA_GO_KR_TRADE_KEY(실거래가), DATA_GO_KR_APPLY_KEY(청약홈). 하나만 쓰면 DATA_GO_KR_KEY.
 - 국토교통부 아파트 매매 실거래가: 최근 7일 신고된 서울 아파트 매매 건수·최고가 거래
 - 한국부동산원 청약홈 분양정보: 앞으로 열흘 안에 청약 접수하는 아파트
 키가 없거나 호출이 실패하면 None → 뉴스 기사만으로 만듦 (2026-11-24 사용자 결정: 주 1편으로 시작)."""
@@ -20,8 +21,10 @@ SEOUL = {"11110": "종로구", "11140": "중구", "11170": "용산구", "11200":
          "11620": "관악구", "11650": "서초구", "11680": "강남구", "11710": "송파구", "11740": "강동구"}
 
 
-def key():
-    return (config.env("DATA_GO_KR_KEY") or "").strip()
+def key(kind=""):
+    """kind: trade(국토교통부 실거래가) | apply(청약홈). 서비스별 키가 없으면 공통 키(DATA_GO_KR_KEY)."""
+    name = {"trade": "DATA_GO_KR_TRADE_KEY", "apply": "DATA_GO_KR_APPLY_KEY"}.get(kind)
+    return ((config.env(name) if name else None) or config.env("DATA_GO_KR_KEY") or "").strip()
 
 
 def _tag(el, *names):
@@ -33,7 +36,7 @@ def _tag(el, *names):
 
 
 def _trades(lawd, ymd):
-    r = requests.get(TRADE_API, timeout=20, params={"serviceKey": key(), "LAWD_CD": lawd, "DEAL_YMD": ymd,
+    r = requests.get(TRADE_API, timeout=20, params={"serviceKey": key("trade"), "LAWD_CD": lawd, "DEAL_YMD": ymd,
                                                     "numOfRows": 1000, "pageNo": 1})
     r.raise_for_status()
     root = ET.fromstring(r.content)
@@ -86,7 +89,7 @@ def seoul_week():
 def upcoming_subscriptions(days=10):
     today = dt.datetime.now(KST).date()
     r = requests.get(APPLY_API, timeout=20, params={
-        "serviceKey": key(), "page": 1, "perPage": 100,
+        "serviceKey": key("apply"), "page": 1, "perPage": 100,
         "cond[RCEPT_BGNDE::GTE]": today.isoformat(),
         "cond[RCEPT_BGNDE::LTE]": (today + dt.timedelta(days=days)).isoformat()})
     r.raise_for_status()
@@ -103,11 +106,11 @@ def upcoming_subscriptions(days=10):
 
 def material():
     """주간 부동산 근거 자료(dict) 또는 None."""
-    if not key():
-        print("  [부동산] DATA_GO_KR_KEY 없음 → 뉴스 기사만으로 만들어요")
-        return None
     parts = []
-    for name, f in (("실거래가", seoul_week), ("청약 일정", upcoming_subscriptions)):
+    for name, kind, f in (("실거래가", "trade", seoul_week), ("청약 일정", "apply", upcoming_subscriptions)):
+        if not key(kind):
+            print(f"  [부동산] {name} 키 없음 → 건너뜀")
+            continue
         try:
             t = f()
             if t:

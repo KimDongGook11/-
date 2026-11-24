@@ -31,6 +31,8 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
       DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+      DATA_GO_KR_TRADE_KEY: ${{ secrets.DATA_GO_KR_TRADE_KEY }}
+      DATA_GO_KR_APPLY_KEY: ${{ secrets.DATA_GO_KR_APPLY_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       IG_USER_ID: ${{ secrets.IG_USER_ID }}
