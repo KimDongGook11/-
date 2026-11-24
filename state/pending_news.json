@@ -1,25 +1,25 @@
 {
-  "id": "n20261124-110522",
+  "id": "n20261124-121252",
   "series": "news",
-  "created_at": "2026-11-24T11:05:22.963153+09:00",
-  "video": "/home/runner/work/-/-/output/reel_n20261124-110522.mp4",
+  "created_at": "2026-11-24T12:12:52.059968+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261124-121252.mp4",
   "sources": [
     "CNBC"
   ],
   "caption": "젠슨 황의 전격 복귀로 엔비디아에 이어 아시아 공급망까지 불기둥을 뿜어냈습니다.🔥\n삼성전자와 SK하이닉스의 급등으로 코스피에는 통산 100번째 매수 사이드카가 발동됐는데요.\n다만 미국 의회의 안보 조사와 규제 리스크가 남아있어 안심하기엔 이르다는 지적도 나옵니다.\n\n📰 출처: CNBC\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #코스피 #반도체주 #엔비디아",
-  "duration": 70.3,
+  "duration": 71.0,
   "qc": {
-    "ok": false,
+    "ok": true,
     "items": [
       [
         "길이",
         true,
-        "70초"
+        "71초"
       ],
       [
         "화면 끊김",
-        false,
-        "51초에서 화면이 멈춤"
+        true,
+        "없음"
       ],
       [
         "규격",
@@ -60,10 +60,10 @@
     "https://www.cnbc.com/2026/11/23/anthropic-nvidia-shares.html"
   ],
   "kr": true,
-  "release_tag": "reel-n20261124-110522",
+  "release_tag": "reel-n20261124-121252",
   "cover_name": "cover.jpg",
-  "tg_message_id": 335,
-  "sent_at": "2026-11-24T02:39:09.374773+00:00",
+  "tg_message_id": 337,
+  "sent_at": "2026-11-24T03:16:57.715770+00:00",
   "hook_title": "코스피 [6% 폭등], 사이드카 터졌다",
   "tag": "반도체",
   "hashtags": [
