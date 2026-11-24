@@ -46,6 +46,7 @@ FORMATS = {
 - 2~3번 문장: 코스닥·원/달러 환율·삼성전자·SK하이닉스 등 의미 있게 움직인 것만 숫자로 짧게.
 - 그다음 '오늘의 핵심': 주 자료의 이슈 하나를 원인·영향까지 (전체의 절반 정도).
 - 그다음 '그밖의 뉴스': [그밖의 뉴스] 자료 2개를 한 문장씩 (자료에 있는 사실만).
+- [공시] 자료가 있으면 '오늘의 공시' 1~2개를 한 문장씩 (회사명·공시 종류·규모만, 주가 전망은 하지 마).
 - 마지막 질문 직전: 내일 볼 것 한 문장.
 - 지수·환율·종목 숫자는 [시세 데이터] 표의 값만 그대로 써. 기사 숫자와 다르면 시세 데이터를 따라.
 - 개인 투자자 눈높이로, 한국 종목·코스피·환율 중심.
@@ -53,7 +54,7 @@ FORMATS = {
 }
 
 
-def pick_story(candidates, history, focus="global", market=""):
+def pick_story(candidates, history, focus="global", market="", buzz=None):
     """focus: global = 오늘의 원픽(그날 이슈 하나), us = 미국 증시 마감 브리핑, kr = 국내 증시 마감 브리핑.
     market: 시세 데이터 텍스트(브리핑일 때, 오늘 시장을 움직인 뉴스를 고르는 참고용)"""
     lines = []
@@ -90,6 +91,9 @@ def pick_story(candidates, history, focus="global", market=""):
                  "2. 누구나 아는 큰 이름: 유가, 환율, 금리(연준), 엔비디아·애플·테슬라·삼성·AI 빅테크, 비트코인처럼 시청자가 이미 아는 주제가 유리해.")
         if kr_recent < 2:
             first += "\n※ 최근 영상이 미국·해외 기업 위주였어. 비슷한 화제성이면 한국 증시·환율과 이어지는 뉴스를 골라."
+    if buzz:
+        role += ("\n\n[참고: 오늘 투자자 텔레그램 채널에서 많이 다룬 이슈 (화제성 판단에만 쓰고, 사실 근거로 쓰지 마)]\n"
+                 + "\n".join(f"- {b}" for b in buzz[:15]))
     prompt = f"""{role}
 
 [선정 기준 — 위에서부터 중요]
@@ -137,7 +141,8 @@ def gather_materials(pool, main_item, limit=8, want=3):
         if len(mats) >= 6:
             break
     for m in mats:
-        m["body"] = news.fetch_article_text(m["link"])
+        if not m.get("body"):   # 공시·증권사 리서치처럼 본문이 이미 있는 자료는 그대로
+            m["body"] = news.fetch_article_text(m["link"])
     have = sum(1 for m in mats if m.get("body"))
     q = _query(main_item["title"])
     if have < want and q:
@@ -178,6 +183,8 @@ def write_script(mats, topic, brand, recent=None, focus="global"):
 아래 자료만 근거로 약 1분 20초(80초 안팎)짜리 한국어 릴스 대본을 써.
 
 [규칙]
+0. 제목이 [증권사 의견]인 자료는 증권사의 의견·전망이야. 쓸 때는 반드시 "키움증권은 ~로 봤어요"처럼 출처를 밝히고 사실처럼 단정하지 마.
+   [공시] 자료는 회사가 낸 공시라 사실로 써도 돼. 텔레그램 채널 이름은 대본에 절대 쓰지 마. '잠정' 수급 숫자는 확정처럼 쓰지 마.
 1. 숫자·날짜·인명·기관명은 자료에 나온 것만 써. 자료에 없는 수치는 절대 지어내지 마.
 2. 자료 문장을 번역해서 그대로 옮기지 말고, 쉬운 말로 새로 풀어서 써.
 3. 말투는 친근한 존댓말(~요, ~죠). 경제 용어는 한 번 쉽게 풀어줘.

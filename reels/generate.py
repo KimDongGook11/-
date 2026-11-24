@@ -15,7 +15,7 @@ import time
 import traceback
 
 from . import talk
-from . import approval, config, factcheck, history, instagram, market, news, pending, produce, qc, render, script, storage, telegram, tts, youtube
+from . import approval, config, factcheck, history, instagram, market, news, pending, tgchannels, produce, qc, render, script, storage, telegram, tts, youtube
 from .utils import git_push_state, load_state, save_state
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -116,11 +116,21 @@ def _news_script(focus="global"):
         items = news.fetch_all({"kr": news.KR_FEEDS, "re": news.RE_FEEDS}.get(focus, news.FEEDS))
         if focus == "re":
             items = news.drop_promo(items)
-        cands, pool = news.rank(items, history_log, max_age_hours=24 * 7 if focus == "re" else 30)
+        tg_items, tg_signals, tg_ideas, filings = [], [], [], []
+        if focus in ("global", "us", "kr"):   # 투자자 텔레그램 채널 9곳 (2026-11-24)
+            try:
+                tg_items, tg_signals, tg_ideas, filings = tgchannels.collect(focus)
+            except Exception as e:
+                print(f"  [텔레그램 채널] 건너뜀: {e}")
+        opinions = [it for it in tg_items if it.get("opinion")]   # 증권사 의견은 후보가 아니라 보조 자료로만
+        cands, pool = news.rank(items + [it for it in tg_items if not it.get("opinion")], history_log,
+                                max_age_hours=24 * 7 if focus == "re" else 30)
+        cands = tgchannels.boost(cands, tg_signals)
         if not cands:
             raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
         print("2) 오늘의 뉴스 선정")
-        idx, pick = script.pick_story(cands, history_log, focus=focus, market=mk["body"] if mk else "")
+        buzz = (tg_ideas + [c["title"] for c in cands if c.get("tg_signal")])[:15] or None
+        idx, pick = script.pick_story(cands, history_log, focus=focus, market=mk["body"] if mk else "", buzz=buzz)
         main = cands[idx]
         print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
         mats = script.gather_materials(pool, main)
@@ -129,6 +139,14 @@ def _news_script(focus="global"):
             for c in others:
                 mats.append({"title": "[그밖의 뉴스] " + c["title"], "source": c["source"], "link": c["link"],
                              "summary": c.get("summary", ""), "body": c.get("summary", "")})
+        if focus == "kr":
+            mats += filings[:2]
+        if focus in ("us", "global"):   # 같은 주제의 증권사 의견 1개 (출처 밝혀 인용)
+            mt = news.tokens(main["title"] + " " + main.get("summary", "")[:200])
+            ops = sorted(opinions,
+                         key=lambda it: -news.jaccard(mt, news.tokens(it["title"] + " " + it["summary"])))
+            if ops and news.jaccard(mt, news.tokens(ops[0]["title"] + " " + ops[0]["summary"])) >= 0.1:
+                mats.append(ops[0])
     if mk:
         mats.insert(0, {**mk, "title": ("[부동산 공공데이터] " if focus == "re" else "[시세 데이터] ") + mk["title"]})
     print("3) 대본 작성")
