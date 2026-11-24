@@ -155,7 +155,7 @@ def build_background(shots, W, H, workdir, layout="full"):
         else:
             inp = ["-f", "lavfi", "-i", f"gradients=s=1920x1920:c0=0x0B1D33:c1=0x1B3A6B:x0=0:y0=0:x1=1920:y1=1920"
                                         f":speed=0.01:r={FPS}:seed={i}"]
-        base = f"[0:v]setpts=PTS/{speed:.3f},fps={FPS}"
+        base = f"[0:v]setpts=(PTS-STARTPTS)/{speed:.3f},fps={FPS}"   # 조각마다 시간을 0부터 (11/24 화면 끊김)
         if layout == "card":
             fc = (f"{base},split=2[a][b];"
                   f"[a]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=28:2,"
@@ -189,16 +189,14 @@ def build_background(shots, W, H, workdir, layout="full"):
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     bg = workdir / "bg.mp4"
     want = sum(L for _, _, L in shots)
-    run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", bg])
+    # 이어 붙이면서 시간 정보를 장면 번호로 새로 매김 (조각 안의 시간이 튀어도 영향 없게, 11/24 화면 끊김·렌더 멈춤)
+    run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-vf", f"setpts=N/{FPS}/TB",
+         "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an", bg],
+        timeout=max(600, int(want * 6)))
     got = _vdur(bg)
-    if got < want - 0.5:   # 이어 붙이기가 중간에 끊겼으면 다시 인코딩하며 이어 붙임
-        print(f"  [배경] 이어 붙이기 {got:.1f}초 < {want:.1f}초 → 다시 인코딩해서 이어 붙임")
-        run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-vf", f"fps={FPS},setpts=N/{FPS}/TB",
-             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an", bg],
-            timeout=max(600, int(want * 6)))
-        got = _vdur(bg)
-        if got < want - 0.5:
-            raise RuntimeError(f"배경 영상이 {got:.1f}초로 짧음 (필요 {want:.1f}초)")
+    print(f"  [배경] {got:.1f}초 / 필요 {want:.1f}초")
+    if got < want - 0.5:
+        raise RuntimeError(f"배경 영상이 {got:.1f}초로 짧음 (필요 {want:.1f}초)")
     return bg
 
 
@@ -337,7 +335,7 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
             # 마지막 안전 모드: 배경 영상 시간 정보를 새로 맞추고, 영상·소리를 따로 만든 뒤 합침
             print(f"  [렌더] {limit // 60}분 넘게 멈춤 → 안전 모드(배경 다시 정리 + 영상·소리 따로 렌더)")
             clean = Path(str(bg)).with_name("bg_clean.mp4")
-            run(["ffmpeg", "-nostdin", "-y", "-fflags", "+genpts", "-i", bg, "-vf", f"fps={FPS},setpts=N/{FPS}/TB",
+            run(["ffmpeg", "-nostdin", "-y", "-fflags", "+genpts", "-i", bg, "-vf", f"setpts=N/{FPS}/TB",
                  "-t", f"{total + 1:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", clean],
                 timeout=limit)
             return compose(W=W, H=H, bg=clean, narration=narration, total=total, ass=ass,
