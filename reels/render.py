@@ -175,14 +175,36 @@ def build_background(shots, W, H, workdir, layout="full"):
             fc = (f"{base},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
                   f"{GRADE},setsar=1,format=yuv420p[v]")
             extra = []
-        run(["ffmpeg", "-y", *inp, *extra, "-filter_complex", fc, "-map", "[v]", "-t", f"{L:.3f}", "-an",
-             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-r", str(FPS), p])
+        # 조각마다 시간 단위·화질 설정을 똑같이 (11/24: 단색 배경 조각에서 이어 붙이기가 끊겨 영상이 중간에 멈춤)
+        run(["ffmpeg", "-nostdin", "-y", *inp, *extra, "-filter_complex", fc, "-map", "[v]", "-t", f"{L:.3f}", "-an",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-r", str(FPS), "-pix_fmt", "yuv420p",
+             "-profile:v", "high", "-video_track_timescale", "15360", p])
         parts.append(p)
     lst = workdir / "shots.txt"
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     bg = workdir / "bg.mp4"
-    run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", bg])
+    want = sum(L for _, _, L in shots)
+    run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", bg])
+    got = _vdur(bg)
+    if got < want - 0.5:   # 이어 붙이기가 중간에 끊겼으면 다시 인코딩하며 이어 붙임
+        print(f"  [배경] 이어 붙이기 {got:.1f}초 < {want:.1f}초 → 다시 인코딩해서 이어 붙임")
+        run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-vf", f"fps={FPS},setpts=N/{FPS}/TB",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an", bg],
+            timeout=max(600, int(want * 6)))
+        got = _vdur(bg)
+        if got < want - 0.5:
+            raise RuntimeError(f"배경 영상이 {got:.1f}초로 짧음 (필요 {want:.1f}초)")
     return bg
+
+
+def _vdur(path):
+    """영상 트랙 길이(초). 모르면 0."""
+    import subprocess
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                          "stream=duration:format=duration", "-of", "default=nw=1:nk=1", str(path)],
+                         capture_output=True, text=True).stdout.split()
+    vals = [float(x) for x in out if x not in ("N/A", "")]
+    return vals[0] if vals else 0.0
 
 
 # ---------------- 효과음 (직접 합성, 저작권 걱정 없음) ----------------
@@ -317,6 +339,9 @@ def compose(*, W, H, bg, narration, total, ass, overlays, out, sfx=None, bgm=Non
         return compose(W=W, H=H, bg=bg, narration=narration, total=total, ass=ass,
                        overlays=rest, out=out, sfx=sfx, bgm=bgm,
                        progress=progress, youtube=youtube)
+    vd = _vdur(out)
+    if vd < total - 1.0:
+        raise RuntimeError(f"완성 영상의 화면이 {vd:.1f}초에서 끊김 (전체 {total:.1f}초)")
     print(f"  [렌더] 완료: {out} ({total:.1f}초)")
     return out
 

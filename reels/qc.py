@@ -6,7 +6,7 @@ import subprocess
 
 def _probe(path):
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                          "stream=codec_type,width,height:format=duration", "-of", "json", str(path)],
+                          "stream=codec_type,width,height,duration:format=duration", "-of", "json", str(path)],
                          capture_output=True, text=True).stdout
     return json.loads(out or "{}")
 
@@ -35,6 +35,10 @@ def check(path, info, script, offline=False):
         else:
             ok = dur >= 240
             items.append(("길이", ok, f"{int(dur // 60)}분 {int(dur % 60)}초" + ("" if ok else " (목표 5분보다 짧음)")))
+        # 1-1) 화면이 소리보다 먼저 끝나지 않는지 (11/24: 54초에서 화면이 멈추고 소리만 나감)
+        vdur = float(v.get("duration") or 0) if v else 0
+        if vdur:
+            items.append(("화면 끊김", vdur >= dur - 1.0, "없음" if vdur >= dur - 1.0 else f"{vdur:.0f}초에서 화면이 멈춤"))
         # 2) 화면 규격·소리
         want = (1080, 1920) if kind == "short" else (1920, 1080)
         items.append(("규격", (v.get("width"), v.get("height")) == want and has_audio,
