@@ -1,0 +1,80 @@
+{
+  "id": "n20261124-100439",
+  "series": "news",
+  "created_at": "2026-11-24T10:04:39.134895+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261124-100439.mp4",
+  "sources": [
+    "CNBC"
+  ],
+  "caption": "젠슨 황의 전격 복귀로 엔비디아에 이어 아시아 공급망까지 불기둥을 뿜어냈습니다.🔥\n삼성전자와 SK하이닉스의 급등으로 코스피에는 통산 100번째 매수 사이드카가 발동됐는데요.\n다만 미국 의회의 안보 조사와 규제 리스크가 남아있어 안심하기엔 이르다는 지적도 나옵니다.\n\n📰 출처: CNBC\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #코스피 #반도체주 #엔비디아",
+  "duration": 71.7,
+  "qc": {
+    "ok": true,
+    "items": [
+      [
+        "길이",
+        true,
+        "72초"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 93%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 140개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "Nvidia partner and supplier stocks in Asia jump after Jensen Huang's return",
+  "link": "https://www.cnbc.com/2026/11/24/nvidia-jensen-huang-asia-chip-stocks.html",
+  "topic": "Asian chipmakers and Nvidia supplier stocks surge following Jensen Huang's return as CEO",
+  "links": [
+    "https://www.cnbc.com/2026/11/24/nvidia-jensen-huang-asia-chip-stocks.html",
+    "https://www.cnbc.com/2026/11/23/nvidia-stock-jensen-huang-ai-trade.html",
+    "https://www.cnbc.com/2026/11/23/nvidia-has-reinstated-ceo-jensen-huang-analysts-upgraded-the-stock.html",
+    "https://www.cnbc.com/2026/11/23/jim-cramer-nvidia-jensen-huang-ceo-return.html",
+    "https://www.cnbc.com/2026/11/23/nvidia-jensen-huang-ceo.html",
+    "https://www.cnbc.com/2026/11/23/anthropic-nvidia-shares.html"
+  ],
+  "kr": true,
+  "release_tag": "reel-n20261124-100439",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 329,
+  "sent_at": "2026-11-24T01:42:38.470434+00:00",
+  "hook_title": "코스피 [6% 폭등], 사이드카 터졌다",
+  "tag": "반도체",
+  "hashtags": [
+    "#경제뉴스",
+    "#글로벌경제",
+    "#코스피",
+    "#반도체주",
+    "#엔비디아"
+  ],
+  "brand": "",
+  "yt_title": "100번째 사이드카 터졌다, 반도체 랠리 지금 타도 될까?",
+  "title_tags": [
+    "#SK하이닉스",
+    "#삼성전자",
+    "#국내증시"
+  ],
+  "question": "반도체 랠리, 계속 이어질까요 멈칫할까요? 여러분은 어떻게 생각하세요?",
+  "waiting_until": "2026-11-24T03:04:38.471134+00:00"
+}
