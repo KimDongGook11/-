@@ -7,6 +7,7 @@
 - 명령어: /new(오늘의 경제), /history(그때 그 결정), /status, /help
 """
 import datetime as dt
+import re
 import os
 import tempfile
 import time
@@ -152,6 +153,81 @@ def _cover(p):
         return None
 
 
+def _channel_caption(p, vid=None):
+    """채널 게시글: 제목 + 요약 + 질문 + 유튜브 링크 + 투자 권유 아님 안내."""
+    title = script.clean_yt_title(p.get("yt_title")) or script.clean_yt_title(p.get("hook_title", ""))
+    body = re.split(r"\n\n(?:📰|📚|🎞|🤖)", p.get("caption", "") or "")[0].strip()
+    lines = [f"📌 {title}", "", body] if body else [f"📌 {title}"]
+    if p.get("question"):
+        lines += ["", f"💬 {p['question']}"]
+    if vid:
+        lines += ["", f"▶ 유튜브로 보기: https://youtube.com/shorts/{vid}"]
+    if config.CHANNEL_HANDLE:
+        h = config.CHANNEL_HANDLE if config.CHANNEL_HANDLE.startswith("@") else "@" + config.CHANNEL_HANDLE
+        lines.append(f"🔔 구독: https://www.youtube.com/{h}")
+    lines += ["", "ℹ️ 투자 권유가 아닌 경제 뉴스 브리핑입니다."]
+    return "\n".join(lines)
+
+
+def _queue_channel(p, vid=None, at=None):
+    """채널 게시 예약: 유튜브 공개 시각(at, UTC ISO)이 되면 flush_channel이 올림. 채널 미설정이면 건너뜀."""
+    if not telegram.channel_id() or not p.get("tg_message_id"):
+        return
+    q = load_state("channel_queue", [])
+    if any(x.get("id") == p["id"] for x in q):
+        return
+    q.append({"id": p["id"], "due": at or _now().isoformat(timespec="seconds"), "msg": p["tg_message_id"],
+              "caption": _channel_caption(p, vid)})
+    save_state("channel_queue", q[-20:])
+    print(f"  [채널] 게시 예약: {at or '바로'}")
+
+
+def flush_channel():
+    """시각이 된 채널 게시를 올림. 텔레그램을 확인할 때마다 불려서, 공개 시각 뒤 최대 몇십 분 안에 올라감."""
+    q = load_state("channel_queue", [])
+    if not q or not telegram.channel_id():
+        return
+    now, left, posted = _now(), [], 0
+    for x in q:
+        try:
+            due = dt.datetime.fromisoformat(x["due"].replace("Z", "+00:00"))
+        except Exception:
+            due = now
+        if due > now:
+            left.append(x)
+            continue
+        try:
+            try:
+                telegram.copy_to_channel(x["msg"], x["caption"])
+            except Exception as e:   # 영상 메시지를 못 찾으면 글만이라도
+                print(f"  [채널] 영상 복사 실패 → 글만 게시: {e}")
+                telegram.send_channel_message(x["caption"])
+            posted += 1
+        except Exception as e:
+            print(f"  [채널] 게시 실패(다음 확인 때 다시): {e}")
+            if (now - due).total_seconds() < 12 * 3600:
+                left.append(x)
+    if posted or len(left) != len(q):
+        save_state("channel_queue", left)
+        print(f"  [채널] {posted}건 게시")
+
+
+def _on_channel_admin(m):
+    """봇이 채널 관리자로 추가되면(사장님이 추가한 경우만) 채널 주소를 기록."""
+    chat, new = m.get("chat", {}), (m.get("new_chat_member") or {}).get("status")
+    if chat.get("type") != "channel" or not _owner(m.get("from", {}).get("id")):
+        return
+    if new in ("administrator", "creator"):
+        save_state("telegram_channel", {"id": chat["id"], "title": chat.get("title", ""),
+                                        "username": chat.get("username", "")})
+        telegram.send_message(f"📣 채널 연결 완료: {chat.get('title', '')}"
+                              + (f" (@{chat['username']})" if chat.get("username") else "")
+                              + "\n앞으로 승인한 영상은 유튜브 공개 시각에 이 채널에도 올라가요.")
+    elif new in ("left", "kicked") and str(load_state("telegram_channel", {}).get("id")) == str(chat.get("id")):
+        save_state("telegram_channel", {})
+        telegram.send_message("📣 채널에서 봇이 빠져서 채널 자동 게시를 멈췄어요.")
+
+
 def _upload_short(p):
     """릴스를 유튜브 쇼츠로도 게시. 성공 True."""
     series = p.get("series", "news")
@@ -173,6 +249,7 @@ def _upload_short(p):
                                        "yt_title", "title_tags")}
         _link_history(p["id"], short=vid, short_title=title, short_tags=tags, short_meta=meta)
     when = (f"{p.get('slot') or config.YT_SLOTS.get(series)} 예약 공개" if at else f"상태: {st}")
+    _queue_channel(p, vid, at)
     if series == "history" and config.HISTORY_LONG:
         tip = "💡 유튜브 앱에서 이 쇼츠의 '관련 동영상'에 이번 편 장편을 연결해 두면 장편 조회수에 도움이 돼요."
     else:
@@ -251,6 +328,8 @@ def _approve(p):
                 return False
         p["ig_done"] = True
         pending.save(series, p)
+    if series in ("news", "kr", "us", "re", "history") and not youtube.enabled():
+        _queue_channel(p)   # 유튜브 연결이 없으면 채널에는 바로 (링크 없이)
     if series in ("news", "kr", "us", "re", "history") and youtube.enabled() and not p.get("yt_short_id"):
         telegram.send_message("⏫ 유튜브 쇼츠로도 올리는 중이에요.")
         if not _upload_short(p):
@@ -275,6 +354,9 @@ def handle(updates):
     """반환: (다시 만들 시리즈 또는 None, 처리가 끝난 영상 id 집합)"""
     redo, finished = None, set()
     for u in updates:
+        if "my_chat_member" in u:
+            _on_channel_admin(u["my_chat_member"])
+            continue
         if "callback_query" in u:
             cq = u["callback_query"]
             if not _owner(cq["from"]["id"]):
@@ -352,6 +434,10 @@ def handle(updates):
 
 
 def _fetch(timeout=0):
+    try:
+        flush_channel()
+    except Exception as e:
+        print(f"  [채널] 확인 실패(무시): {e}")
     off = load_state("telegram_offset", {}).get("offset")
     try:
         ups = telegram.get_updates(off, timeout=timeout)

@@ -83,9 +83,37 @@ def answer_callback(cb_id, text):
         pass
 
 
+def channel_id():
+    """사장님이 운영하는 공개 텔레그램 채널 (2026-11-24): Variables TELEGRAM_CHANNEL_ID(@아이디 또는 -100…),
+    없으면 봇을 채널 관리자로 추가할 때 자동으로 기록된 값(state/telegram_channel.json)."""
+    cid = (config.env("TELEGRAM_CHANNEL_ID") or "").strip()
+    if cid:
+        return cid
+    from .utils import load_state
+    return str(load_state("telegram_channel", {}).get("id") or "")
+
+
+def copy_to_channel(from_message_id, caption):
+    """승인용 개인 채팅에 보냈던 영상 메시지를 채널로 복사 (영상 파일을 다시 올리지 않아도 됨)."""
+    r = requests.post(_api("copyMessage"), timeout=60, data={
+        "chat_id": channel_id(), "from_chat_id": config.TELEGRAM_CHAT_ID, "message_id": from_message_id,
+        "caption": caption[:1024], "reply_markup": json.dumps({"inline_keyboard": []})})
+    if r.status_code != 200:
+        raise RuntimeError(f"채널 복사 실패: {r.text[:300]}")
+    return r.json()["result"]["message_id"]
+
+
+def send_channel_message(text):
+    r = requests.post(_api("sendMessage"), timeout=30, data={"chat_id": channel_id(), "text": text[:4000]})
+    if r.status_code != 200:
+        raise RuntimeError(f"채널 게시 실패: {r.text[:300]}")
+    return r.json()["result"]["message_id"]
+
+
 def get_updates(offset=None, timeout=0):
-    """timeout>0 이면 새 메시지가 올 때까지 최대 timeout초 기다림(롱폴링)."""
-    params = {"timeout": timeout, "allowed_updates": json.dumps(["message", "callback_query"])}
+    """timeout>0 이면 새 메시지가 올 때까지 최대 timeout초 기다림(롱폴링).
+    my_chat_member: 봇이 채널 관리자로 추가된 알림 (채널 주소 자동 기록용)."""
+    params = {"timeout": timeout, "allowed_updates": json.dumps(["message", "callback_query", "my_chat_member"])}
     if offset:
         params["offset"] = offset
     import time
