@@ -65,6 +65,7 @@ PILJAE = "tc_68257f68bc6e3c161ab5078d"
 DAY_VOICE = "서현"
 VOICE_BY_SERIES = {
     "news": lambda: config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
+    "re": lambda: config.env("TYPECAST_VOICE_RE") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     "us": lambda: config.env("TYPECAST_VOICE_US") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     "kr": lambda: config.env("TYPECAST_VOICE_KR") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     # 예전 TYPECAST_VOICE 변수는 보지 않음: 다른 목소리가 남아 있어도 그때 그 결정은 필재로

@@ -58,12 +58,14 @@ YT_SLOTS = {
     "news": env("YT_NEWS_TIME", "12:00"),        # 오늘의 원픽
     "kr": env("YT_KR_TIME", "18:00"),            # 국내 증시 마감 브리핑 + 뉴스 정리
     "history": env("YT_HISTORY_TIME", "18:00"),  # 그때 그 결정 (주말)
+    "re": env("YT_RE_TIME", "12:00"),            # 주간 부동산 (토요일)
 }
 # 시리즈별 마무리 멘트 (예전 OUTRO_TEXT 변수는 '매일 아침' 문구라 쓰지 않음)
 OUTROS = {
     "us": env("US_OUTRO_TEXT", "매일 아침 7시 미국 증시 정리, 구독하고 내일 또 만나요!"),
     "news": env("NEWS_OUTRO_TEXT", "매일 낮 12시 경제 이슈 딱 하나, 구독하고 내일 또 만나요!"),
     "kr": env("KR_OUTRO_TEXT", "매일 저녁 6시 국내 증시 정리, 구독하고 내일 또 만나요!"),
+    "re": env("RE_OUTRO_TEXT", "매주 토요일 낮 12시 부동산 정리, 구독하고 다음 주에 또 만나요!"),
 }
 OUTRO_TEXT = OUTROS["news"]
 # 주말(토·일)에는 그때 그 결정을 하루 2편: 12:00(원픽 자리, daily.yml) + 18:00(history.yml). 끄려면 WEEKEND_HISTORY=false

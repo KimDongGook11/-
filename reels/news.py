@@ -47,6 +47,27 @@ KR_FEEDS = [
     ("Google News KR", GN_KR + "(배당+OR+공모주+OR+외국인+순매도)+when:1d"),
 ]
 
+# 주간 부동산(토요일 12:00)용 (2026-11-24 사용자 결정: 정책·재건축·재개발·분양·시세)
+RE_FEEDS = [
+    ("한국경제", "https://www.hankyung.com/feed/realestate"),
+    ("Google News KR", GN_KR + "부동산+(대책+OR+정책+OR+규제+OR+대출)+when:7d"),
+    ("Google News KR", GN_KR + "(재건축+OR+재개발)+(조합+OR+인가+OR+착공+OR+정비구역)+when:7d"),
+    ("Google News KR", GN_KR + "아파트+(청약+OR+분양+OR+입주)+when:7d"),
+    ("Google News KR", GN_KR + "주간+아파트+가격+동향+한국부동산원+when:7d"),
+    ("Google News KR", GN_KR + "(전세+OR+전셋값+OR+매매가)+서울+아파트+when:7d"),
+]
+# 분양 홍보성 기사(시행사 보도자료) 걸러내기 — 특정 단지 홍보로 보이면 안 됨
+PROMO = re.compile(r"완판|견본주택|모델하우스|그랜드\s*오픈|분양\s*(돌입|개시|예정|중)|청약\s*(흥행|돌풍|열기)|"
+                   r"프리미엄\s*(단지|입지)|역세권\s*신축|분양가\s*(착한|합리)|특별\s*혜택|계약\s*조건")
+
+
+def drop_promo(items):
+    out = [it for it in items if not PROMO.search(it.get("title", ""))]
+    if len(out) != len(items):
+        print(f"  [부동산] 홍보성 기사 {len(items) - len(out)}건 제외")
+    return out
+
+
 STOP = set("""the a an and or of to in on for with at by from as is are was were be been this that
 these those it its into over after before about amid says said say new more than will would could
 can may might up down out not but has have had how why what who when where which their they them

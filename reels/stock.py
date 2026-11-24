@@ -114,7 +114,10 @@ FIN_CONTEXT = {"finance", "financial", "money", "cash", "currency", "dollar", "d
                "building", "buildings", "port", "container", "containers", "cargo", "shipping", "freight", "factory",
                "industry", "industrial", "semiconductor", "chip", "chips", "wafer", "electronics", "technology",
                "robot", "server", "oil", "refinery", "supermarket", "grocery", "apartment", "apartments",
-               "real estate", "city", "wall street", "stock market", "exchange rate", "trading floor"}
+               "real estate", "city", "wall street", "stock market", "exchange rate", "trading floor",
+               # 주간 부동산(2026-11-24): 재건축·분양 멘트용 공사·주거 장면
+               "construction", "crane", "cranes", "housing", "residential", "house", "houses", "realtor",
+               "property", "condominium", "keys"}
 AMBIGUOUS = {"bank", "market", "exchange", "interest", "trading", "card", "stock", "rate", "city", "building",
              "buildings", "price", "prices", "phone", "smartphone"}
 # 증시 검색어(stock market 등)엔 시세·차트가 보이는 클립만 (11/23: 시장 골목·소쿠리·거리 인파가 나온 문제)
@@ -185,6 +188,8 @@ FIN_SCENES = [
     (("유가", "원유", "기름값", "휘발유"), "oil refinery"),
     (("반도체", "메모리", "HBM", "칩"), "semiconductor chip wafer"),
     (("물가", "인플레이션", "장바구니"), "supermarket grocery prices"),
+    (("재건축", "재개발", "착공", "정비사업"), "apartment construction site crane"),
+    (("분양", "청약", "입주", "모델하우스"), "new apartment complex residential"),
     (("부동산", "집값", "아파트", "전세"), "apartment buildings city"),
     (("수출", "무역", "관세"), "cargo container port"),
     (("비트코인", "가상자산", "코인"), "bitcoin cryptocurrency"),

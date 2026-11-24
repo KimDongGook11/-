@@ -95,9 +95,10 @@ def _custom_news():
 
 
 def _news_script(focus="global"):
-    """focus: global = 12:00 오늘의 원픽, us = 07:00 미국 증시 마감, kr = 18:00 국내 마감 브리핑·뉴스 정리.
-    세 시리즈는 '이미 다룬 주제' 기록을 함께 써서 하루 안에 같은 이슈가 겹치지 않음."""
-    mk = market.material(focus) if focus in ("us", "kr") else None
+    """focus: global = 12:00 오늘의 원픽, us = 07:00 미국 증시 마감, kr = 18:00 국내 마감 브리핑·뉴스 정리,
+    re = 토요일 12:00 주간 부동산. 모든 시리즈는 '이미 다룬 주제' 기록을 함께 써서 같은 이슈가 겹치지 않음."""
+    from . import realestate
+    mk = market.material(focus) if focus in ("us", "kr") else realestate.material() if focus == "re" else None
     history_log = load_state("history", [])
     custom = _custom_news() if focus == "global" else None
     if custom:
@@ -111,9 +112,11 @@ def _news_script(focus="global"):
         drop = set(custom.get("drop_history", []))   # 폐기한 영상은 '이미 다룬 영상'에서 뺌
         history_log = [h for h in history_log if h.get("date") not in drop]
     else:
-        print("1) 뉴스 수집" + (" (국내 증시)" if focus == "kr" else ""))
-        items = news.fetch_all(news.KR_FEEDS if focus == "kr" else news.FEEDS)
-        cands, pool = news.rank(items, history_log)
+        print("1) 뉴스 수집" + {"kr": " (국내 증시)", "re": " (부동산, 지난 7일)"}.get(focus, ""))
+        items = news.fetch_all({"kr": news.KR_FEEDS, "re": news.RE_FEEDS}.get(focus, news.FEEDS))
+        if focus == "re":
+            items = news.drop_promo(items)
+        cands, pool = news.rank(items, history_log, max_age_hours=24 * 7 if focus == "re" else 30)
         if not cands:
             raise RuntimeError("후보 뉴스를 찾지 못했습니다 (RSS 수집 실패).")
         print("2) 오늘의 뉴스 선정")
@@ -121,13 +124,13 @@ def _news_script(focus="global"):
         main = cands[idx]
         print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
         mats = script.gather_materials(pool, main)
-        if focus == "kr":   # 뉴스 정리용: 주 이슈와 다른 화제 뉴스 2개 (제목·요약만, 그 안의 사실만 쓰게 함)
+        if focus in ("kr", "re"):   # 뉴스 정리용: 주 이슈와 다른 화제 뉴스 2개 (제목·요약만, 그 안의 사실만 쓰게 함)
             others = [c for j, c in enumerate(cands) if j != idx and j not in main.get("related", [])][:2]
             for c in others:
                 mats.append({"title": "[그밖의 뉴스] " + c["title"], "source": c["source"], "link": c["link"],
                              "summary": c.get("summary", ""), "body": c.get("summary", "")})
     if mk:
-        mats.insert(0, {**mk, "title": "[시세 데이터] " + mk["title"]})
+        mats.insert(0, {**mk, "title": ("[부동산 공공데이터] " if focus == "re" else "[시세 데이터] ") + mk["title"]})
     print("3) 대본 작성")
     sc = script.write_script(mats, pick.get("topic") or main["title"], config.BRAND_NAME, recent=history_log, focus=focus)
     print("4) 팩트체크 (숫자 대조 + AI 검증)")
@@ -241,7 +244,7 @@ RERENDER = None   # --rerender: {"series", "script", "sources", "meta"} — 같�
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
-    rid = {"history": "h", "kr": "k", "us": "u", "talk": "t"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
+    rid = {"history": "h", "kr": "k", "us": "u", "talk": "t", "re": "r"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
     tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
@@ -250,7 +253,7 @@ def make_reel(series="news", offline=False):
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out = config.OUTPUT_DIR / f"reel_{rid}.mp4"
 
-    if series in ("news", "kr", "us") and RERENDER:
+    if series in ("news", "kr", "us", "re") and RERENDER:
         job = RERENDER
         sc, sources, meta = job["script"], job.get("sources", []), job.get("meta", {})
         print(f"같은 대본으로 영상만 다시 제작: {sc.get('hook_title')} (문장 {len(sc['segments'])}개)")
@@ -259,11 +262,11 @@ def make_reel(series="news", offline=False):
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
                 "qc": qc.check(out, info, sc, offline=offline), **{k: v for k, v in meta.items() if v is not None}}
-    if series in ("news", "kr", "us"):
+    if series in ("news", "kr", "us", "re"):
         if offline:
             sc, sources, meta = SAMPLE, ["Sample News"], {"title_en": "sample", "link": "", "topic": "sample"}
         else:
-            sc, sources, meta = _news_script(focus=series if series in ("kr", "us") else "global")
+            sc, sources, meta = _news_script(focus=series if series in ("kr", "us", "re") else "global")
         print("영상 제작 (세로 릴스)")
         dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
         info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
@@ -518,7 +521,7 @@ def _today():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--series", choices=["news", "us", "kr", "history", "talk"], default="news",
+    ap.add_argument("--series", choices=["news", "us", "kr", "re", "history", "talk"], default="news",
                     help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=18:00 국내 마감 브리핑, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
@@ -544,8 +547,12 @@ def main():
     if (series == "news" and a.once_per_day and not a.offline and config.WEEKEND_HISTORY
             and dt.datetime.now(KST).weekday() >= 5):   # 예약 자동 실행만 (주말에 /new로 직접 부르면 원픽)
         # 주말 12:00 자리는 원픽 대신 그때 그 결정 (주말엔 하루 2편: 12:00 + 18:00)
-        print("주말이라 12:00 자리는 '그때 그 결정'으로 만들어요.")
-        series, slot = "history", config.YT_SLOTS["news"]
+        if dt.datetime.now(KST).weekday() == 5:   # 토요일 12:00 = 주간 부동산 (2026-11-24 사용자 결정)
+            print("토요일이라 12:00 자리는 '주간 부동산'으로 만들어요.")
+            series, slot = "re", config.YT_SLOTS["re"]
+        else:
+            print("일요일이라 12:00 자리는 '그때 그 결정'으로 만들어요.")
+            series, slot = "history", config.YT_SLOTS["news"]
     if series == "us" and not a.offline and not RERENDER and (not _wait_us_close() or not _us_session_today()):
         return
     if series == "kr" and not a.offline and not RERENDER and not _kr_ready():
@@ -555,7 +562,7 @@ def main():
     signal.signal(signal.SIGTERM, _on_cancel)
     signal.signal(signal.SIGINT, _on_cancel)
     if a.once_per_day:
-        key = ("last_daily" if series == "news" else "last_daily_history_noon" if slot
+        key = ("last_daily" if series == "news" else "last_daily_history_noon" if (slot and series == "history")
                else f"last_daily_{series}")
         prev_mark = load_state(key, {})
         if prev_mark.get("date") == _today():
@@ -582,7 +589,7 @@ def main():
             if kind != "redo":
                 break
             series = nxt
-            slot = slot if nxt == "history" else None
+            slot = slot if nxt in ("history", "re") else None
     except Exception as e:
         traceback.print_exc()
         if a.once_per_day and not delivered:   # 전송 전에 실패하면 '오늘 했음' 표시를 되돌려 다시 시도할 수 있게

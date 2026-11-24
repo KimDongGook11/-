@@ -14,9 +14,9 @@ import time
 from . import config, instagram, pending, script, storage, telegram, youtube
 from .utils import git_push_state, load_state, save_state
 
-HELP = ("명령어\n/us - 미국 증시 마감 브리핑 새로 만들기\n/new - 오늘의 원픽 새로 만들기\n/kr - 국내 증시 마감 브리핑 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
+HELP = ("명령어\n/us - 미국 증시 마감 브리핑 새로 만들기\n/re - 주간 부동산 새로 만들기\n/new - 오늘의 원픽 새로 만들기\n/kr - 국내 증시 마감 브리핑 새로 만들기\n/history - '그때 그 결정' 새 에피소드 만들기\n"
         "/status - 승인 대기 중인 영상 보기\n/approve - 대기 중인 오늘의 원픽 영상 게시 (버튼이 없을 때)\n"
-        "/approve us - 대기 중인 미국 증시 마감 게시\n/approve kr - 대기 중인 국내 증시 마감 게시\n/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
+        "/approve us - 대기 중인 미국 증시 마감 게시\n/approve re - 대기 중인 주간 부동산 게시\n/approve kr - 대기 중인 국내 증시 마감 게시\n/approve history - 대기 중인 '그때 그 결정' 릴스 게시\n/approve youtube - 대기 중인 유튜브 장편 게시\n/help - 도움말\n\n"
         "버튼은 보통 1분 안에 처리돼요. (대기 영상이 남아 있는 동안 계속 확인해요)")
 
 
@@ -39,7 +39,7 @@ def _clear(p, keep_file=False):
 def _published(p):
     """회차 번호 올리기. 같은 에피소드의 릴스·유튜브 장편은 한 회차로 셈 (어느 쪽이 먼저 게시돼도 1번만)."""
     series = "history" if p.get("series") == "youtube" else p.get("series")
-    key = {"news": "news_ep", "kr": "kr_ep", "us": "us_ep"}.get(series)   # 그때 그 결정은 회차 번호를 세지 않음
+    key = {"news": "news_ep", "kr": "kr_ep", "us": "us_ep", "re": "re_ep"}.get(series)   # 그때 그 결정은 회차 번호를 세지 않음
     if not key:
         return
     rid = str(p.get("id", ""))
@@ -54,7 +54,7 @@ def _published(p):
 
 
 def _next_news_no(series="news"):
-    key = {"kr": "kr_ep", "us": "us_ep"}.get(series, "news_ep")
+    key = {"kr": "kr_ep", "us": "us_ep", "re": "re_ep"}.get(series, "news_ep")
     return load_state(key, {"published": 0}).get("published", 0) + 1
 
 
@@ -112,20 +112,22 @@ def _shorts_meta(p):
         return _history_meta(p)
     series = p.get("series", "news")
     no = _next_news_no(series)
-    name = {"kr": "국내 증시 마감", "us": "미국 증시 마감"}.get(series, "오늘의 원픽")
+    name = {"kr": "국내 증시 마감", "us": "미국 증시 마감", "re": "주간 부동산"}.get(series, "오늘의 원픽")
     # 2026-11-21 채널 진단: [증시] 같은 분류 꼬리표·회차 번호로 시작하는 제목 → 말하듯 쓴 제목 + 해시태그 3개
     title = script.youtube_title(p, p.get("hook_title", ""), extra_tags={
-        "kr": ("#국내주식", "#코스피"), "us": ("#미국주식", "#미국증시")}.get(series, ("#경제뉴스",)))
+        "kr": ("#국내주식", "#코스피"), "us": ("#미국주식", "#미국증시"), "re": ("#부동산", "#아파트")}.get(series, ("#경제뉴스",)))
     tags = [t.lstrip("#") for t in p.get("hashtags", []) + p.get("title_tags", [])]
     links = "\n".join(p.get("links", [])[:3])
-    slogan = {"kr": "매일 저녁 6시 국내 증시 마감 정리", "us": "매일 아침 7시 미국 증시 마감 정리"}.get(
+    slogan = {"kr": "매일 저녁 6시 국내 증시 마감 정리", "us": "매일 아침 7시 미국 증시 마감 정리",
+              "re": "매주 토요일 낮 12시 부동산 정책·시세 정리"}.get(
         series, "매일 낮 12시 오늘의 경제 이슈 딱 하나")
     desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n"
             f"{p.get('caption', '')}\n\n"
             + (f"🔗 원문 기사\n{links}\n\n" if links else "")
             + f"📅 {slogan} — {name} #{no:03d}\n{_subscribe_line()}#Shorts")
     extra = {"kr": ["Shorts", "경제뉴스", "국내주식", "코스피", "증시마감"],
-             "us": ["Shorts", "경제뉴스", "미국주식", "미국증시", "나스닥"]}.get(series, ["Shorts", "경제뉴스", "오늘의원픽"])
+             "us": ["Shorts", "경제뉴스", "미국주식", "미국증시", "나스닥"],
+             "re": ["Shorts", "부동산", "아파트", "재건축", "청약", "부동산뉴스"]}.get(series, ["Shorts", "경제뉴스", "오늘의원픽"])
     return title, desc, list(dict.fromkeys(tags + extra))
 
 
@@ -161,7 +163,7 @@ def _upload_short(p):
     except Exception as e:
         print(f"  [유튜브 쇼츠] 실패: {e}")
         telegram.send_message(f"⚠️ 유튜브 쇼츠 게시 실패 (인스타는 끝났어요)\n{str(e)[:600]}\n\n"
-                              "해결한 뒤 " + {"history": "/approve history", "kr": "/approve kr", "us": "/approve us"}.get(series, "/approve")
+                              "해결한 뒤 " + {"history": "/approve history", "kr": "/approve kr", "us": "/approve us", "re": "/approve re"}.get(series, "/approve")
                               + " 를 보내면 유튜브만 다시 올려요.")
         return False
     p["yt_short_id"] = vid
@@ -249,7 +251,7 @@ def _approve(p):
                 return False
         p["ig_done"] = True
         pending.save(series, p)
-    if series in ("news", "kr", "us", "history") and youtube.enabled() and not p.get("yt_short_id"):
+    if series in ("news", "kr", "us", "re", "history") and youtube.enabled() and not p.get("yt_short_id"):
         telegram.send_message("⏫ 유튜브 쇼츠로도 올리는 중이에요.")
         if not _upload_short(p):
             return False
@@ -311,7 +313,8 @@ def handle(updates):
             text = (m.get("text") or "").strip().lower()
             print(f"  [텔레그램] 메시지 {text[:20]}")
             series = ("history" if text.startswith(("/history", "/그때")) else "kr" if text.startswith(("/kr", "/국내"))
-                      else "us" if text.startswith(("/us", "/미국")) else "news" if text.startswith("/new") else None)
+                      else "us" if text.startswith(("/us", "/미국")) else "re" if text.startswith(("/re", "/부동산"))
+                      else "news" if text.startswith("/new") else None)
             if series:
                 old = pending.load(series)
                 if old and _sent_before(m, old):
@@ -330,7 +333,8 @@ def handle(updates):
                 which = ("youtube" if ("youtube" in text or "유튜브" in text) else
                          "history" if ("history" in text or "그때" in text) else
                          "kr" if (" kr" in text or "국내" in text) else
-                         "us" if (" us" in text or "미국" in text) else "news")
+                         "us" if (" us" in text or "미국" in text) else
+                         "re" if (" re" in text or "부동산" in text) else "news")
                 p = pending.load(which)
                 if not p:
                     telegram.send_message(f"ℹ️ 승인 대기 중인 [{pending.LABEL[which]}] 영상이 없어요.")
