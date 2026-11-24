@@ -123,3 +123,32 @@ def material():
     print("  " + body.replace("\n", "\n  "))
     return {"title": "부동산 공공데이터", "source": "국토교통부·청약홈", "link": "https://www.data.go.kr",
             "summary": "", "body": body}
+
+
+def main():
+    """키 점검: python -m reels.realestate (Actions '부동산 공공데이터 키 점검'). 결과를 텔레그램에도 보냄. 키 값은 출력하지 않음."""
+    lines = []
+    for name, kind, f in (("실거래가(국토교통부)", "trade", seoul_week), ("청약 일정(청약홈)", "apply", upcoming_subscriptions)):
+        if not key(kind):
+            lines.append(f"❌ {name}: 키가 등록되지 않았어요")
+            continue
+        try:
+            t = f()
+            lines.append(f"✅ {name}: 정상\n{t}" if t else f"⚠️ {name}: 연결은 됐지만 해당 기간 자료가 없어요")
+        except Exception as e:
+            msg = str(e).replace(key(kind), "***")[:300]
+            hint = (" (승인 직후면 1~2시간 뒤 다시, 아니면 Decoding 키인지 확인)"
+                    if any(w in msg for w in ("SERVICE_KEY", "인증", "401", "403", "30")) else "")
+            lines.append(f"❌ {name}: 실패 — {msg}{hint}")
+    report = "🏠 부동산 공공데이터 키 점검\n\n" + "\n\n".join(lines)
+    print(report)
+    try:
+        from . import telegram
+        if telegram.enabled():
+            telegram.send_message(report[:3900])
+    except Exception as e:
+        print(f"  [텔레그램] 전송 실패(무시): {e}")
+
+
+if __name__ == "__main__":
+    main()
