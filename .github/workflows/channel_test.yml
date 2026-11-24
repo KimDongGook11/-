@@ -1,0 +1,37 @@
+name: 텔레그램 채널 연결 테스트
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: 채널에 테스트 글 → 결과를 개인 채팅으로
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHANNEL_ID: ${{ vars.TELEGRAM_CHANNEL_ID }}
+        run: |
+          python - <<'PY'
+          from reels import telegram
+          cid = telegram.channel_id()
+          if not cid:
+              telegram.send_message("❌ 채널 테스트: 채널 주소가 없어요. Variables에 TELEGRAM_CHANNEL_ID(@채널아이디)를 넣어 주세요.")
+              raise SystemExit("채널 주소 없음")
+          try:
+              telegram.send_channel_message("✅ 경제원픽 채널 자동 게시 연결 테스트입니다. 이 글은 지우셔도 돼요.")
+              telegram.send_message(f"✅ 채널 테스트 성공: {cid} 에 테스트 글을 올렸어요. 채널에서 확인하고 지우셔도 돼요.")
+          except Exception as e:
+              msg = str(e)
+              hint = ("봇이 채널 관리자가 아니거나 '메시지 게시' 권한이 꺼져 있어요." if "not enough rights" in msg or "administrator" in msg
+                      else "채널 주소가 틀렸어요. @ 포함 공개 채널 아이디인지 확인해 주세요." if "chat not found" in msg else "")
+              telegram.send_message(f"❌ 채널 테스트 실패 ({cid})\n{msg[:300]}\n{hint}")
+              raise
+          PY
