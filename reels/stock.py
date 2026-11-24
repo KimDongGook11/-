@@ -244,7 +244,8 @@ def plan_shots(segments, durs, workdir, vertical=True, shot_len=2.8, max_clips=4
                 return t[0]
         return None
     for i, (seg, lens) in enumerate(zip(segments, cuts)):
-        kw = (seg.get("keywords") or "business meeting").strip()
+        from .script import kw_text
+        kw = kw_text(seg.get("keywords") or "business meeting")
         if _sensitive_query(kw):
             print(f"  [영상] {i + 1}번 문장 검색어 '{kw}'는 금지 장면이라 일반 장면으로 바꿈")
             kw = "business meeting"

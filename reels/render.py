@@ -185,16 +185,26 @@ def build_background(shots, W, H, workdir, layout="full"):
                  "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
                  "-profile:v", "high", "-video_track_timescale", "15360", p])
         parts.append(p)
-    lst = workdir / "shots.txt"
-    lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     bg = workdir / "bg.mp4"
     want = sum(L for _, _, L in shots)
     # 이어 붙이면서 시간 정보를 장면 번호로 새로 매김 (조각 안의 시간이 튀어도 영향 없게, 11/24 화면 끊김·렌더 멈춤)
-    run(["ffmpeg", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-vf", f"setpts=N/{FPS}/TB",
-         "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an", bg],
+    # concat 필터: 조각마다 모든 장면을 그대로 이어 붙임 (concat 목록 방식은 11/24 장면 일부를 빠뜨림 46.6/51.2초)
+    ins = [x for q in parts for x in ("-i", q)]
+    chain = "".join(f"[{k}:v]setpts=PTS-STARTPTS,setsar=1[c{k}];" for k in range(len(parts)))
+    chain += "".join(f"[c{k}]" for k in range(len(parts))) + f"concat=n={len(parts)}:v=1:a=0,setpts=N/{FPS}/TB[v]"
+    run(["ffmpeg", "-nostdin", "-y", *ins, "-filter_complex", chain, "-map", "[v]", "-r", str(FPS),
+         "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an", bg],
         timeout=max(600, int(want * 6)))
     got = _vdur(bg)
     print(f"  [배경] {got:.1f}초 / 필요 {want:.1f}초")
+    if want - 3.0 <= got < want - 0.1:   # 조금 모자라면 마지막 장면을 늘려 채움
+        fixed = workdir / "bg_pad.mp4"
+        run(["ffmpeg", "-nostdin", "-y", "-i", bg, "-vf", f"tpad=stop_mode=clone:stop_duration={want - got + 0.2:.2f}",
+             "-t", f"{want:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+             "-an", fixed])
+        fixed.replace(bg)
+        got = _vdur(bg)
+        print(f"  [배경] 끝 장면으로 채움 → {got:.1f}초")
     if got < want - 0.5:
         raise RuntimeError(f"배경 영상이 {got:.1f}초로 짧음 (필요 {want:.1f}초)")
     return bg

@@ -389,6 +389,22 @@ def _number(n):
             "dir": d if d in ("up", "down") else "none"}
 
 
+def kw_text(kw):
+    """배경 검색어를 문자열 하나로: AI가 ['a b', 'c d'] 목록으로 주면 첫 번째 (11/24 국내 마감: 목록째 검색돼 6문장이 영상 없음)."""
+    if isinstance(kw, (list, tuple)):
+        kw = next((str(k) for k in kw if str(k).strip()), "")
+    kw = str(kw or "").strip()
+    if kw.startswith("[") and kw.endswith("]"):
+        import ast
+        try:
+            v = ast.literal_eval(kw)
+            if isinstance(v, (list, tuple)) and v:
+                kw = str(v[0])
+        except Exception:
+            kw = kw.strip("[]").split(",")[0].strip(" '\"")
+    return (kw or "stock market")[:60]
+
+
 def norm_segments(items):
     segs = []
     for s in items or []:
@@ -399,7 +415,7 @@ def norm_segments(items):
         text = re.sub(r"^\s*\d{1,2}\s*[.)]\s+", "", str(s.get("text", ""))).strip()   # AI가 붙인 줄 번호 제거
         if text:
             segs.append({"text": text,
-                         "keywords": str(s.get("keywords") or "stock market").strip()[:60],
+                         "keywords": kw_text(s.get("keywords")),
                          "show_chart": bool(s.get("show_chart")),
                          "number": _number(s.get("number"))})
     return segs
