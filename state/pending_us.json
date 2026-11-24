@@ -1,0 +1,91 @@
+{
+  "id": "u20261125-061002",
+  "series": "us",
+  "created_at": "2026-11-25T06:10:02.915943+09:00",
+  "video": "/home/runner/work/-/-/output/reel_u20261125-061002.mp4",
+  "sources": [
+    "Yahoo Finance",
+    "MarketWatch",
+    "CNBC",
+    "BBC",
+    "Financial Times",
+    "The Guardian"
+  ],
+  "caption": "젠슨 황 CEO의 복귀 소식 이후 반등했던 엔비디아가 하루 만에 5.86% 떨어졌습니다. 📉\n\n복귀 과정에 대한 미국 정치권의 개입 정황과 국가 안보 조사 요구 등 정치적 불확실성이 다시 불거졌기 때문인데요.\n\n필라델피아 반도체지수도 7.88% 급락한 만큼, 오늘 국내 증시의 삼성전자와 SK하이닉스 등 반도체주의 변동성에도 주의가 필요합니다. 💡\n\n📰 출처: Yahoo Finance, MarketWatch, CNBC\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #엔비디아 #미국증시 #국내증시 #반도체",
+  "duration": 69.8,
+  "qc": {
+    "ok": false,
+    "items": [
+      [
+        "길이",
+        false,
+        "70초 (권장 70~110초)"
+      ],
+      [
+        "화면 끊김",
+        true,
+        "없음"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 88%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 138개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "Nvidia’s stock drops as these major questions loom over Jensen Huang’s return",
+  "link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNdXpfR2gxNWJ3RDhZbFRLNVlvMWJDampmWkRDemMxVlN1ZkpBaTBXTUVMMjlzU1BLZWhVczAyNEtvQ2R4dWVKeEtzSDZIVmx4N0pTYnVCcUEzSEkxS05WdkZ4QVNEZDQxNUlpb0Y0S2t6TEVHUmFkbmFiaXBBQkZIaFZ0R0dsaDNybDdpZDlmMnF0bHc5M0JzcmpPZ2h4LU53b1QyZDZ4c1hKa3BtdEtCWFkyc1UtTHhmdXc?oc=5",
+  "topic": "Nvidia stock drops as major questions loom over Jensen Huang's return",
+  "links": [
+    "https://finance.yahoo.com",
+    "https://news.google.com/rss/articles/CBMiugFBVV95cUxNdXpfR2gxNWJ3RDhZbFRLNVlvMWJDampmWkRDemMxVlN1ZkpBaTBXTUVMMjlzU1BLZWhVczAyNEtvQ2R4dWVKeEtzSDZIVmx4N0pTYnVCcUEzSEkxS05WdkZ4QVNEZDQxNUlpb0Y0S2t6TEVHUmFkbmFiaXBBQkZIaFZ0R0dsaDNybDdpZDlmMnF0bHc5M0JzcmpPZ2h4LU53b1QyZDZ4c1hKa3BtdEtCWFkyc1UtTHhmdXc?oc=5",
+    "https://www.cnbc.com/2026/11/24/nvidia-jensen-huang-politics-market.html",
+    "https://www.bbc.co.uk/news/articles/cq62pn6j42jko?at_medium=RSS&at_campaign=rss",
+    "https://news.google.com/rss/articles/CBMi6AFBVV95cUxNYnBZTkhUUGlCUVBvdW9Mam9JbGJueElLNmRUenk3eTZ2YmhXSEJhb3VCTTlrQ0xDZzF1N3pURFZFNDROVkZhOW1Mc0JxQUhGQ25rSjdWZXdxMnZNLWFaNzJfdXdFeEpUMzFQMUl3alZfWVotcFRHRGxSRzNiWHJuSlpyaXVHTld1MDFLSy1rdDJCU1F6ME9vZDB1bzB2bS1PeHpZbTg5czJrQ1lzdFRHbUlmS3JzYlFvQnRjZ2xRT3hoR1FVMUQ2a0hNMXZwNEtYckw1Q0ZYOThJMTlobXZTY3JzdDFESjBN?oc=5",
+    "https://news.google.com/rss/articles/CBMicEFVX3lxTE9ZdmRpVXA1Nm5YcTh2N1lzWXQzbWRpbkgxUlNZaGNpYVFCUmRvVEVnaFhjbC1IWUJuYjdQQk4xcUVIelE0NFFNTFp4dnZITTNfeXBTaGFZU2g4bE15c3JQWFhJYTZjN2NJVFlHclI5Qks?oc=5",
+    "https://news.google.com/rss/articles/CBMijwFBVV95cUxNNVRZWXlzdFRreUMweC1ZVVR2MUVXRFVSdVhLOEYxOWVEYWpzd0NaNk5KUUdBZnNycHFTMGJqRHNGczR1bEw3UDVRQ0ZhNl9Fd05NdjF3Qmg2ME90a2p0a3NJclhuNnhWSTFGYWFHdTJDSTZrZEtXS280T2JzUHduNHJ6dzN2ZGN5c1JrMFlhSQ?oc=5"
+  ],
+  "kr": true,
+  "release_tag": "reel-u20261125-061002",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 366,
+  "sent_at": "2026-11-24T21:18:29.892875+00:00",
+  "hook_title": "엔비디아 [5.8% 급락], 젠슨 황 복귀 후 악재?",
+  "tag": "반도체",
+  "hashtags": [
+    "#경제뉴스",
+    "#엔비디아",
+    "#미국증시",
+    "#국내증시",
+    "#반도체"
+  ],
+  "brand": "",
+  "yt_title": "엔비디아 5.86% 폭락, 젠슨 황 복귀에도 주가 다시 꺾인 이유",
+  "title_tags": [
+    "#엔비디아",
+    "#미국주식",
+    "#반도체"
+  ],
+  "question": "의회의 조사를 앞둔 젠슨 황의 엔비디아 주가, 다시 반등할 수 있을까요?",
+  "waiting_until": "2026-11-24T23:09:29.893534+00:00"
+}
