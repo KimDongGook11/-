@@ -558,40 +558,51 @@ def thumbnail_photo(photo, line1, line2, sub, ep, out, w=1280, h=720):
 
 
 def _face_x(ph):
-    """사진 속 가장 큰 얼굴의 가운데 x(비율). 못 찾으면 None. (opencv 없으면 None)"""
+    """사진 속 가장 큰 얼굴 (가운데 x 비율, 가운데 y 비율, 높이 비율). 못 찾으면 None."""
     try:
         import cv2
         import numpy as np
         g = cv2.cvtColor(np.array(ph.convert("RGB")), cv2.COLOR_RGB2GRAY)
+        k = 900 / max(g.shape)
+        if k < 1:
+            g = cv2.resize(g, (int(g.shape[1] * k), int(g.shape[0] * k)))
         cc = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-        fs = cc.detectMultiScale(g, 1.1, 6, minSize=(max(24, ph.width // 25),) * 2)
+        if cc.empty():
+            print("  [썸네일] 얼굴 인식 모델 없음")
+            return None
+        fs = cc.detectMultiScale(g, 1.1, 5, minSize=(max(24, g.shape[1] // 30),) * 2)
         if len(fs) == 0:
             return None
         x, y, fw, fh = max(fs, key=lambda f: f[2] * f[3])
-        return (x + fw / 2) / ph.width, (y + fh / 2) / ph.height
-    except Exception:
+        return (x + fw / 2) / g.shape[1], (y + fh / 2) / g.shape[0], fh / g.shape[0]
+    except Exception as e:
+        print(f"  [썸네일] 얼굴 인식 실패: {e}")
         return None
 
 
 def thumbnail_number(photo, number, label, question, line2, sub, direction, out, w=1280, h=720):
-    """숫자 충격형 썸네일: 인물 사진 오른쪽 + 왼쪽에 큰 숫자(내림 파랑/오름 빨강) + 노란 질문 띠 + 둘째 줄."""
+    """숫자 충격형 썸네일: 인물 사진(얼굴 기준) 오른쪽 + 왼쪽에 큰 숫자(내림 파랑/오름 빨강) + 노란 질문 띠 + 둘째 줄."""
     from PIL import ImageEnhance
     ph = Image.open(photo).convert("RGB")
     face = _face_x(ph)
-    r = max(w / ph.width, h / ph.height) * 1.15     # 살짝 당겨서 인물을 크게
-    ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS)
-    if face:   # 얼굴이 화면 가로 62% 지점에 오도록
-        x0 = int(face[0] * ph.width - w * 0.62)
-        y0 = int(face[1] * ph.height - h * 0.32)
-    else:
-        x0, y0 = int((ph.width - w) * 0.6), (ph.height - h) // 2
-    x0 = min(max(0, x0), ph.width - w)
-    y0 = min(max(0, y0), ph.height - h)
-    ph = ph.crop((x0, y0, x0 + w, y0 + h))
-    ph = ImageEnhance.Contrast(ImageEnhance.Color(ph).enhance(1.05)).enhance(1.08)
-    img = ph.convert("RGBA")
+    # 사진은 화면 오른쪽에 둔다: 얼굴을 (가로 67%, 세로 36%)에, 얼굴 높이가 화면의 22% 정도가 되게
+    fx, fy = (face[0], face[1]) if face else (0.5, 0.4)
+    s = h / ph.height
+    if face:
+        s = max(s, min(0.22 * h / (face[2] * ph.height), 2.5 * s))
+    while ph.width * s < w * 0.5:        # 너무 좁은 세로 사진은 키움
+        s *= 1.05
+    pw, phh = ph.width * s, ph.height * s
+    ox = w * 0.67 - fx * pw
+    ox = max(min(ox, w * 0.45), w - pw)   # 오른쪽 끝이 비지 않게, 왼쪽은 45%보다 안쪽에서 시작하지 않게
+    oy = min(0, max(h * 0.36 - fy * phh, h - phh))
+    big = ph.resize((int(pw) + 1, int(phh) + 1), Image.LANCZOS)
+    big = ImageEnhance.Contrast(ImageEnhance.Color(big).enhance(1.05)).enhance(1.08)
+    img = Image.new("RGBA", (w, h), (8, 8, 10, 255))
+    img.paste(big, (int(ox), int(oy)))
     grad = Image.new("L", (w, 1))
-    grad.putdata([int(250 * min(1.0, max(0.0, 1 - (x - w * 0.3) / (w * 0.42))) ** 1.3) for x in range(w)])
+    edge = max(0.0, ox / w)     # 사진 왼쪽 끝도 자연스럽게 감춤
+    grad.putdata([int(250 * min(1.0, max(0.0, 1 - (x - w * max(0.3, edge)) / (w * 0.42))) ** 1.3) for x in range(w)])
     shade = Image.new("RGBA", (w, h), (0, 0, 0, 255))
     shade.putalpha(grad.resize((w, h)))
     img.alpha_composite(shade)
