@@ -1,10 +1,43 @@
 {
-  "collected_at": "2026-11-24T09:49:23+00:00",
+  "collected_at": "2026-11-25T08:25:22+00:00",
   "channel": "경제원픽",
-  "subscribers": 21,
-  "total_views": 12891,
-  "video_count": 39,
+  "subscribers": 25,
+  "total_views": 14913,
+  "video_count": 42,
   "videos": [
+    {
+      "id": "NTzyxuQfSx0",
+      "title": "코스피 6.16% 폭락 마감, 삼성전자·SK하이닉스 주가 반등할 수 있을까? #삼성전자 #SK하이닉스 #국내증시",
+      "published": "2026-11-25T08:00:22Z",
+      "kind": "shorts",
+      "duration_s": 62,
+      "privacy": "public",
+      "views": 4,
+      "likes": 0,
+      "comments": 0
+    },
+    {
+      "id": "JWreZUo1qqA",
+      "title": "상장 4일 만에 34% 폭락, 앤트로픽 주가 공모가 붕괴된 이유 #앤트로픽 #미국주식 #경제뉴스",
+      "published": "2026-11-25T03:00:35Z",
+      "kind": "shorts",
+      "duration_s": 70,
+      "privacy": "public",
+      "views": 130,
+      "likes": 2,
+      "comments": 0
+    },
+    {
+      "id": "BEgbZ4EJTS0",
+      "title": "엔비디아 5.86% 폭락, 젠슨 황 복귀에도 주가 다시 꺾인 이유 #엔비디아 #미국주식 #반도체",
+      "published": "2026-11-24T22:00:38Z",
+      "kind": "shorts",
+      "duration_s": 70,
+      "privacy": "public",
+      "views": 259,
+      "likes": 8,
+      "comments": 0
+    },
     {
       "id": "SKR6_y_boSc",
       "title": "코스피 6.32% 급등 5000선 회복, 내 계좌는 안전할까? #코스피 #삼성전자 #경제뉴스",
@@ -12,8 +45,8 @@
       "kind": "shorts",
       "duration_s": 60,
       "privacy": "public",
-      "views": 0,
-      "likes": 0,
+      "views": 231,
+      "likes": 3,
       "comments": 0
     },
     {
@@ -23,8 +56,8 @@
       "kind": "shorts",
       "duration_s": 71,
       "privacy": "public",
-      "views": 639,
-      "likes": 6,
+      "views": 801,
+      "likes": 9,
       "comments": 0
     },
     {
@@ -34,7 +67,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 978,
+      "views": 988,
       "likes": 8,
       "comments": 0
     },
@@ -56,7 +89,7 @@
       "kind": "shorts",
       "duration_s": 49,
       "privacy": "public",
-      "views": 891,
+      "views": 894,
       "likes": 3,
       "comments": 0
     },
@@ -67,7 +100,7 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 1084,
+      "views": 1096,
       "likes": 8,
       "comments": 0
     },
@@ -89,7 +122,7 @@
       "kind": "shorts",
       "duration_s": 39,
       "privacy": "public",
-      "views": 971,
+      "views": 972,
       "likes": 12,
       "comments": 1
     },
@@ -111,7 +144,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 323,
+      "views": 324,
       "likes": 2,
       "comments": 0
     },
@@ -133,7 +166,7 @@
       "kind": "shorts",
       "duration_s": 46,
       "privacy": "public",
-      "views": 769,
+      "views": 771,
       "likes": 5,
       "comments": 0
     },
@@ -155,7 +188,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 210,
+      "views": 213,
       "likes": 0,
       "comments": 0
     },
@@ -166,7 +199,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 218,
+      "views": 219,
       "likes": 1,
       "comments": 0
     },
@@ -177,7 +210,7 @@
       "kind": "long",
       "duration_s": 237,
       "privacy": "public",
-      "views": 273,
+      "views": 274,
       "likes": 3,
       "comments": 0
     },
@@ -188,7 +221,7 @@
       "kind": "shorts",
       "duration_s": 74,
       "privacy": "public",
-      "views": 684,
+      "views": 686,
       "likes": 4,
       "comments": 0
     },
@@ -199,7 +232,7 @@
       "kind": "long",
       "duration_s": 222,
       "privacy": "public",
-      "views": 29,
+      "views": 30,
       "likes": 1,
       "comments": 0
     },
@@ -221,7 +254,7 @@
       "kind": "shorts",
       "duration_s": 41,
       "privacy": "public",
-      "views": 428,
+      "views": 429,
       "likes": 2,
       "comments": 0
     },
@@ -232,7 +265,7 @@
       "kind": "shorts",
       "duration_s": 65,
       "privacy": "public",
-      "views": 1001,
+      "views": 1002,
       "likes": 7,
       "comments": 0
     },
@@ -254,7 +287,7 @@
       "kind": "shorts",
       "duration_s": 32,
       "privacy": "public",
-      "views": 444,
+      "views": 445,
       "likes": 1,
       "comments": 0
     },
@@ -265,7 +298,7 @@
       "kind": "shorts",
       "duration_s": 72,
       "privacy": "public",
-      "views": 316,
+      "views": 317,
       "likes": 5,
       "comments": 0
     },
@@ -276,7 +309,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 145,
+      "views": 146,
       "likes": 4,
       "comments": 0
     },
@@ -287,7 +320,7 @@
       "kind": "shorts",
       "duration_s": 40,
       "privacy": "public",
-      "views": 830,
+      "views": 831,
       "likes": 3,
       "comments": 0
     },
@@ -298,7 +331,7 @@
       "kind": "long",
       "duration_s": 276,
       "privacy": "public",
-      "views": 146,
+      "views": 147,
       "likes": 4,
       "comments": 0
     },
@@ -309,7 +342,7 @@
       "kind": "shorts",
       "duration_s": 43,
       "privacy": "public",
-      "views": 13,
+      "views": 15,
       "likes": 1,
       "comments": 0
     },
@@ -320,7 +353,7 @@
       "kind": "long",
       "duration_s": 290,
       "privacy": "public",
-      "views": 103,
+      "views": 105,
       "likes": 1,
       "comments": 0
     },
@@ -331,7 +364,7 @@
       "kind": "shorts",
       "duration_s": 41,
       "privacy": "public",
-      "views": 4,
+      "views": 6,
       "likes": 1,
       "comments": 0
     },
@@ -342,7 +375,7 @@
       "kind": "shorts",
       "duration_s": 43,
       "privacy": "public",
-      "views": 4,
+      "views": 5,
       "likes": 1,
       "comments": 0
     },
@@ -386,7 +419,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 4,
+      "views": 5,
       "likes": 3,
       "comments": 0
     },
@@ -397,7 +430,7 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 3,
+      "views": 4,
       "likes": 1,
       "comments": 0
     },
@@ -408,7 +441,7 @@
       "kind": "shorts",
       "duration_s": 44,
       "privacy": "public",
-      "views": 613,
+      "views": 614,
       "likes": 2,
       "comments": 0
     },
@@ -419,7 +452,7 @@
       "kind": "shorts",
       "duration_s": 35,
       "privacy": "public",
-      "views": 1228,
+      "views": 1231,
       "likes": 10,
       "comments": 0
     },
@@ -430,7 +463,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 2,
+      "views": 3,
       "likes": 3,
       "comments": 0
     }
