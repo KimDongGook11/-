@@ -83,7 +83,7 @@ const CounterScene: React.FC = () => {
           padding: "6px 26px", borderRadius: 14, transform: `scale(${0.6 + 0.4 * pop})`, opacity: pop }}>
           ▼ {Math.abs(pct).toFixed(2)}%
         </div>
-        <svg width={760} height={230} style={{ position: "absolute", left: 90, top: 560 }}>
+        <svg width={760} height={230} style={{ position: "absolute", left: 40, top: 420 }}>
           <path d={path} fill="none" stroke={R} strokeWidth={8} strokeLinejoin="round" strokeLinecap="round"
             pathLength={1} strokeDasharray={1} strokeDashoffset={draw} />
         </svg>
@@ -145,7 +145,7 @@ const Tile: React.FC<{ delay: number; title: string; value: string; change: stri
           display: "flex", alignItems: "center", justifyContent: "center", color: Y, fontSize: 64, fontWeight: 900 }}>{icon}</div>
         <div style={{ flex: 1 }}>
           <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 34, fontWeight: 700 }}>{title}</div>
-          <div style={{ color: "#fff", fontSize: 92, fontWeight: 900, letterSpacing: -1 }}>{value}</div>
+          <div style={{ color: "#fff", fontSize: 84, fontWeight: 900, letterSpacing: -1, whiteSpace: "nowrap" }}>{value}</div>
         </div>
         <div style={{ color: up ? R : B, fontSize: 52, fontWeight: 900, textAlign: "right" }}>{up ? "▲" : "▼"} {change}</div>
       </div>
