@@ -154,7 +154,7 @@ def plan(sc, starts, durs, words, hook, end, number_word_time):
             for k in ("label", "name", "value", "change"):
                 if isinstance(it.get(k), str):
                     it[k] = _safe(it[k])
-        chk.update({"from": round(a0 - hook, 3), "to": round(a1 - hook, 3)})
+        chk.update({"from": round(a0 - hook, 3), "to": round(a1 - hook, 3), "seg": i})
         scenes.append(chk)
     print(f"  [모션] 장면 {len(scenes)}개: " + ", ".join(x["type"] for x in scenes)
           + (f" (규칙 위반으로 바꾼 장면 {bad}개)" if bad else ""))
@@ -177,16 +177,17 @@ def render(scenes, length, tag, workdir):
     return out if out.exists() and out.stat().st_size > 10000 else None
 
 
-def apply(bg, motion, start, end, workdir):
-    """배경 영상(카드 레이아웃)의 카드 자리에 모션 영상을 덮음 (둥근 모서리). 새 배경 경로."""
+def apply(bg, motion, start, ranges, workdir):
+    """배경 영상(카드 레이아웃)의 카드 자리에 모션 영상을 덮음 (둥근 모서리). ranges: 덮을 구간 [(시작, 끝)] (영상 기준 초)."""
     from PIL import Image, ImageDraw
     mask = workdir / "motion_mask.png"
     m = Image.new("L", (CARD["w"], CARD["h"]), 0)
     ImageDraw.Draw(m).rounded_rectangle([0, 0, CARD["w"] - 1, CARD["h"] - 1], radius=36, fill=255)
     m.save(mask)
     out = workdir / "bg_motion.mp4"
+    en = "+".join(f"between(t,{a:.3f},{b - 0.02:.3f})" for a, b in ranges)
     fc = (f"[1:v]setpts=PTS+{start:.3f}/TB,format=rgba[m];[2:v]format=gray[k];[m][k]alphamerge[mk];"
-          f"[0:v][mk]overlay={CARD['x']}:{CARD['y']}:enable='between(t,{start:.3f},{end - 0.02:.3f})':eof_action=pass[v]")
+          f"[0:v][mk]overlay={CARD['x']}:{CARD['y']}:enable='{en}':eof_action=pass[v]")
     run(["ffmpeg", "-nostdin", "-y", "-i", bg, "-i", motion, "-loop", "1", "-i", mask, "-filter_complex", fc,
          "-map", "[v]", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p", out],
         timeout=900)

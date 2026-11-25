@@ -114,11 +114,16 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None, motion_on=F
         from . import motion
         try:
             scenes = motion.plan(sc, starts, durs, words, HOOK, total - OUTRO_S, number_word_time)
-            mfile = motion.render(scenes, total - OUTRO_S - HOOK, sc.get("tag") or "오늘의 원픽", workdir / "motion")
-            if mfile:
-                bg = motion.apply(bg, mfile, HOOK, total - OUTRO_S, workdir)
-                mv = scenes
-                print("  [모션] 카드 자리에 모션 그래픽 적용 (숫자·헤드라인 카드는 모션이 대신함)")
+            # 규칙(11/25 사용자): 관련 영상이 있는 문장은 영상 그대로. 모션은 ① 관련 영상이 없는 문장
+            # ② 숫자·헤드라인을 보여 주는 문장(예전 숫자·헤드라인 카드 자리)에만
+            keep = [x for x in scenes if x["seg"] in stock.LAST_MISSING
+                    or x["type"] in ("counter", "tiles", "bars", "headline")]
+            if keep:
+                mfile = motion.render(keep, total - OUTRO_S - HOOK, sc.get("tag") or "오늘의 원픽", workdir / "motion")
+                if mfile:
+                    bg = motion.apply(bg, mfile, HOOK, [(HOOK + x["from"], HOOK + x["to"]) for x in keep], workdir)
+                    mv = keep
+                    print(f"  [모션] 문장 {len(scenes)}개 중 {len(keep)}개에 모션 그래픽, 나머지는 관련 영상")
         except Exception as e:
             print(f"  [모션] 적용 실패 → 기존 방식으로: {e}")
             mv = None
@@ -130,7 +135,7 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None, motion_on=F
             "fade_out": 0.25}]
     fx = [(HOOK, "whoosh", 0.18)] + [(t, "whoosh", 0.12) for t in starts[1:]]
 
-    busy = set(range(len(segs))) if mv else set()   # 모션이 있으면 차트·숫자·헤드라인 카드를 따로 띄우지 않음
+    busy = set(range(len(segs))) if mv else set()   # 모션이 있으면 차트·숫자·헤드라인 카드를 따로 띄우지 않음 (모션이 대신)
     on = [i for i, s in enumerate(segs) if s.get("show_chart")][:1] or ([min(2, len(segs) - 1)] if sc.get("chart") else [])
     if on and sc.get("chart") and not mv:
         i = on[0]
