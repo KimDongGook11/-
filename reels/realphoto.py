@@ -83,7 +83,13 @@ JSON으로만: {{"pick": [번호, ...]}}""", temperature=0.2)
             order = picks + [c for c in order if c not in picks]
         except Exception as e:
             print(f"  [썸네일] 사진 고르기 AI 실패(무작위): {e}")
+    if person:   # 인물 사진을 원하면: 얼굴이 실제로 잡히는 사진만 (동상·먼 무대 사진 제외)
+        order = order + [c for c in fresh if c not in order]
+    tried = 0
     for c in order:
+        if person and tried >= 8:
+            break
+        tried += 1
         try:
             r = requests.get(c["url"], headers=UA, timeout=60)
             r.raise_for_status()
@@ -91,6 +97,12 @@ JSON으로만: {{"pick": [번호, ...]}}""", temperature=0.2)
         except Exception as e:
             print(f"  [썸네일] 사진 내려받기 실패: {e}")
             continue
+        if person:
+            from .graphics import _face_x
+            f = _face_x(img)
+            if not f or f[2] < 0.12:
+                print(f"  [썸네일] 얼굴이 안 잡히거나 너무 작음 → 다음 사진: {c['name']}")
+                continue
         out = workdir / "thumb_real.jpg"
         img.save(out, quality=95)
         save_state("thumb_used", (load_state("thumb_used", []) + [c["name"]])[-60:])

@@ -566,11 +566,16 @@ def _face_x(ph):
         k = 900 / max(g.shape)
         if k < 1:
             g = cv2.resize(g, (int(g.shape[1] * k), int(g.shape[0] * k)))
-        cc = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-        if cc.empty():
-            print("  [썸네일] 얼굴 인식 모델 없음")
-            return None
-        fs = cc.detectMultiScale(g, 1.1, 5, minSize=(max(24, g.shape[1] // 30),) * 2)
+        g = cv2.equalizeHist(g)
+        fs = []
+        for xml in ("haarcascade_frontalface_default.xml", "haarcascade_frontalface_alt2.xml",
+                    "haarcascade_profileface.xml"):
+            cc = cv2.CascadeClassifier(cv2.data.haarcascades + xml)
+            if cc.empty():
+                continue
+            fs = cc.detectMultiScale(g, 1.05, 5, minSize=(max(24, g.shape[1] // 30),) * 2)
+            if len(fs):
+                break
         if len(fs) == 0:
             return None
         x, y, fw, fh = max(fs, key=lambda f: f[2] * f[3])
