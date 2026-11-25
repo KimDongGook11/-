@@ -1,0 +1,27 @@
+{
+  "id": "ytt20261125-174901",
+  "series": "youtube",
+  "created_at": "2026-11-25T17:49:01.128775+09:00",
+  "release_tag": "long-t20261125-174901",
+  "keep_release": true,
+  "video_name": "long-t20261125-174901.mp4",
+  "thumb_name": "thumbnail.jpg",
+  "hook_title": "젠슨 황 복귀 랠리 하루 만에 소멸… 미 관세 우려에 반도체주 급락한 이유는?",
+  "yt_title": "젠슨 황 복귀 랠리 하루 만에 소멸… 미 관세 우려에 반도체주 급락한 이유는?",
+  "yt_description": "젠슨 황 CEO의 전격 복귀로 급등했던 엔비디아 주가가 하루 만에 하락 전환하고, 미 관세 우려가 불거지면서 국내외 반도체주가 크게 흔들렸습니다.\n삼성전자와 SK하이닉스 등 대장주 하락으로 코스피 변동성이 극에 달한 가운데, 배경과 증시 영향, 향후 주요 일정을 짚어봅니다.\n\n⏱ 챕터\n00:00 오프닝\n00:11 젠슨 황 복귀와 반전\n00:28 관세 우려와 AI 경계\n01:09 코스피 급락과 환율\n02:18 주요 일정과 변수들\n03:07 앞으로 지켜볼 점\n\n📚 참고: Yahoo Finance, China Labour Bulletin, Global Banking & Finance Review, TradingView, bloomingbit, Kotak Neo\nhttps://finance.yahoo.com\nhttps://finance.yahoo.com/markets/stocks/articles/nvidias-stock-surges-more-30-000002844.html\nhttps://clb.org.hk/en/business/Nasdaq-and-S-P-500-fall-as-Nvidia-rally-fades-and-tariff-fea-493b31\n🎞 영상: Pixabay\n🖼 썸네일 사진: Raysonho @ Open Grid Scheduler / Scalable Grid Engine / CC0 / Wikimedia Commons — https://commons.wikimedia.org/wiki/File:JensenHuangSC18.jpg\n🤖 이 콘텐츠는 AI로 제작되었습니다.",
+  "yt_tags": [
+    "반도체주",
+    "젠슨황",
+    "엔비디아",
+    "삼성전자",
+    "SK하이닉스",
+    "코스피",
+    "미관세",
+    "PCE",
+    "이슈뒷담화"
+  ],
+  "tg_message_id": 385,
+  "playlist": "이슈 뒷담화",
+  "slot": "20:00",
+  "waiting_until": "2026-11-25T09:48:12.444527+00:00"
+}
