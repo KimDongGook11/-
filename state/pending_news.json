@@ -1,23 +1,25 @@
 {
-  "id": "n20261124-161801",
+  "id": "n20261125-100452",
   "series": "news",
-  "created_at": "2026-11-24T16:18:01.836104+09:00",
-  "video": "/home/runner/work/-/-/output/reel_n20261124-161801.mp4",
+  "created_at": "2026-11-25T10:04:52.747731+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261125-100452.mp4",
   "sources": [
-    "Financial Times",
+    "Bloomberg.com",
     "CNBC",
-    "BBC",
-    "Politico"
+    "Yahoo Finance Singapore",
+    "MarketWatch",
+    "Reuters",
+    "Financial Times"
   ],
-  "caption": "젠슨 황 복귀로 다시 살아난 엔비디아! 🚀\n앞으로의 반도체 시장, 여러분은 어떻게 생각하세요?\n\n#엔비디아 #미국주식 #반도체 #경제원픽\n\n📰 출처: Financial Times, CNBC, BBC\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #주식시황",
-  "duration": 42.7,
+  "caption": "미국 AI 챗봇 클로드(Claude)의 개발사 앤트로픽 주가가 나스닥 상장 4일 만에 공모가($83) 아래로 급락했습니다. 📉\n\n경영진의 19억 달러 규모 대규모 주식 매도 공시와 함께 주요 AI 기술주들의 숨고르기가 이어지면서 투자 심리가 위축된 모습인데요.\n\n다만 글로벌 증권사들은 여전히 장기 성장성에 무게를 두며 목표주가를 높게 유지하고 있습니다. 과연 이번 조정이 반등의 기회가 될 수 있을까요? 🤔\n\n📰 출처: Bloomberg.com, CNBC, Yahoo Finance Singapore\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#앤트로픽 #미국주식 #AI관련주 #테크주 #경제뉴스",
+  "duration": 69.4,
   "qc": {
     "ok": false,
     "items": [
       [
         "길이",
         false,
-        "43초 (권장 70~110초)"
+        "69초 (권장 70~110초)"
       ],
       [
         "화면 끊김",
@@ -31,13 +33,13 @@
       ],
       [
         "배경",
-        true,
-        "실사 영상 100%"
+        false,
+        "실사 영상 77%"
       ],
       [
         "자막",
         true,
-        "단어 88개"
+        "단어 143개"
       ],
       [
         "검은 화면",
@@ -51,35 +53,39 @@
       ]
     ]
   },
-  "title_en": "Nvidia adds nearly $1tn to market value after it reinstates Jensen Huang",
-  "link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOY0VMY3VZRlBrNGs0bElpa1NJSEZtREllUzFhaGFRTWVNYXN0eVA3Y0hFMjdrRUtyekZnQ3RDRTVLdTNTNWlSRHdXMkRVeXFEX2tvczJxUVRVYjhRX0hSR0FabmJwMlBrZEhNeHBCS3kxcHladGtoQlFkOW5TMG81Y3RGODk?oc=5",
-  "topic": "Nvidia adds nearly $1tn to market value after it reinstates Jensen Huang",
+  "title_en": "Anthropic Shares Plunge Below IPO Price in Fourth Trading Day",
+  "link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPT0hkbFdEeDFKTWo1UXlkenJzS3l0QWpGSDdIWGxpbTdiMkpzVkl0bFN0d2RUSGxJS3FxNFNjeEVOeE9qUlB6X1ZKNldQdFA5b2NUam1pZjQzXzFZSFZYQ21mUXJlSzVvOWs5dS1lc3A2NG5zeGQ1RXlQR0c4QkxOUVNQUzNyYzBMT1A5emhvX2VNc2thcUJoSjhqYzZjM0Y2ZmdQellESkczaXc?oc=5",
+  "topic": "Anthropic shares plunge below IPO price in fourth trading day",
   "links": [
-    "https://news.google.com/rss/articles/CBMihAFBVV95cUxOY0VMY3VZRlBrNGs0bElpa1NJSEZtREllUzFhaGFRTWVNYXN0eVA3Y0hFMjdrRUtyekZnQ3RDRTVLdTNTNWlSRHdXMkRVeXFEX2tvczJxUVRVYjhRX0hSR0FabmJwMlBrZEhNeHBCS3kxcHladGtoQlFkOW5TMG81Y3RGODk?oc=5",
-    "https://www.cnbc.com/2026/11/23/nvidia-stock-jensen-huang-ai-trade.html",
-    "https://www.bbc.co.uk/news/articles/cq62pn6j42jko?at_medium=RSS&at_campaign=rss",
-    "https://www.bbc.co.uk/news/articles/c68798vdprwpo?at_medium=RSS&at_campaign=rss",
-    "https://www.bbc.co.uk/news/videos/cqze7lwdglngo?at_medium=RSS&at_campaign=rss",
-    "https://news.google.com/rss/articles/CBMiugFBVV95cUxNcjd3VE9YUEVubzNBZGswajJJU2pqU2hvMjY3X2R2UE9fMDlybEQ2a3ZFb0o4NUVxd2ZlSHlMUkxNeHdodG81SFdsQlpFY3RNZ2FEd21HZ09DRXYwcldvWmRXLWF0NG5xeFVqN3pIdmJtbFRiVnlxREd1NmdXQ2Y1ZkdMVm5vcjZBaTJCVllQYVdrZmo1dGZoT3BHQ1RSN0pOMWgta0FUZ3VxeHAtczI1c2VnZjByczZTNmc?oc=5"
+    "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPT0hkbFdEeDFKTWo1UXlkenJzS3l0QWpGSDdIWGxpbTdiMkpzVkl0bFN0d2RUSGxJS3FxNFNjeEVOeE9qUlB6X1ZKNldQdFA5b2NUam1pZjQzXzFZSFZYQ21mUXJlSzVvOWs5dS1lc3A2NG5zeGQ1RXlQR0c4QkxOUVNQUzNyYzBMT1A5emhvX2VNc2thcUJoSjhqYzZjM0Y2ZmdQellESkczaXc?oc=5",
+    "https://www.cnbc.com/2026/11/24/anthropic-stock-ipo-price.html",
+    "https://www.cnbc.com/2026/11/24/anthropic-options-trading-ipo-price.html",
+    "https://news.google.com/rss/articles/CBMihwFBVV95cUxOR3dTY2Z0c0ZBYVY0am8wOEkzdTR0TGk5dTVQOEdmQ1IybDNUQjNEa0pRNzNXZUxaV0xRejVpYXBWZ2RtZy14VHo5ZU9vYjNTemhiN1VEQ21NNmtwNENqdHY0dTdReHlhRldxVDg0WDZwaHR4UmN1b1JzcHQySS10TXNBcVpXWkk?oc=5",
+    "https://www.marketwatch.com/story/anthropics-stock-just-broke-below-its-ipo-price-for-the-first-time-5dc82668?mod=mw_rss_topstories",
+    "https://news.google.com/rss/articles/CBMiowFBVV95cUxNMHBNOVY5RDc1NmxUUjNnZkNhLWROQkhUOFZpVmQ0SEI0UG9aSUpTTjhpV3EydTNkdW8xYm1KOWF6OXg2Z3BMaUJCWTE3WnFCM0hCZGNuQ3ZKUklsYUROVWQzdExOamNKVlJLRTgwYWpoYVdOUjlDY0pxTmxZajlvckJ4cHc0TG1hbW1ZUkszaDZ2M2Rvd3RqTWRFaVRENXVWT0pr?oc=5",
+    "https://news.google.com/rss/articles/CBMihAFBVV95cUxPal9tdUdZVTJvVTB5aGJHZ0FwTk1GVW8zRWFzNlFEdU9YTERXNlNPcGFzbHUyaXd5U3I4WlMzTGNFUUtPVlA2VmpYSW94TFZKMFhGOFlsU19WV09kVkFGRk9IQ3h3MkRLUGlqWms3akdWTUNaR1hxX2VXakFVMm1tNWk0MW8?oc=5"
   ],
   "kr": true,
-  "release_tag": "reel-n20261124-161801",
+  "release_tag": "reel-n20261125-100452",
   "cover_name": "cover.jpg",
-  "tg_message_id": 354,
-  "sent_at": "2026-11-24T07:21:40.566350+00:00",
-  "hook_title": "엔비디아 시총 [1조 달러] 폭증",
-  "tag": "반도체",
+  "tg_message_id": 372,
+  "sent_at": "2026-11-25T01:13:31.385936+00:00",
+  "hook_title": "앤트로픽 [34% 폭락], 공모가 붕괴됐다",
+  "tag": "증시",
   "hashtags": [
-    "#경제뉴스",
-    "#글로벌경제",
-    "#주식시황"
+    "#앤트로픽",
+    "#미국주식",
+    "#AI관련주",
+    "#테크주",
+    "#경제뉴스"
   ],
   "brand": "",
-  "yt_title": "젠슨 황 복귀에 시총 1조 달러 폭증, 엔비디아 주가 다시 날까?",
+  "yt_title": "상장 4일 만에 34% 폭락, 앤트로픽 주가 공모가 붕괴된 이유",
   "title_tags": [
-    "#엔비디아",
+    "#앤트로픽",
     "#미국주식",
-    "#반도체"
+    "#경제뉴스"
   ],
-  "question": "엔비디아의 앞으로의 행보, 여러분은 어떻게 생각하세요?"
+  "question": "앤트로픽 주가, 지금이 반등 기회일까요 더 떨어질까요? 여러분은 어떻게 생각하세요?",
+  "waiting_until": "2026-11-25T03:04:31.386511+00:00"
 }
