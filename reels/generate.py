@@ -95,7 +95,7 @@ def _custom_news():
 
 
 def _news_script(focus="global"):
-    """focus: global = 12:00 오늘의 원픽, us = 07:00 미국 증시 마감, kr = 18:00 국내 마감 브리핑·뉴스 정리,
+    """focus: global = 12:00 오늘의 원픽, us = 07:00 미국 증시 마감, kr = 17:00 국내 마감 브리핑·뉴스 정리,
     re = 토요일 12:00 주간 부동산. 모든 시리즈는 '이미 다룬 주제' 기록을 함께 써서 같은 이슈가 겹치지 않음."""
     from . import realestate
     mk = market.material(focus) if focus in ("us", "kr") else realestate.material() if focus == "re" else None
@@ -540,7 +540,7 @@ def _today():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--series", choices=["news", "us", "kr", "re", "history", "talk"], default="news",
-                    help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=18:00 국내 마감 브리핑, history=그때 그 결정")
+                    help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=17:00 국내 마감 브리핑, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
     ap.add_argument("--wait", type=int, default=0, help="영상 전송 후 버튼을 실시간으로 기다릴 시간(분)")

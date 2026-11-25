@@ -119,7 +119,7 @@ def _shorts_meta(p):
         "kr": ("#국내주식", "#코스피"), "us": ("#미국주식", "#미국증시"), "re": ("#부동산", "#아파트")}.get(series, ("#경제뉴스",)))
     tags = [t.lstrip("#") for t in p.get("hashtags", []) + p.get("title_tags", [])]
     links = "\n".join(p.get("links", [])[:3])
-    slogan = {"kr": "매일 저녁 6시 국내 증시 마감 정리", "us": "매일 아침 7시 미국 증시 마감 정리",
+    slogan = {"kr": "매일 오후 5시 국내 증시 마감 정리", "us": "매일 아침 7시 미국 증시 마감 정리",
               "re": "매주 토요일 낮 12시 부동산 정책·시세 정리"}.get(
         series, "매일 낮 12시 오늘의 경제 이슈 딱 하나")
     desc = (f"💬 {p.get('question', '')}\n댓글로 여러분 생각을 남겨 주세요!\n\n"
