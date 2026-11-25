@@ -1,0 +1,35 @@
+name: 작업용 이미지 받아 두기 (Release 'asset-tmp')
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "받을 이미지 주소 (위키미디어 공용 등 자유 라이선스)"
+        required: true
+      name:
+        description: "저장 이름"
+        default: "image.jpg"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - run: |
+          curl -sSL -A "econonepick-bot/1.0 (thumbnail test)" "${{ inputs.url }}" -o "${{ inputs.name }}"
+          ls -la "${{ inputs.name }}"
+          python - <<'PY'
+          from reels import storage
+          storage.delete("asset-tmp")
+          storage.upload("${{ inputs.name }}", "asset-tmp", title="작업용 이미지")
+          PY
