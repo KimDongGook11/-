@@ -1,0 +1,49 @@
+name: 모션 그래픽 시험 (기존 레이아웃 카드 자리에 대체)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "바탕이 될 기존 원픽 보관 태그"
+        default: "reel-k20261123-164451"
+
+permissions:
+  contents: write
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 프로그램 설치
+        run: |
+          sudo apt-get install -y -qq ffmpeg >/dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          pip install -q -r requirements.txt
+          cd motionlab && npm install --no-audit --no-fund
+      - name: 모션 그래픽 렌더 (Remotion)
+        run: cd motionlab && npx remotion render src/index.ts KospiTest out/motion.mp4 --codec=h264 --crf=16
+      - name: 기존 영상에 합성
+        run: |
+          python - <<'PY'
+          import os, requests
+          from reels import storage
+          storage.download("${{ inputs.source }}", "base.mp4")
+          PY
+          python motionlab/composite.py base.mp4 motionlab/out/motion.mp4 motion_test.mp4
+      - name: 결과 보관 (Release 'motion-lab')
+        run: |
+          python - <<'PY'
+          from reels import storage
+          storage.delete("motion-lab")
+          storage.upload("motion_test.mp4", "motion-lab", title="모션 그래픽 시험")
+          storage.add_asset("motion-lab", "motionlab/out/motion.mp4", "motion_only.mp4")
+          PY
