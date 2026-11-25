@@ -8,11 +8,11 @@ from . import config
 RUN_TIMEOUT = 1800   # 외부 명령 하나가 30분 넘게 걸리면 멈춘 것으로 보고 중단 (11/20 1분 요약 렌더가 3.5시간 멈춰 작업이 통째로 취소됨)
 
 
-def run(cmd, quiet=True, timeout=RUN_TIMEOUT):
+def run(cmd, quiet=True, timeout=RUN_TIMEOUT, cwd=None):
     """ffmpeg 등 외부 명령 실행. 실패하면 마지막 에러 로그를 보여줍니다."""
     cmd = [str(c) for c in cmd]
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
     except subprocess.TimeoutExpired as e:
         # 멈춘 지점을 알 수 있게 ffmpeg 마지막 진행 로그를 남김 (frame=…, time=… 줄)
         err = e.stderr.decode("utf-8", "replace") if isinstance(e.stderr, bytes) else (e.stderr or "")

@@ -48,6 +48,7 @@ jobs:
       BG_SPEED: ${{ vars.BG_SPEED }}
       TTS_ENGINE: ${{ vars.TTS_ENGINE }}
       TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      MOTION_SERIES: ${{ vars.MOTION_SERIES }}
       HISTORY_SHORT: ${{ vars.HISTORY_SHORT }}
       TYPECAST_VOICE: ${{ vars.TYPECAST_VOICE }}
       TYPECAST_VOICE_NEWS: ${{ vars.TYPECAST_VOICE_NEWS }}
@@ -71,6 +72,13 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 모션 그래픽 준비 (Remotion)
+        timeout-minutes: 10
+        continue-on-error: true
+        run: cd motionlab && npm install --no-audit --no-fund --loglevel=error && npx remotion browser ensure >/dev/null && echo "모션 그래픽 준비 완료" || (rm -rf node_modules; echo "모션 준비 실패 → 기존 방식으로 제작")
       - name: 프로그램 설치
         timeout-minutes: 20
         run: |

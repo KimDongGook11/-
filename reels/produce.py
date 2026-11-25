@@ -97,8 +97,9 @@ def number_word_time(value, text, words, seg):
     return seg_words[0][0] if seg_words else None
 
 
-def short(sc, workdir, out, sources, offline=False, chart_opts=None):
-    """세로 릴스 (레이아웃 A). 반환: (길이초, 품질 점검용 정보)"""
+def short(sc, workdir, out, sources, offline=False, chart_opts=None, motion_on=False):
+    """세로 릴스 (레이아웃 A). 반환: (길이초, 품질 점검용 정보)
+    motion_on: 가운데 카드 안을 모션 그래픽으로 대체 (레이아웃은 그대로, 2026-11-25)"""
     W, H = 1080, 1920
     workdir.mkdir(parents=True, exist_ok=True)
     segs = sc["segments"]
@@ -108,6 +109,19 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
     shots = [(None, 0.0, d) for d in durs] if offline else \
         stock.plan_shots(segs, durs, workdir / "clips", vertical=True, shot_len=2.8, card=True)
     bg = render.build_background(shots, W, H, workdir, layout="card")
+    mv = None
+    if motion_on and not offline:
+        from . import motion
+        try:
+            scenes = motion.plan(sc, starts, durs, words, HOOK, total - OUTRO_S, number_word_time)
+            mfile = motion.render(scenes, total - OUTRO_S - HOOK, sc.get("tag") or "오늘의 원픽", workdir / "motion")
+            if mfile:
+                bg = motion.apply(bg, mfile, HOOK, total - OUTRO_S, workdir)
+                mv = scenes
+                print("  [모션] 카드 자리에 모션 그래픽 적용 (숫자·헤드라인 카드는 모션이 대신함)")
+        except Exception as e:
+            print(f"  [모션] 적용 실패 → 기존 방식으로: {e}")
+            mv = None
 
     title_png, _ = graphics.title_a(sc, workdir / "title.png")
     ovs = [{"kind": "image", "path": graphics.card_frame(workdir / "frame.png"), "start": 0, "end": total - OUTRO_S},
@@ -116,9 +130,9 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
             "fade_out": 0.25}]
     fx = [(HOOK, "whoosh", 0.18)] + [(t, "whoosh", 0.12) for t in starts[1:]]
 
-    busy = set()
+    busy = set(range(len(segs))) if mv else set()   # 모션이 있으면 차트·숫자·헤드라인 카드를 따로 띄우지 않음
     on = [i for i, s in enumerate(segs) if s.get("show_chart")][:1] or ([min(2, len(segs) - 1)] if sc.get("chart") else [])
-    if on and sc.get("chart"):
+    if on and sc.get("chart") and not mv:
         i = on[0]
         cf = chart.make_chart_frames(sc["chart"], workdir / "chartf", offline=offline,
                                      w=CARD["w"] - 40, h=640, **(chart_opts or {}))
@@ -154,9 +168,11 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
         fx.append((st, "pop", 0.32))
         busy.add(i)
         count += 1
-    if offline:
+    if offline or mv:
         stock.LAST_MISSING.clear()
-    ovs += _cards(segs, starts, durs, busy | {len(segs) - 1}, sc.get("headlines") or [],
+    if mv:
+        fx += [(HOOK + x["from"] + 0.05, "pop", 0.22) for x in mv[1:]]
+    ovs += [] if mv else _cards(segs, starts, durs, busy | {len(segs) - 1}, sc.get("headlines") or [],
                   (sc.get("hook_title", ""), sc.get("tag", "")), CARD, workdir,
                   show_at=1 if sc.get("headlines") and len(segs) > 3 else None, after=HOOK + 0.1)
 
@@ -168,7 +184,7 @@ def short(sc, workdir, out, sources, offline=False, chart_opts=None):
     sfx = render.build_sfx(fx, total, workdir / "sfx.wav")
     render.compose(W=W, H=H, bg=bg, narration=narration, total=total, ass=ass, overlays=ovs, out=out,
                    sfx=sfx, bgm=_bgm(), progress=True)
-    return total, {"shots": shots, "words": len(words), "kind": "short"}
+    return total, {"shots": shots, "words": len(words), "kind": "short", "motion": bool(mv)}
 
 
 def long(lsc, workdir, out, sources, offline=False, chart_opts=None):

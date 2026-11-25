@@ -256,6 +256,15 @@ def _need_short():
     return config.HISTORY_SHORT or not config.HISTORY_LONG
 
 
+def _motion(series):
+    """모션 그래픽 카드 사용 여부 (Variables MOTION_SERIES, 기본 kr = 국내 증시 마감 브리핑)."""
+    try:
+        from . import motion
+        return motion.enabled(series)
+    except Exception:
+        return False
+
+
 RERENDER = None   # --rerender: {"series", "script", "sources", "meta"} — 같은 대본으로 영상만 다시
 
 
@@ -275,7 +284,8 @@ def make_reel(series="news", offline=False):
         job = RERENDER
         sc, sources, meta = job["script"], job.get("sources", []), job.get("meta", {})
         print(f"같은 대본으로 영상만 다시 제작: {sc.get('hook_title')} (문장 {len(sc['segments'])}개)")
-        dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
+        dur, info = produce.short(sc, work / "short", out, sources, offline=offline,
+                                  motion_on=_motion(series))
         info["range"] = (70, 110)
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
@@ -286,7 +296,7 @@ def make_reel(series="news", offline=False):
         else:
             sc, sources, meta = _news_script(focus=series if series in ("kr", "us", "re") else "global")
         print("영상 제작 (세로 릴스)")
-        dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
+        dur, info = produce.short(sc, work / "short", out, sources, offline=offline, motion_on=_motion(series))
         info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
