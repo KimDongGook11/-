@@ -120,3 +120,21 @@ def add_to_playlist(vid, title, tok=None):
     except Exception as e:
         print(f"  [유튜브] 재생목록 추가 실패: {e}")
         return None
+
+
+def set_thumbnail(vid, path, tok=None):
+    """이미 올라간 영상의 썸네일 바꾸기."""
+    tok = tok or _token()
+    with open(path, "rb") as f:
+        r = requests.post(f"{UPLOAD}/thumbnails/set", params={"videoId": vid}, timeout=120,
+                          headers=_h(tok, {"Content-Type": "image/jpeg"}), data=f)
+    if r.status_code != 200:
+        raise RuntimeError(f"썸네일 교체 실패: {r.text[:300]}")
+    return r.json()
+
+
+if __name__ == "__main__":   # python -m reels.youtube thumb <영상ID> <파일>
+    import sys
+    if len(sys.argv) == 4 and sys.argv[1] == "thumb":
+        print(set_thumbnail(sys.argv[2], sys.argv[3]))
+        print("유튜브 썸네일 교체 완료:", sys.argv[2])

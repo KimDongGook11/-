@@ -1,0 +1,27 @@
+name: 올라간 유튜브 영상 썸네일 교체
+
+on:
+  workflow_dispatch:
+    inputs:
+      video:
+        description: "유튜브 영상 ID (예: W2FDotwsRyc)"
+        required: true
+      file:
+        description: "저장소 안의 새 썸네일 파일 (예: thumbs/xxx.jpg)"
+        required: true
+
+jobs:
+  thumb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - run: python -m reels.youtube thumb "${{ inputs.video }}" "${{ inputs.file }}"
