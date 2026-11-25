@@ -6,4 +6,4 @@ matplotlib>=3.8
 numpy>=1.26
 pillow>=10.0
 trafilatura>=1.8
-opencv-python-headless>=4.8
+opencv-python-headless>=4.8,<5   # 5.x에서 얼굴 인식(CascadeClassifier)이 빠짐
