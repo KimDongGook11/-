@@ -37,7 +37,7 @@ const Frame: React.FC<{ label: string; idx: number }> = ({ label, idx }) => {
       <div style={c({ left: 22, bottom: 22, borderLeft: "4px solid", borderBottom: "4px solid", opacity: glow })} />
       <div style={c({ right: 22, bottom: 22, borderRight: "4px solid", borderBottom: "4px solid", opacity: glow })} />
       {/* 위 정보 줄 */}
-      <div style={{ position: "absolute", left: 64, top: 52, color: "rgba(255,255,255,0.7)", fontSize: 30, fontWeight: 700, letterSpacing: 1 }}>
+      <div style={{ position: "absolute", left: 64, top: 52, color: "rgba(255,255,255,0.7)", fontSize: 32, fontWeight: 700, letterSpacing: 1 }}>
         오늘의 원픽 · {label}
       </div>
       <div style={{ position: "absolute", right: 64, top: 44, color: Y, fontSize: 30, fontWeight: 800, border: `2px solid ${LINE}`,
@@ -68,22 +68,22 @@ const CounterScene: React.FC = () => {
   const pct = -3.31 * t;
   const pop = useIn(50);
   const pts = [0, 8, 4, 18, 14, 30, 42, 38, 60, 72, 66, 88, 100];
-  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${60 + i * 58} ${150 + p * 1.6}`).join(" ");
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${10 + i * 61} ${20 + p * 1.9}`).join(" ");
   const draw = interpolate(f, [10, 70], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const enter = useIn(0);
   return (
-    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 150 }}>
-      <div style={{ width: 800, height: 600, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`,
-        boxShadow: `0 0 40px rgba(255,214,10,0.12)`, transform: `translateY(${(1 - enter) * 60}px)`, opacity: enter, padding: "38px 50px" }}>
-        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 36, fontWeight: 700 }}>코스피 종가</div>
+    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 130 }}>
+      <div style={{ width: 840, height: 680, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`, position: "relative",
+        boxShadow: `0 0 40px rgba(255,214,10,0.12)`, transform: `translateY(${(1 - enter) * 60}px)`, opacity: enter, padding: "40px 52px" }}>
+        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 42, fontWeight: 700 }}>코스피 종가</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 22, marginTop: 6 }}>
-          <div style={{ color: "#fff", fontSize: 124, fontWeight: 900, letterSpacing: -2 }}>{fmt(val, 2)}</div>
+          <div style={{ color: "#fff", fontSize: 150, fontWeight: 900, letterSpacing: -3, lineHeight: 1.1 }}>{fmt(val, 2)}</div>
         </div>
-        <div style={{ display: "inline-block", marginTop: 4, background: R, color: "#fff", fontSize: 44, fontWeight: 900,
-          padding: "6px 22px", borderRadius: 14, transform: `scale(${0.6 + 0.4 * pop})`, opacity: pop }}>
+        <div style={{ display: "inline-block", marginTop: 4, background: R, color: "#fff", fontSize: 54, fontWeight: 900,
+          padding: "6px 26px", borderRadius: 14, transform: `scale(${0.6 + 0.4 * pop})`, opacity: pop }}>
           ▼ {Math.abs(pct).toFixed(2)}%
         </div>
-        <svg width={800} height={330} style={{ position: "absolute", left: 60, top: 400 }}>
+        <svg width={760} height={230} style={{ position: "absolute", left: 90, top: 560 }}>
           <path d={path} fill="none" stroke={R} strokeWidth={8} strokeLinejoin="round" strokeLinecap="round"
             pathLength={1} strokeDasharray={1} strokeDashoffset={draw} />
         </svg>
@@ -102,30 +102,30 @@ const GaugeScene: React.FC = () => {
   const badge = useIn(42);
   const enter = useIn(0);
   const arc = (a0: number, a1: number) => {
-    const r = 230, cx = 400, cy = 400;
+    const r = 250, cx = 400, cy = 330;
     const p = (a: number) => [cx + r * Math.sin((a * Math.PI) / 180), cy - r * Math.cos((a * Math.PI) / 180)];
     const [x0, y0] = p(a0), [x1, y1] = p(a1);
     return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`;
   };
   return (
-    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 150 }}>
-      <div style={{ width: 800, height: 600, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`, opacity: enter,
+    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 130 }}>
+      <div style={{ width: 840, height: 680, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`, opacity: enter,
         transform: `scale(${0.92 + 0.08 * enter})`, position: "relative" }}>
-        <div style={{ position: "absolute", left: 50, top: 36, color: "rgba(255,255,255,0.75)", fontSize: 36, fontWeight: 700 }}>장중 하락 폭</div>
-        <svg width={800} height={470} style={{ position: "absolute", top: 70 }}>
+        <div style={{ position: "absolute", left: 52, top: 36, color: "rgba(255,255,255,0.75)", fontSize: 42, fontWeight: 700 }}>장중 하락 폭</div>
+        <svg width={840} height={420} viewBox="0 0 800 420" style={{ position: "absolute", top: 70, left: 0 }}>
           <path d={arc(-90, -30)} stroke="#3BD17A" strokeWidth={34} fill="none" />
           <path d={arc(-28, 28)} stroke={Y} strokeWidth={34} fill="none" />
           <path d={arc(30, 90)} stroke={R} strokeWidth={34} fill="none" />
-          <g transform={`rotate(${ang} 400 400)`}>
-            <line x1={400} y1={400} x2={400} y2={210} stroke="#fff" strokeWidth={12} strokeLinecap="round" />
+          <g transform={`rotate(${ang} 400 330)`}>
+            <line x1={400} y1={330} x2={400} y2={120} stroke="#fff" strokeWidth={14} strokeLinecap="round" />
           </g>
-          <circle cx={400} cy={400} r={26} fill={Y} />
+          <circle cx={400} cy={330} r={28} fill={Y} />
         </svg>
-        <div style={{ position: "absolute", left: 0, right: 0, top: 420, textAlign: "center", color: "#fff", fontSize: 60, fontWeight: 900 }}>
+        <div style={{ position: "absolute", left: 0, right: 0, top: 445, textAlign: "center", color: "#fff", fontSize: 70, fontWeight: 900 }}>
           장중 <span style={{ color: R }}>-5% 이상</span>
         </div>
-        <div style={{ position: "absolute", left: "50%", top: 505, transform: `translateX(-50%) scale(${0.5 + 0.5 * badge})`, opacity: badge,
-          background: R, color: "#fff", fontSize: 40, fontWeight: 900, padding: "8px 28px", borderRadius: 14,
+        <div style={{ position: "absolute", left: "50%", top: 560, transform: `translateX(-50%) scale(${0.5 + 0.5 * badge})`, opacity: badge,
+          background: R, color: "#fff", fontSize: 46, fontWeight: 900, padding: "8px 30px", borderRadius: 14, whiteSpace: "nowrap",
           boxShadow: `0 0 ${30 * flash}px ${R}` }}>
           ⚠ 매도 사이드카 발동
         </div>
@@ -139,20 +139,20 @@ const Tile: React.FC<{ delay: number; title: string; value: string; change: stri
   ({ delay, title, value, change, up, icon }) => {
     const s = useIn(delay);
     return (
-      <div style={{ width: 800, height: 260, background: PANEL, borderRadius: 26, border: `2px solid ${LINE}`, display: "flex",
+      <div style={{ width: 840, height: 300, background: PANEL, borderRadius: 26, border: `2px solid ${LINE}`, display: "flex",
         alignItems: "center", padding: "0 44px", gap: 34, opacity: s, transform: `translateX(${(1 - s) * 120}px)` }}>
         <div style={{ width: 120, height: 120, borderRadius: 26, background: "rgba(255,214,10,0.12)", border: `2px solid ${LINE}`,
           display: "flex", alignItems: "center", justifyContent: "center", color: Y, fontSize: 64, fontWeight: 900 }}>{icon}</div>
         <div style={{ flex: 1 }}>
           <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 34, fontWeight: 700 }}>{title}</div>
-          <div style={{ color: "#fff", fontSize: 80, fontWeight: 900, letterSpacing: -1 }}>{value}</div>
+          <div style={{ color: "#fff", fontSize: 92, fontWeight: 900, letterSpacing: -1 }}>{value}</div>
         </div>
-        <div style={{ color: up ? R : B, fontSize: 46, fontWeight: 900, textAlign: "right" }}>{up ? "▲" : "▼"} {change}</div>
+        <div style={{ color: up ? R : B, fontSize: 52, fontWeight: 900, textAlign: "right" }}>{up ? "▲" : "▼"} {change}</div>
       </div>
     );
   };
 const TilesScene: React.FC = () => (
-  <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 170, gap: 40 }}>
+  <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 140, gap: 36 }}>
     <Tile delay={4} title="코스닥" value="635.49" change="1.58%" up={false} icon="Q" />
     <Tile delay={S(4.6)} title="원/달러 환율" value="1,343.7원" change="8.9원" up={true} icon="₩" />
   </AbsoluteFill>
@@ -164,11 +164,11 @@ const Bar: React.FC<{ delay: number; name: string; pct: number }> = ({ delay, na
   const t = interpolate(f, [delay, delay + 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
   const s = useIn(delay - 4);
   return (
-    <div style={{ opacity: s, marginBottom: 46 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", color: "#fff", fontSize: 44, fontWeight: 800, marginBottom: 14 }}>
+    <div style={{ opacity: s, marginBottom: 64 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", color: "#fff", fontSize: 54, fontWeight: 800, marginBottom: 16 }}>
         <span>{name}</span><span style={{ color: B }}>▼ {(pct * t).toFixed(2)}%</span>
       </div>
-      <div style={{ height: 46, background: "rgba(255,255,255,0.08)", borderRadius: 23, overflow: "hidden" }}>
+      <div style={{ height: 60, background: "rgba(255,255,255,0.08)", borderRadius: 23, overflow: "hidden" }}>
         <div style={{ width: `${(pct / 3.5) * 100 * t}%`, height: "100%", background: `linear-gradient(90deg, ${B}, #8FB6FF)`, borderRadius: 23 }} />
       </div>
     </div>
@@ -177,9 +177,9 @@ const Bar: React.FC<{ delay: number; name: string; pct: number }> = ({ delay, na
 const BarsScene: React.FC = () => {
   const enter = useIn(0);
   return (
-    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 150 }}>
-      <div style={{ width: 800, height: 600, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`, opacity: enter, padding: "40px 52px" }}>
-        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 36, fontWeight: 700, marginBottom: 50 }}>대형주 하락률 (오늘)</div>
+    <AbsoluteFill style={{ fontFamily: font, alignItems: "center", paddingTop: 130 }}>
+      <div style={{ width: 840, height: 680, background: PANEL, borderRadius: 28, border: `2px solid ${LINE}`, opacity: enter, padding: "40px 52px" }}>
+        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 42, fontWeight: 700, marginBottom: 70 }}>대형주 하락률 (오늘)</div>
         <Bar delay={8} name="삼성전자" pct={3.06} />
         <Bar delay={S(2.0)} name="SK하이닉스" pct={2.52} />
       </div>
