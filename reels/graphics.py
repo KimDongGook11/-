@@ -557,6 +557,101 @@ def thumbnail_photo(photo, line1, line2, sub, ep, out, w=1280, h=720):
     return out
 
 
+def _face_x(ph):
+    """사진 속 가장 큰 얼굴의 가운데 x(비율). 못 찾으면 None. (opencv 없으면 None)"""
+    try:
+        import cv2
+        import numpy as np
+        g = cv2.cvtColor(np.array(ph.convert("RGB")), cv2.COLOR_RGB2GRAY)
+        cc = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        fs = cc.detectMultiScale(g, 1.1, 6, minSize=(max(24, ph.width // 25),) * 2)
+        if len(fs) == 0:
+            return None
+        x, y, fw, fh = max(fs, key=lambda f: f[2] * f[3])
+        return (x + fw / 2) / ph.width, (y + fh / 2) / ph.height
+    except Exception:
+        return None
+
+
+def thumbnail_number(photo, number, label, question, line2, sub, direction, out, w=1280, h=720):
+    """숫자 충격형 썸네일: 인물 사진 오른쪽 + 왼쪽에 큰 숫자(내림 파랑/오름 빨강) + 노란 질문 띠 + 둘째 줄."""
+    from PIL import ImageEnhance
+    ph = Image.open(photo).convert("RGB")
+    face = _face_x(ph)
+    r = max(w / ph.width, h / ph.height) * 1.15     # 살짝 당겨서 인물을 크게
+    ph = ph.resize((int(ph.width * r) + 1, int(ph.height * r) + 1), Image.LANCZOS)
+    if face:   # 얼굴이 화면 가로 62% 지점에 오도록
+        x0 = int(face[0] * ph.width - w * 0.62)
+        y0 = int(face[1] * ph.height - h * 0.32)
+    else:
+        x0, y0 = int((ph.width - w) * 0.6), (ph.height - h) // 2
+    x0 = min(max(0, x0), ph.width - w)
+    y0 = min(max(0, y0), ph.height - h)
+    ph = ph.crop((x0, y0, x0 + w, y0 + h))
+    ph = ImageEnhance.Contrast(ImageEnhance.Color(ph).enhance(1.05)).enhance(1.08)
+    img = ph.convert("RGBA")
+    grad = Image.new("L", (w, 1))
+    grad.putdata([int(250 * min(1.0, max(0.0, 1 - (x - w * 0.3) / (w * 0.42))) ** 1.3) for x in range(w)])
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 255))
+    shade.putalpha(grad.resize((w, h)))
+    img.alpha_composite(shade)
+    d = ImageDraw.Draw(img)
+    color = {"down": (66, 133, 255), "up": (255, 66, 80)}.get(direction, THUMB_YEL)
+    maxw = 720
+    y = 58
+    if label:
+        lf = F("Black", 50)
+        d.text((62, y), label, font=lf, fill=WHITE, stroke_width=3, stroke_fill=BLACK)
+        y += 78
+    for size in (230, 200, 176, 150, 128):
+        nf = F("Black", size)
+        if d.textlength(number, font=nf) <= maxw:
+            break
+    bb = d.textbbox((0, 0), number, font=nf)
+    d.text((48, y - bb[1]), number, font=nf, fill=color, stroke_width=4, stroke_fill=BLACK)
+    y += bb[3] - bb[1] + 40
+    if question:
+        for size in (72, 64, 56, 50):
+            qf = F("Black", size)
+            if d.textlength(question, font=qf) <= 560:
+                break
+        qb = d.textbbox((0, 0), question, font=qf)
+        bw = max(560, int(d.textlength(question, font=qf)) + 48)
+        d.rectangle([50, y, 50 + bw, y + (qb[3] - qb[1]) + 40], fill=THUMB_YEL)
+        d.text((74, y + 20 - qb[1]), question, font=qf, fill=BLACK)
+        y += qb[3] - qb[1] + 40 + 34
+    if line2:
+        for size in (66, 58, 50):
+            f2 = F("Black", size)
+            if d.textlength(line2, font=f2) <= 640:
+                break
+        b2 = d.textbbox((0, 0), line2, font=f2)
+        d.text((58, y - b2[1]), line2, font=f2, fill=WHITE, stroke_width=3, stroke_fill=BLACK)
+        y += b2[3] - b2[1] + 26
+    if sub:
+        sf = F("Black", 38)
+        d.text((60, y), sub, font=sf, fill=(205, 205, 205), stroke_width=2, stroke_fill=BLACK)
+    lf = F("Black", 34)
+    parts = [("경제 ", WHITE), ("[", (230, 60, 50)), ("원픽", (230, 60, 50)), ("]", (230, 60, 50))]
+    lw = sum(d.textlength(t, font=lf) for t, _ in parts)
+    d.rounded_rectangle([w - lw - 70, 22, w - 30, 84], radius=31, fill=BLACK)
+    x = w - lw - 50
+    for t, c in parts:
+        d.text((x, 30), t, font=lf, fill=c)
+        x += d.textlength(t, font=lf)
+    img.convert("RGB").save(out, quality=93)
+    return out
+
+
+def number_ok(number, text):
+    """썸네일 숫자가 대본에 실제로 있는지 (숫자 부분이 대본에 그대로 등장해야 함)."""
+    digits = re.sub(r"[^0-9.,]", "", number or "").strip(".,")
+    if not digits or not re.search(r"\d", digits):
+        return False
+    norm = lambda t: re.sub(r"(?<=\d),(?=\d)", "", t)
+    return re.search(r"(?<![\d.])" + re.escape(norm(digits)) + r"(?![\d])", norm(text or "")) is not None
+
+
 def split_thumb(lsc):
     """썸네일 두 줄 문구 (AI가 준 두 줄, 없으면 thumb_title을 반으로)."""
     l1, l2 = lsc.get("thumb_line1"), lsc.get("thumb_line2")

@@ -21,7 +21,7 @@ def _strip(html):
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html or "")).strip()
 
 
-def _candidates(title):
+def _candidates(title, person=False):
     r = requests.get(WIKI, headers=UA, timeout=20, params={
         "action": "query", "format": "json", "formatversion": 2, "redirects": 1, "titles": title,
         "generator": "images", "gimlimit": 60, "prop": "imageinfo",
@@ -34,7 +34,10 @@ def _candidates(title):
         if ii.get("mime") != "image/jpeg" or SKIP.search(name):
             continue
         w, h = ii.get("width", 0), ii.get("height", 0)
-        if w < 1000 or h < 560 or w < h * 1.15:           # 가로 사진만 (썸네일 16:9에 맞게)
+        if person:   # 인물 문서: 세로 사진도 허용 (얼굴 기준으로 16:9 잘라냄)
+            if w < 1000 or h < 700:
+                continue
+        elif w < 1000 or h < 560 or w < h * 1.15:           # 가로 사진만 (썸네일 16:9에 맞게)
             continue
         meta = ii.get("extmetadata", {})
         lic = _strip(meta.get("LicenseShortName", {}).get("value"))
@@ -46,13 +49,13 @@ def _candidates(title):
     return out
 
 
-def company_photo(titles, workdir, episode=""):
+def company_photo(titles, workdir, episode="", person=""):
     """(사진 경로, 출처 문구) 또는 (None, None)."""
     used = set(load_state("thumb_used", []))
     cands, seen = [], set()
     for t in [t for t in dict.fromkeys(titles) if t][:4]:
         try:
-            for c in _candidates(t):
+            for c in _candidates(t, person=bool(person) and t == person):
                 if c["name"] not in seen:
                     seen.add(c["name"])
                     cands.append(c)
@@ -67,11 +70,13 @@ def company_photo(titles, workdir, episode=""):
     if episode and len(fresh) > 1:     # 에피소드 내용·시대와 가장 어울리는 사진을 AI가 고름 (실패하면 무작위)
         try:
             from . import llm
+            pref = (f"\n핵심 인물 {person}의 얼굴이 크고 또렷하게 나온 사진(무대·인터뷰·발표 장면)을 가장 먼저 골라. "
+                    "그 인물이 아닌 사람 사진은 빼.") if person else ""
             lst = "\n".join(f"{i}. {c['name']}" for i, c in enumerate(fresh[:25]))
             ans = llm.ask_json(f"""유튜브 경제 다큐 썸네일 배경 사진을 고르려고 해.
 에피소드: {episode}
 아래 위키미디어 사진 파일 이름 중 이 에피소드(그 회사, 그 시대, 그 사건)와 가장 잘 어울리는 사진 번호를 순서대로 최대 3개.
-시대가 안 맞는 최신 제품, 추모·행사 사진, 사건과 무관한 인물 사진은 빼. 적당한 게 없으면 빈 목록.
+시대가 안 맞는 최신 제품, 추모·행사 사진, 사건과 무관한 인물 사진은 빼. 적당한 게 없으면 빈 목록.{pref}
 {lst}
 JSON으로만: {{"pick": [번호, ...]}}""", temperature=0.2)
             picks = [fresh[int(i)] for i in ans.get("pick", []) if str(i).isdigit() and int(i) < len(fresh[:25])]

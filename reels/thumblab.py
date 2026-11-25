@@ -3,24 +3,26 @@ import requests
 
 from . import config, doubleexp, graphics, realphoto, storage
 
-SAMPLES = [(["Apple Inc.", "History of Apple Inc."], "파산 90일 전", "돌아온 창업자", "1997  ·  애플  ·  IT", "EP.4"),
-           (["Nintendo", "History of Nintendo"], "소니를 버린", "닌텐도의 결정", "1991  ·  닌텐도  ·  게임", "EP.3"),
-           (["Nvidia"], "월가의 비난", "사운 건 베팅", "2006  ·  엔비디아  ·  반도체", "EP.5"),
-           (["Kodak", "Eastman Kodak"], "최초를 은폐한", "코닥의 몰락", "1975  ·  코닥  ·  필름", "EP.2")]
+# (인물, 위키 문서, 숫자, 숫자 설명, 방향, 질문, 둘째 줄, 아래 줄)  — 숫자 충격형 시험
+SAMPLES = [("Steve Jobs", ["Apple Inc."], "90일", "파산까지 남은 시간", "none", "누가 살렸나?", "돌아온 창업자", "1997  ·  애플"),
+           ("Jensen Huang", ["Nvidia"], "-6.16%", "코스피 하루 만에", "down", "젠슨황 효과 끝?", "반도체 동반 급락", "삼성전자  ·  SK하이닉스"),
+           ("Satya Nadella", ["Microsoft"], "687억 달러", "역대 최대 인수", "up", "왜 샀을까?", "MS의 게임 베팅", "2022  ·  마이크로소프트"),
+           ("Elon Musk", ["Tesla, Inc."], "1조 달러", "시가총액", "up", "거품일까?", "테슬라의 질주", "2021  ·  테슬라")]
 
 
 def main():
     out = config.OUTPUT_DIR / "thumblab"
     out.mkdir(parents=True, exist_ok=True)
     files = []
-    for i, (country, l1, l2, sub, ep) in enumerate(SAMPLES):
+    for i, (person, titles, num, label, dr, q, l2, sub) in enumerate(SAMPLES):
         wd = out / f"s{i}"
         wd.mkdir(exist_ok=True)
-        real, credit = realphoto.company_photo(country, wd, episode=f"{sub} — {l1} {l2}")
+        real, credit = realphoto.company_photo([person] + titles, wd, episode=f"{sub} — {q} {l2}", person=person)
         if real:
-            p = graphics.thumbnail_photo(real, l1, l2, sub, ep, out / f"thumb_{i}.jpg")
+            print("  얼굴 위치:", graphics._face_x(__import__("PIL.Image", fromlist=["Image"]).open(real)))
+            p = graphics.thumbnail_number(real, num, label, q, l2, sub, dr, out / f"thumb_{i}.jpg")
         else:
-            p = graphics.thumbnail(None, l1, l2, sub, ep, out / f"thumb_{i}.jpg",
+            p = graphics.thumbnail(None, q, l2, sub, None, out / f"thumb_{i}.jpg",
                                    figure=doubleexp.figure_for("미국", wd, seed=i))
         print(i, credit)
         files.append(p)

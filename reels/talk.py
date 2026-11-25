@@ -214,13 +214,19 @@ def write(job, mats):
 10. topic_keyword(6자 이내), hook_title(18자 이내, topic_keyword 포함, 핵심 단어 하나를 [ ]로),
     thumb_line1·thumb_line2(썸네일 두 줄, 각 7자 이내, 한 줄에 topic_keyword), youtube_title(40자 이내, 질문형이나 결론형),
     description(3~5줄), tags(10개 이내).
+   thumb_number·thumb_number_label·thumb_dir·thumb_question·thumb_person: 새 썸네일(숫자 충격형)용.
+     thumb_number: 이 영상에서 가장 충격적인 숫자 하나를 대본에 쓴 그대로 짧게(예: "-6.16%", "30억 달러", "66억 개"). 대본에 없는 숫자 금지. 마땅한 숫자가 없으면 "".
+     thumb_number_label: 그 숫자 위에 붙을 설명 10자 이내(예: "코스피 하루 만에", "인수 금액").
+     thumb_dir: 숫자가 오름이면 "up", 내림이면 "down", 둘 다 아니면 "none".
+     thumb_question: 숫자 아래 노란 띠에 들어갈 궁금증 한 줄, 9자 이내(예: "젠슨황 효과 끝?", "왜 샀을까?").
+     thumb_person: 이 이야기의 핵심 인물(CEO·창업자 등)의 영어 위키백과 문서 제목(예: "Jensen Huang"). 없으면 "".
 
 [자료]
 {chr(10).join(blocks)}
 
 JSON으로만 답해:
 {{
- "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "youtube_title": "...",
+ "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "thumb_number": "...", "thumb_number_label": "...", "thumb_dir": "down", "thumb_question": "...", "thumb_person": "...", "youtube_title": "...",
  "description": "...", "tags": ["..."],
  "intro": [{{"speaker": "host", "text": "...", "keywords": "...", "show_chart": false, "number": null}}],
  "chapters": [{{"title": "...", "year": null, "summary": "...", "segments": [{{"speaker": "host|panel", "text": "...", "keywords": "...", "chart": null, "number": null}}]}}],
@@ -249,9 +255,10 @@ JSON으로만 답해:
         raise ValueError("대담 대본 챕터가 부족합니다")
     chart = d.get("chart") if isinstance(d.get("chart"), dict) and d["chart"].get("ticker") else None
     kw = str(d.get("topic_keyword") or "").strip()[:10]
-    from .history import with_keyword
+    from .history import with_keyword, _thumb_fields
     return {"hook_title": with_keyword(str(d.get("hook_title", ""))[:30], kw), "topic_keyword": kw,
             "thumb_line1": str(d.get("thumb_line1") or "")[:10], "thumb_line2": str(d.get("thumb_line2") or "")[:10],
+            **_thumb_fields(d),
             "youtube_title": str(d.get("youtube_title", ""))[:90], "description": str(d.get("description", "")),
             "tags": [str(t).lstrip("#") for t in d.get("tags", [])][:15],
             "intro": segs(d.get("intro")), "chapters": chapters, "chart": chart,

@@ -298,11 +298,25 @@ def long(lsc, workdir, out, sources, offline=False, chart_opts=None):
     comp = lsc.get("company") or {}
     l1, l2 = graphics.split_thumb(lsc)
     sub = "  ·  ".join(str(v) for v in (lsc.get("year"), comp.get("name_ko"), comp.get("industry_ko")) if v)
+    # 숫자 충격형(시안 A): 대본에 실제로 나온 숫자 + 핵심 인물 사진 (자유 이용 사진만)
+    num = (lsc.get("thumb_number") or "").strip()
+    num_ok = bool(num) and graphics.number_ok(num, " ".join(s.get("text", "") for s in segs))
+    if num and not num_ok:
+        print(f"  [썸네일] 숫자 '{num}'이 대본에 없음 → 기존 문구형")
+    person = (lsc.get("thumb_person") or "").strip()
+    titles = ([person] if person else []) + list(lsc.get("wiki_titles") or [])
     real, credit = (None, None) if offline else realphoto.company_photo(
-        lsc.get("wiki_titles") or [], workdir, episode=f"{comp.get('name_ko', '')} {lsc.get('year', '')}년 — {lsc.get('hook_title', '')}")
-    if real:   # 1순위: 위키미디어 공용의 실제 기업 사진 (합성 없음)
+        titles, workdir, episode=f"{comp.get('name_ko', '')} {lsc.get('year', '')}년 — {lsc.get('hook_title', '')}",
+        person=person)
+    if real:   # 1순위: 위키미디어 공용의 실제 사진 (합성 없음)
         lsc["thumb_credit"] = credit
-        thumb = graphics.thumbnail_photo(real, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg")
+        if num_ok:
+            q = lsc.get("thumb_question") or l1
+            thumb = graphics.thumbnail_number(real, num, lsc.get("thumb_number_label") or "", q,
+                                              l2 if q != l2 else "", sub, lsc.get("thumb_dir"),
+                                              workdir / "thumbnail.jpg")
+        else:
+            thumb = graphics.thumbnail_photo(real, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg")
     else:
         fig = None if offline else doubleexp.figure_for(comp.get("country_ko"), workdir, seed=lsc.get("ep"))
         thumb = graphics.thumbnail(frame, l1, l2, sub, lsc.get("ep"), workdir / "thumbnail.jpg", figure=fig)
