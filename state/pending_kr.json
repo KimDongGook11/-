@@ -1,0 +1,95 @@
+{
+  "id": "k20261126-160323",
+  "series": "kr",
+  "created_at": "2026-11-26T16:03:23.082528+09:00",
+  "video": "/home/runner/work/-/-/output/reel_k20261126-160323.mp4",
+  "sources": [
+    "Yahoo Finance",
+    "뉴스1",
+    "연합뉴스",
+    "내외뉴스통신",
+    "ISSUE ON (이슈온)",
+    "DART 공시"
+  ],
+  "caption": "전날 급락 이후 반등을 시도한 국내 증시! 📈\n코스피와 SK하이닉스 움직임 함께 체크해봐요.\n\n댓글로 여러분의 의견을 남겨주세요! 👇\n\n📰 출처: Yahoo Finance, 뉴스1, 연합뉴스\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #코스피 #SK하이닉스 #증시마감 #주식브리핑",
+  "duration": 44.1,
+  "qc": {
+    "ok": false,
+    "items": [
+      [
+        "길이",
+        false,
+        "44초 (권장 70~110초)"
+      ],
+      [
+        "화면 끊김",
+        true,
+        "없음"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 81%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 71개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "코스피, 0.29% 상승한 4711.21 마감…코스닥 0.78%↑(2보)",
+  "link": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE1wcVFVWEp6ZEs4SG5pa2o1LVB3dUFxTjlhRzB1cXQwTkwwQXdTczhqTHVBUmVoOXR1UDJFeVhxWlFKNDRrZU9lQjN4ZTBhTnJyOF94ZkFUQ0VqZGc?oc=5",
+  "topic": "코스피 4,711.21 마감, SK하이닉스 2.23% 상승 등 반등 시도",
+  "links": [
+    "https://finance.yahoo.com",
+    "https://news.google.com/rss/articles/CBMiW0FVX3lxTE1wcVFVWEp6ZEs4SG5pa2o1LVB3dUFxTjlhRzB1cXQwTkwwQXdTczhqTHVBUmVoOXR1UDJFeVhxWlFKNDRrZU9lQjN4ZTBhTnJyOF94ZkFUQ0VqZGc?oc=5",
+    "https://www.yna.co.kr/view/AKR20261126149100008",
+    "https://www.yna.co.kr/view/AKR20261126144400008",
+    "https://www.yna.co.kr/view/AKR20261126144200008",
+    "https://www.yna.co.kr/view/AKR20261126038100008",
+    "https://www.yna.co.kr/view/AKR20261126037400008",
+    "https://news.google.com/rss/articles/CBMibEFVX3lxTE1vUTNZVFJxU2lzdUNSWkZHNHgySWJQQjhKUk1URVgtYUJTSFR1RXJzRTZyYXFIeFJxajZUMlpMLV9yNjVuWmNKbkRqLXpRVmM5bTd3WFRiOUEySFZMV0FmSWs2M1NYcmhfUDBYNtIBcEFVX3lxTE1XTUkwNVVBU0x2Wi02QnB6bEkxZXEwdXFrdkNzQldJQjY2X21fRmkyM3AybVVSSE5mVk12cWFSRkNQcUw5QXpyVXdWYjQxLUl4NktsMjFKWXhEQ2ZMNS0tMGFVekpNNk1PYlBiblRCNXM?oc=5",
+    "https://news.google.com/rss/articles/CBMia0FVX3lxTE9MWnJaLWJvdGVLMGRQOWt6RXNvSWs3QU1KQWw3bENLdFl0d3pxQkJtRVhCQVhNV2MwV0c0Z3VIQTh1U2p4dTg2NzllX1hUUHlVSEZXWDVyX1ltNm5sZGt1Zmt6YUNaRGZJSjVV?oc=5",
+    "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261126900254",
+    "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261126000283"
+  ],
+  "kr": true,
+  "release_tag": "reel-k20261126-160323",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 404,
+  "sent_at": "2026-11-26T07:08:04.162699+00:00",
+  "hook_title": "코스피 [4,711] 반등 시도 마감",
+  "tag": "증시",
+  "hashtags": [
+    "#경제뉴스",
+    "#코스피",
+    "#SK하이닉스",
+    "#증시마감",
+    "#주식브리핑"
+  ],
+  "brand": "",
+  "yt_title": "코스피 4,711.21 마감, SK하이닉스 2.23% 반등 시도",
+  "title_tags": [
+    "#코스피",
+    "#SK하이닉스",
+    "#증시브리핑"
+  ],
+  "question": "SK하이닉스 반등, 내일도 이어질까요? 여러분은 어떻게 생각하세요?",
+  "waiting_until": "2026-11-26T09:03:04.163332+00:00"
+}
