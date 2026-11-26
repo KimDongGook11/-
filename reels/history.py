@@ -153,12 +153,7 @@ def write_long(ep, material, brand):
    hook_title: 18자 이내, topic_keyword를 반드시 넣고, 핵심 단어 하나를 [ ]로.
    thumb_line1, thumb_line2: 유튜브 썸네일 두 줄 문구. 각 줄 띄어쓰기 포함 7자 이내, 강하고 궁금하게. 두 줄 중 한 줄에는 topic_keyword를 반드시 그대로 넣어 (예: "소니를 버린" / "닌텐도의 결정", "파산 직전" / "스페이스X", "GTA를 산" / "1998년 결단").
    company: 회사 이름·나라·업종을 한국어로 짧게.
-   thumb_number·thumb_number_label·thumb_dir·thumb_question·thumb_person: 새 썸네일(숫자 충격형)용.
-     thumb_number: 이 영상에서 가장 충격적인 숫자 하나를 대본에 쓴 그대로 짧게(예: "-6.16%", "30억 달러", "66억 개"). 대본에 없는 숫자 금지. 마땅한 숫자가 없으면 "".
-     thumb_number_label: 그 숫자 위에 붙을 설명 10자 이내(예: "코스피 하루 만에", "인수 금액").
-     thumb_dir: 숫자가 오름이면 "up", 내림이면 "down", 둘 다 아니면 "none".
-     thumb_question: 숫자 아래 노란 띠에 들어갈 궁금증 한 줄, 9자 이내(예: "젠슨황 효과 끝?", "왜 샀을까?").
-     thumb_person: 이 이야기의 핵심 인물(CEO·창업자 등)의 영어 위키백과 문서 제목(예: "Jensen Huang"). 없으면 "".
+   thumb_person: 썸네일용. 이 이야기의 핵심 인물(CEO·창업자 등)의 영어 위키백과 문서 제목(예: "Jensen Huang"). 없으면 "".
 9. youtube_title: 40자 이내, 호기심을 끄는 제목. description: 3~5줄 소개. tags: 10개 이내.
 
 [자료]
@@ -166,7 +161,7 @@ def write_long(ep, material, brand):
 
 JSON으로만 답해:
 {{
- "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "thumb_number": "...", "thumb_number_label": "...", "thumb_dir": "down", "thumb_question": "...", "thumb_person": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
+ "topic_keyword": "...", "hook_title": "...", "thumb_line1": "...", "thumb_line2": "...", "thumb_person": "...", "youtube_title": "...", "description": "...", "tags": ["..."],
  "intro": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}],
  "company": {{"name_ko": "닌텐도", "country_ko": "일본", "industry_ko": "게임"}},
  "chapters": [{{"title": "...", "year": 1997, "summary": "핵심 한 줄", "segments": [{{"text": "...", "keywords": "...", "show_chart": false, "number": null}}]}}],

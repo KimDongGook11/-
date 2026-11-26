@@ -20,7 +20,7 @@ def main():
         real, credit = realphoto.company_photo([person] + titles, wd, episode=f"{sub} — {q} {l2}", person=person)
         if real:
             print("  얼굴 위치:", graphics._face_x(__import__("PIL.Image", fromlist=["Image"]).open(real)))
-            p = graphics.thumbnail_number(real, num, label, q, l2, sub, dr, out / f"thumb_{i}.jpg")
+            p = graphics.thumbnail_photo(real, q, l2, sub, None, out / f"thumb_{i}.jpg")
         else:
             p = graphics.thumbnail(None, q, l2, sub, None, out / f"thumb_{i}.jpg",
                                    figure=doubleexp.figure_for("미국", wd, seed=i))

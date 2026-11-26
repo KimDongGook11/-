@@ -506,6 +506,43 @@ def thumbnail(frame_png, line1, line2, sub, ep, out, figure=None, w=1280, h=720)
 
 
 def thumbnail_photo(photo, line1, line2, sub, ep, out, w=1280, h=720):
+    """실제 사진(인물은 얼굴 기준으로 오른쪽) + 왼쪽 어둡게 + 노랑/흰 제목 상자·EP·채널 로고 (합성 없이 사진 그대로)."""
+    img = _person_bg(photo, w, h, dark=215, start=0.22)
+    d = ImageDraw.Draw(img)
+    ef = F("Black", 44)
+    if ep:
+        tw = d.textlength(ep, font=ef)
+        d.rectangle([56, 112, 56 + tw + 36, 176], fill=(178, 34, 34))
+        d.text((74, 116), ep, font=ef, fill=WHITE)
+    y = 196
+    for text, bg, fg in [(line1, BLACK, THUMB_YEL), (line2, WHITE, BLACK)]:
+        if not text:
+            continue
+        for size in (108, 96, 86, 76):
+            f1 = F("Black", size)
+            if d.textlength(text, font=f1) <= 640:
+                break
+        bb = d.textbbox((0, 0), text, font=f1)
+        th = bb[3] - bb[1]
+        tw = d.textlength(text, font=f1)
+        d.rectangle([56, y, 56 + tw + 48, y + th + 44], fill=bg)
+        d.text((80, y + 22 - bb[1]), text, font=f1, fill=fg)
+        y += th + 44
+    if sub:
+        d.text((60, y + 24), sub, font=F("Black", 40), fill=BLACK)
+    lf = F("Black", 34)
+    parts = [("경제 ", WHITE), ("[", (230, 60, 50)), ("원픽", THUMB_YEL), ("]", (230, 60, 50))]
+    lw = sum(d.textlength(t, font=lf) for t, _ in parts)
+    d.rounded_rectangle([w - lw - 70, 30, w - 30, 92], radius=31, fill=BLACK)
+    x = w - lw - 50
+    for t, c in parts:
+        d.text((x, 38), t, font=lf, fill=c)
+        x += d.textlength(t, font=lf)
+    img.convert("RGB").save(out, quality=93)
+    return out
+
+
+def thumbnail_photo(photo, line1, line2, sub, ep, out, w=1280, h=720):
     """실제 사진을 화면 가득 + 왼쪽 어둡게 + 기존과 같은 제목 상자·EP·채널 로고 (합성 없이 사진 그대로)."""
     from PIL import ImageEnhance
     ph = Image.open(photo).convert("RGB")
@@ -585,12 +622,11 @@ def _face_x(ph):
         return None
 
 
-def thumbnail_number(photo, number, label, question, line2, sub, direction, out, w=1280, h=720):
-    """숫자 충격형 썸네일: 인물 사진(얼굴 기준) 오른쪽 + 왼쪽에 큰 숫자(내림 파랑/오름 빨강) + 노란 질문 띠 + 둘째 줄."""
+def _person_bg(photo, w, h, dark=250, start=0.3):
+    """사진을 오른쪽에 배치(얼굴이 있으면 얼굴 기준) + 왼쪽은 글자용으로 어둡게. RGBA 반환."""
     from PIL import ImageEnhance
     ph = Image.open(photo).convert("RGB")
     face = _face_x(ph)
-    # 사진은 화면 오른쪽에 둔다: 얼굴을 (가로 67%, 세로 36%)에, 얼굴 높이가 화면의 22% 정도가 되게
     fx, fy = (face[0], face[1]) if face else (0.5, 0.4)
     s = h / ph.height
     if face:
@@ -599,18 +635,24 @@ def thumbnail_number(photo, number, label, question, line2, sub, direction, out,
         s *= 1.05
     pw, phh = ph.width * s, ph.height * s
     ox = w * 0.67 - fx * pw
-    ox = max(min(ox, w * 0.45), w - pw)   # 오른쪽 끝이 비지 않게, 왼쪽은 45%보다 안쪽에서 시작하지 않게
+    ox = max(min(ox, w * 0.45), w - pw)   # 오른쪽 끝이 비지 않게
     oy = min(0, max(h * 0.36 - fy * phh, h - phh))
     big = ph.resize((int(pw) + 1, int(phh) + 1), Image.LANCZOS)
     big = ImageEnhance.Contrast(ImageEnhance.Color(big).enhance(1.05)).enhance(1.08)
     img = Image.new("RGBA", (w, h), (8, 8, 10, 255))
     img.paste(big, (int(ox), int(oy)))
     grad = Image.new("L", (w, 1))
-    edge = max(0.0, ox / w)     # 사진 왼쪽 끝도 자연스럽게 감춤
-    grad.putdata([int(250 * min(1.0, max(0.0, 1 - (x - w * max(0.3, edge)) / (w * 0.42))) ** 1.3) for x in range(w)])
+    st = max(start, ox / w)
+    grad.putdata([int(dark * min(1.0, max(0.0, 1 - (x - w * st) / (w * 0.42))) ** 1.3) for x in range(w)])
     shade = Image.new("RGBA", (w, h), (0, 0, 0, 255))
     shade.putalpha(grad.resize((w, h)))
     img.alpha_composite(shade)
+    return img
+
+
+def thumbnail_number(photo, number, label, question, line2, sub, direction, out, w=1280, h=720):
+    """(예비) 숫자 충격형 썸네일."""
+    img = _person_bg(photo, w, h)
     d = ImageDraw.Draw(img)
     color = {"down": (66, 133, 255), "up": (255, 66, 80)}.get(direction, THUMB_YEL)
     maxw = 720
