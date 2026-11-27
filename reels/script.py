@@ -47,7 +47,7 @@ FORMATS = {
 - 그다음 '오늘의 핵심': 주 자료의 이슈 하나를 원인·영향까지 (전체의 절반 정도).
 - 그다음 '그밖의 뉴스': [그밖의 뉴스] 자료 2개를 한 문장씩 (자료에 있는 사실만).
 - [공시] 자료가 있으면 '오늘의 공시' 1~2개를 한 문장씩 (회사명·공시 종류·규모만, 주가 전망은 하지 마).
-- 마지막 질문 직전: 내일 볼 것 한 문장.
+- 마지막 질문 직전: 다음 거래일에 볼 것 한 문장 (금요일이면 '다음 주'로).
 - 지수·환율·종목 숫자는 [시세 데이터] 표의 값만 그대로 써. 기사 숫자와 다르면 시세 데이터를 따라.
 - 개인 투자자 눈높이로, 한국 종목·코스피·환율 중심.
 """,
@@ -166,7 +166,14 @@ def gather_materials(pool, main_item, limit=8, want=3):
 
 
 def write_script(mats, topic, brand, recent=None, focus="global"):
-    today = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y년 %m월 %d일")
+    now = dt.datetime.now(dt.timezone(dt.timedelta(hours=9)))
+    wk = "월화수목금토일"[now.weekday()]
+    today = now.strftime("%Y년 %m월 %d일") + f" {wk}요일"
+    # 다음 거래일 표현 (11/27 금요일 국내 마감에 '내일 장'이라고 한 문제)
+    if focus == "us":
+        nxt = "다음 주 월요일 밤(한국시간) 미국 장" if now.weekday() >= 5 else "오늘 밤(한국시간) 미국 장"
+    else:
+        nxt = "다음 주 월요일" if now.weekday() >= 4 else "내일"
     blocks = []
     for i, m in enumerate(mats):
         b = f"[자료 {i+1}] 매체: {m['source']}\n제목: {m['title']}\n요약: {m['summary'] or '-'}"
@@ -178,6 +185,9 @@ def write_script(mats, topic, brand, recent=None, focus="global"):
                 "→ 위 영상에서 이미 말한 배경·설명·숫자를 되풀이하지 마. 겹치는 기업이 나오면 오늘 새로 나온 사실 중심으로 써.\n") if rec else ""
     kr_rule = FORMATS.get(focus, "")
     prompt = f"""너는 '{brand}'라는 인스타그램 경제 릴스 채널의 작가야. 오늘은 {today}이야.
+다음 거래일은 '{nxt}'이야. 앞으로 볼 것을 말할 때는 이 표현을 써 (금요일·주말에 '내일 장'이라고 하지 마).
+표현 주의: 지수가 자기 자신의 상승·하락을 이끌 수는 없어. "코스피가 지수 상승을 견인했다"처럼 같은 대상을 원인과 결과로 쓰지 마.
+지수를 끌어올리거나 끌어내린 건 종목·업종·수급(외국인·기관·개인)으로 말해 (예: "삼성전자와 SK하이닉스가 지수 상승을 이끌었다").
 주제: {topic}
 {rec_rule}{kr_rule}
 아래 자료만 근거로 약 1분 20초(80초 안팎)짜리 한국어 릴스 대본을 써.
