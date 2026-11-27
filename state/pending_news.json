@@ -1,0 +1,85 @@
+{
+  "id": "n20261127-100446",
+  "series": "news",
+  "created_at": "2026-11-27T10:04:46.928529+09:00",
+  "video": "/home/runner/work/-/-/output/reel_n20261127-100446.mp4",
+  "sources": [
+    "Axios",
+    "CNBC",
+    "Reuters",
+    "Bloomberg.com"
+  ],
+  "caption": "일론 머스크가 미국 모든 어린이에게 스페이스X 주식 2주씩, 총 180억 달러어치를 기부하겠다고 밝혔습니다. 🚀\n트럼프 어카운트를 통해 지급되며, 양도세 절감 효과와 장기 의무 보유 조건이 걸려 있는데요.\n스페이스X와 테슬라의 합병 협상 소식까지 겹치면서 시장의 관심이 쏠리고 있습니다. 과연 이번 기부가 테슬라 주가에는 어떤 영향을 미칠까요?\n\n📰 출처: Axios, CNBC, Reuters\n🎞 영상: Pixabay\n🤖 이 콘텐츠는 AI로 제작되었으며 투자 권유가 아닙니다.\n\n#경제뉴스 #글로벌경제 #테슬라 #스페이스X",
+  "duration": 39.1,
+  "qc": {
+    "ok": false,
+    "items": [
+      [
+        "길이",
+        false,
+        "39초 (권장 70~110초)"
+      ],
+      [
+        "화면 끊김",
+        true,
+        "없음"
+      ],
+      [
+        "규격",
+        true,
+        "1080×1920"
+      ],
+      [
+        "배경",
+        true,
+        "실사 영상 100%"
+      ],
+      [
+        "자막",
+        true,
+        "단어 86개"
+      ],
+      [
+        "검은 화면",
+        true,
+        "없음"
+      ],
+      [
+        "멈춘 화면",
+        true,
+        "없음"
+      ]
+    ]
+  },
+  "title_en": "Musk makes $18 billion SpaceX stock pledge for every kid in America",
+  "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9maHp6OXN1a3ZmMDR3a3F6amFwaVF2RnZKRkd0NlMtQmEySkY5LThsd19mNDRsb2VfQjlSWkNzbC01dHd0Vkhqb18yMkFzUm9Kck9TMzZRUFVxRUlNNEdHMU5BNnBFN0FjMTdRc0xXWGpOX0tD?oc=5",
+  "topic": "Elon Musk pledges $18 billion in SpaceX stock for American children",
+  "links": [
+    "https://news.google.com/rss/articles/CBMidEFVX3lxTE9maHp6OXN1a3ZmMDR3a3F6amFwaVF2RnZKRkd0NlMtQmEySkY5LThsd19mNDRsb2VfQjlSWkNzbC01dHd0Vkhqb18yMkFzUm9Kck9TMzZRUFVxRUlNNEdHMU5BNnBFN0FjMTdRc0xXWGpOX0tD?oc=5",
+    "https://www.cnbc.com/2026/11/25/spacex-musk-trump-account-stock.html",
+    "https://news.google.com/rss/articles/CBMirwFBVV95cUxPNklmekFZWmFURnFwVlBHa2FlTGZwYkxaSkNSRUxMV2lsanFDc2hkdGF1RGhHWlJoUTBicHFXY1B3dWxHa0xmdU5mYzFBbGpYN3Z5N2xTS2U1bVBJeVZQVHRucldkRVhsVlVfNldnTWpRclIzSjJQa0tMMnBFVGhDTS1HYzdwVlctaXowdDJtdVJaNkxLcXo2Tk9Odi1XZnI0c1JScHZycXhWRUNUZmQ4?oc=5",
+    "https://news.google.com/rss/articles/CBMitAFBVV95cUxPSjg1OVFibDU2bFpQd0pYX1NWM3c2N25fN3l6TXVBYWk0SUw5RUdQV1NjUWx1Tm1remRsdWhzYjQzd0ZOei1FTlh4VFl3RzBfeXg2UDFLVmN0UFltWkJpdjJNUXBHRXlST0ttV1YwMFhmU0NSOVZ6aldXVTJXUGVfNzhtSWw0VnZBMmI1NHRMZU5QTUZMRHotMXRHTkRWNGNfWXdMbksxWjNPU2RVMDN1Q0FjSXg?oc=5"
+  ],
+  "kr": false,
+  "release_tag": "reel-n20261127-100446",
+  "cover_name": "cover.jpg",
+  "tg_message_id": 410,
+  "sent_at": "2026-11-27T01:16:43.077417+00:00",
+  "hook_title": "머스크 [180억 달러] 쏜다",
+  "tag": "미국증시",
+  "hashtags": [
+    "#경제뉴스",
+    "#글로벌경제",
+    "#테슬라",
+    "#스페이스X"
+  ],
+  "brand": "",
+  "yt_title": "머스크가 180억 달러 쏜다, 테슬라 주주에겐 호재일까 악재일까",
+  "title_tags": [
+    "#테슬라",
+    "#스페이스X",
+    "#미국주식"
+  ],
+  "question": "어린이에게 우주 주식을 나눠주는 파격 실험, 과연 대박일까요 쪽박일까요?",
+  "waiting_until": "2026-11-27T03:04:43.078104+00:00"
+}
