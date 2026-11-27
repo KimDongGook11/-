@@ -1,10 +1,21 @@
 {
-  "collected_at": "2026-11-26T08:10:24+00:00",
+  "collected_at": "2026-11-27T08:20:43+00:00",
   "channel": "경제원픽",
-  "subscribers": 34,
-  "total_views": 17945,
-  "video_count": 46,
+  "subscribers": 38,
+  "total_views": 20313,
+  "video_count": 47,
   "videos": [
+    {
+      "id": "upfqfr5gSSk",
+      "title": "머스크가 180억 달러 쏜다, 테슬라 주주에겐 호재일까 악재일까 #테슬라 #스페이스X #미국주식",
+      "published": "2026-11-27T02:08:31Z",
+      "kind": "shorts",
+      "duration_s": 40,
+      "privacy": "public",
+      "views": 1041,
+      "likes": 8,
+      "comments": 0
+    },
     {
       "id": "cRkmZ-4vGhE",
       "title": "코스피 4,711.21 마감, SK하이닉스 2.23% 반등 시도 #코스피 #SK하이닉스 #증시브리핑",
@@ -12,8 +23,8 @@
       "kind": "shorts",
       "duration_s": 45,
       "privacy": "public",
-      "views": 1,
-      "likes": 0,
+      "views": 1015,
+      "likes": 8,
       "comments": 0
     },
     {
@@ -23,9 +34,9 @@
       "kind": "shorts",
       "duration_s": 60,
       "privacy": "public",
-      "views": 273,
-      "likes": 6,
-      "comments": 0
+      "views": 803,
+      "likes": 13,
+      "comments": 2
     },
     {
       "id": "K31eBztPP5w",
@@ -34,8 +45,8 @@
       "kind": "shorts",
       "duration_s": 68,
       "privacy": "public",
-      "views": 156,
-      "likes": 3,
+      "views": 313,
+      "likes": 6,
       "comments": 0
     },
     {
@@ -45,7 +56,7 @@
       "kind": "long",
       "duration_s": 212,
       "privacy": "public",
-      "views": 6,
+      "views": 7,
       "likes": 2,
       "comments": 0
     },
@@ -56,8 +67,8 @@
       "kind": "shorts",
       "duration_s": 62,
       "privacy": "public",
-      "views": 1080,
-      "likes": 22,
+      "views": 1096,
+      "likes": 23,
       "comments": 3
     },
     {
@@ -67,7 +78,7 @@
       "kind": "shorts",
       "duration_s": 70,
       "privacy": "public",
-      "views": 962,
+      "views": 963,
       "likes": 5,
       "comments": 0
     },
@@ -78,7 +89,7 @@
       "kind": "shorts",
       "duration_s": 70,
       "privacy": "public",
-      "views": 686,
+      "views": 793,
       "likes": 18,
       "comments": 0
     },
@@ -89,7 +100,7 @@
       "kind": "shorts",
       "duration_s": 60,
       "privacy": "public",
-      "views": 387,
+      "views": 396,
       "likes": 4,
       "comments": 0
     },
@@ -100,7 +111,7 @@
       "kind": "shorts",
       "duration_s": 71,
       "privacy": "public",
-      "views": 881,
+      "views": 883,
       "likes": 9,
       "comments": 0
     },
@@ -111,7 +122,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 1020,
+      "views": 1022,
       "likes": 8,
       "comments": 0
     },
@@ -122,7 +133,7 @@
       "kind": "shorts",
       "duration_s": 77,
       "privacy": "public",
-      "views": 970,
+      "views": 972,
       "likes": 11,
       "comments": 0
     },
@@ -133,7 +144,7 @@
       "kind": "shorts",
       "duration_s": 49,
       "privacy": "public",
-      "views": 897,
+      "views": 900,
       "likes": 3,
       "comments": 0
     },
@@ -144,7 +155,7 @@
       "kind": "shorts",
       "duration_s": 37,
       "privacy": "public",
-      "views": 1099,
+      "views": 1102,
       "likes": 8,
       "comments": 0
     },
@@ -188,7 +199,7 @@
       "kind": "shorts",
       "duration_s": 61,
       "privacy": "public",
-      "views": 324,
+      "views": 325,
       "likes": 2,
       "comments": 0
     },
@@ -232,7 +243,7 @@
       "kind": "shorts",
       "duration_s": 42,
       "privacy": "public",
-      "views": 213,
+      "views": 214,
       "likes": 0,
       "comments": 0
     },
@@ -276,7 +287,7 @@
       "kind": "long",
       "duration_s": 222,
       "privacy": "public",
-      "views": 32,
+      "views": 33,
       "likes": 1,
       "comments": 0
     },
@@ -364,7 +375,7 @@
       "kind": "shorts",
       "duration_s": 40,
       "privacy": "public",
-      "views": 831,
+      "views": 832,
       "likes": 3,
       "comments": 0
     },
@@ -375,7 +386,7 @@
       "kind": "long",
       "duration_s": 276,
       "privacy": "public",
-      "views": 148,
+      "views": 150,
       "likes": 4,
       "comments": 0
     },
@@ -397,7 +408,7 @@
       "kind": "long",
       "duration_s": 290,
       "privacy": "public",
-      "views": 106,
+      "views": 107,
       "likes": 1,
       "comments": 0
     },
