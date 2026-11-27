@@ -1,0 +1,182 @@
+{
+ "series": "kr",
+ "script": {
+  "yt_title": "증안펀드 기대감에 코스피 4.34% 급등! 4,900선 회복하고 대반격 시작되나?",
+  "title_tags": [
+   "#코스피",
+   "#삼성전자",
+   "#국내증시"
+  ],
+  "tag": "증시",
+  "hook_title": "코스피 [4.34% 급등], 증안펀드 뜬다?",
+  "segments": [
+   {
+    "text": "오늘 코스피가 4.34% 폭등하면서 4,915.68로 마감했어요.",
+    "keywords": "stock market ticker",
+    "show_chart": true,
+    "number": null
+   },
+   {
+    "text": "코스닥도 8.13% 급등한 708.99를 기록했고 환율은 1,334.0원으로 내렸죠.",
+    "keywords": "currency exchange counter",
+    "show_chart": false,
+    "number": {
+     "value": "8.13%",
+     "change": "",
+     "label": "코스닥 상승률",
+     "dir": "up"
+    }
+   },
+   {
+    "text": "삼성전자 4.55% 오른 179,100원, SK하이닉스 7.45% 뛴 111만 원을 기록했죠.",
+    "keywords": "semiconductor clean room",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "오늘 시장을 강하게 끌어올린 가장 큰 원인은 증안펀드 가동 기대감이었어요.",
+    "keywords": "financial district buildings",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "금융당국이 시장 안정 회의를 연다는 소식에 증권시장안정펀드 투입 예상이 커진 겁니다.",
+    "keywords": "press conference microphone",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "여기에 외국인 투자자가 코스피에서만 1.1조 원어치를 순매수하며 힘을 보탰죠.",
+    "keywords": "stock trading terminal",
+    "show_chart": false,
+    "number": {
+     "value": "1.1조 원",
+     "change": "",
+     "label": "외국인 순매수",
+     "dir": "up"
+    }
+   },
+   {
+    "text": "주요 종목이 급등하며 꺾였던 투자 심리와 계좌 수익률도 오랜만에 크게 웃었습니다.",
+    "keywords": "investor calculating profit",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "한편, 교육공무직 파업으로 전국 학교 32%에서 급식 차질이 일어났습니다.",
+    "keywords": "empty school cafeteria",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "다음 주 월요일 장에서는 오늘 들어온 외국인 수급이 유지될지 살펴봐야겠죠.",
+    "keywords": "stock exchange trader",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "다음 주 외국인 수급, 유지될까요 아니면 빠져나갈까요?",
+    "keywords": "bull statue street",
+    "show_chart": false,
+    "number": null
+   },
+   {
+    "text": "매일 오후 5시 국내 증시 정리, 구독하고 다음 주에 또 만나요!",
+    "keywords": "city sunrise skyline",
+    "show_chart": false,
+    "number": null
+   }
+  ],
+  "chart": {
+   "ticker": "^KS11",
+   "label": "코스피 지수 · 오늘 종가"
+  },
+  "key_facts": [
+   "코스피 4,915.68 (+4.34%) - Yahoo Finance 국내 증시 마감 시세",
+   "코스닥 708.99 (+8.13%) - Yahoo Finance 국내 증시 마감 시세",
+   "원/달러 환율 1,334.0원 (-0.67%) - Yahoo Finance 국내 증시 마감 시세",
+   "외국인 코스피 1조 1,299억 순매수 - 연합뉴스",
+   "전국 학교 32% 급식 차질 - 연합뉴스",
+   "풍원정밀 최대주주 지분 58.16% - DART 공시",
+   "동국제약 사명 디케이센텔리안 변경 - DART 공시"
+  ],
+  "caption": "📈 증안펀드 기대감과 외국인 1.1조 원 순매수에 코스피가 4.34% 급등하며 4,900선을 탈환했습니다!\n코스닥도 8% 넘게 오르고 삼성전자·SK하이닉스가 동반 강세를 보였는데요.\n\n주말 동안 증시 관련 호재가 이어질지, 다음 주에도 상승 흐름이 유지될지 함께 지켜보시죠. 💰",
+  "hashtags": [
+   "#코스피",
+   "#증안펀드",
+   "#삼성전자",
+   "#SK하이닉스",
+   "#국내증시"
+  ],
+  "factcheck": {
+   "bodies": 8,
+   "sources": 11,
+   "numbers": 13,
+   "numbers_ok": 13,
+   "checked": 9,
+   "fixed": 0,
+   "dropped": 3,
+   "remain": []
+  },
+  "question": "다음 주 외국인 수급, 유지될까요 아니면 빠져나갈까요?",
+  "proofread": [
+   [
+    "금융당국이 시장안정 회의를 연다는 소식에 증권시장안정펀드 투입 예상이 커진 겁니다.",
+    "금융당국이 시장 안정 회의를 연다는 소식에 증권시장안정펀드 투입 예상이 커진 겁니다."
+   ]
+  ],
+  "headlines": [
+   {
+    "orig": "",
+    "source": "서울파이낸스",
+    "date": "2026-11-27",
+    "ko": "코스피, 증안펀드 기대·외국인 매수에 / 4910선 마감…코스닥 8% [급등]"
+   },
+   {
+    "orig": "",
+    "source": "연합뉴스",
+    "date": "2026-11-27",
+    "ko": "코스피 4.3% 상승 4,900선 회복 / 코스닥 8%대 급등 700선 [탈환]"
+   },
+   {
+    "orig": "",
+    "source": "연합뉴스",
+    "date": "2026-11-27",
+    "ko": "코스피 4.3% 상승 4,900선 회복 / 코스닥 8%대 [급등]"
+   },
+   {
+    "orig": "",
+    "source": "연합뉴스",
+    "date": "2026-11-27",
+    "ko": "코스피 장초반 1% 이내 강보합세 / 코스닥 1%대 [상승]"
+   }
+  ]
+ },
+ "sources": [
+  "Yahoo Finance",
+  "서울파이낸스",
+  "연합뉴스",
+  "파이낸셜포스트",
+  "신아일보",
+  "DART 공시"
+ ],
+ "meta": {
+  "title_en": "코스피, 증안펀드 기대·외국인 매수에 4910선 마감···코스닥 8% 급등",
+  "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTFBiNjJ2RHRGclNyMlhLcWVYQ0hySzYzcXNJLUg4b0JCQWJ2SXQxeTVnWWxWZlYyUlF5OUszLXBVdHBMT0M3VFU0RU9WRkR0dDdFS2dxVXhfaU44UVNkSEpqRU5samtPZlZQcVE?oc=5",
+  "topic": "증안펀드 투입 기대감과 외국인 순매수에 코스피 4,910선 회복 및 코스닥 8%대 급등",
+  "links": [
+   "https://finance.yahoo.com",
+   "https://news.google.com/rss/articles/CBMiakFVX3lxTFBiNjJ2RHRGclNyMlhLcWVYQ0hySzYzcXNJLUg4b0JCQWJ2SXQxeTVnWWxWZlYyUlF5OUszLXBVdHBMT0M3VFU0RU9WRkR0dDdFS2dxVXhfaU44UVNkSEpqRU5samtPZlZQcVE?oc=5",
+   "https://www.yna.co.kr/view/AKR20261127144700011",
+   "https://www.yna.co.kr/view/AKR20261127120451008",
+   "https://www.yna.co.kr/view/AKR20261127120400008",
+   "https://www.yna.co.kr/view/AKR20261127122600008",
+   "https://www.yna.co.kr/view/AKR20261127031600008",
+   "https://news.google.com/rss/articles/CBMidEFVX3lxTE9WY0xyc2dPWklWU1RiY2pDSEZRZU5qdi1Eb1hqUlZtLTA3TnZOR01YN1BlelJWQzQzbjlnQzZHdGNvZXU0U0U0cmxDLXh0eHd5NE9KUkFKc3luT1RSWnI1dlc4ZGJwWXFxNGJLMGNaMGY1ZURK?oc=5",
+   "https://news.google.com/rss/articles/CBMicEFVX3lxTFAyVEh3bk1fYnNLVEI0QWZ1Umg3QTNLN0VPTEdzTnhtd1NkQkhiRmJ2RDhrcmFFdnpra0U4WGJCUnBCOC1qVDFtUDR2NXhuWnRsNDQ4Z01JR3dod3FPRGE4M2lZZHhqVmU2S1owNnVZTC0?oc=5",
+   "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261127001891",
+   "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261127901042"
+  ],
+  "kr": true
+ }
+}

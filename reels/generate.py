@@ -159,6 +159,9 @@ def _news_script(focus="global"):
         sc["factcheck"] = None
     print("5) 원고 검수 (흐름·마지막 질문 연결)")
     outro = config.OUTROS.get(focus, config.OUTROS["news"])
+    wd = dt.datetime.now(KST).weekday()
+    if (focus == "kr" and wd == 4) or (focus == "us" and wd == 5):   # 다음 편이 다음 주 (11/27 금요일 '내일 또 만나요')
+        outro = outro.replace("내일 또", "다음 주에 또")
     sc = script.polish_flow(sc, outro)
     sc = script.add_outro(sc, outro)
     print("6) 자막 맞춤법 검수")
