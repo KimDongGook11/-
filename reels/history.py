@@ -219,7 +219,7 @@ def with_keyword(hook, kw):
     return f"{kw}, {hook}"[:30]
 
 
-def condense_short(long_sc, ep, has_long=True):
+def condense_short(long_sc, ep, has_long=True, what_if=None):
     """장편 대본을 60초 이내 세로 릴스로 압축 (이미 근거 확인된 장편 대본만 사용)."""
     last_rule = ("- 마지막 문장은 반드시 \"전체 이야기는 유튜브 '경제 원픽'에서 볼 수 있어요.\" 같은 안내." if has_long else
                  "- 마지막 문장은 이 결정에 대해 시청자에게 던지는 질문. 댓글로 답하기 쉬운 양자택일로, 물음표로 끝내 "
@@ -229,9 +229,12 @@ def condense_short(long_sc, ep, has_long=True):
     for c in long_sc["chapters"]:
         lines.append(f"[{c['title']}]")
         lines += [s["text"] for s in c["segments"]]
+    wi_rule = (f"- [그때 샀다면] 마지막 질문 바로 앞 문장은 반드시 이 문장을 숫자 그대로 써 (말투만 자연스럽게, 숫자·연도 변경 금지): "
+               f"\"{what_if['sentence']}\"\n" if what_if else "")
     prompt = f"""아래는 '{SERIES_NAME}' 장편(약 5분) 대본이야. 이걸 인스타 릴스용 40~55초 세로 영상 대본으로 압축해.
 규칙:
-- 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지.
+- 아래 대본에 있는 사실만 사용. 새로운 숫자·사실 추가 금지 (아래 [그때 샀다면] 문장만 예외).
+{wi_rule}
 - segments 7~9개, 각 25~45자, 전체 260~340자. 첫 문장은 강한 후킹.
 {last_rule}
 - keywords는 문장을 눈으로 보이는 구체적 장면으로 바꾼 영어 2~3단어(감정·추상어 금지). 담배·흡연, 약물·알약·주사기 등 약품, 술 취한 모습, 선정적·폭력적 장면, 도박처럼 사회 통념에서 벗어나는 장면도 금지(이야기가 담배·제약 회사여도 공장·건물·사무실 같은 장면으로). 핵심 숫자 1~2문장에 number, 주가 흐름 1문장에 show_chart.
@@ -251,4 +254,30 @@ JSON으로만 답해:
     d["key_facts"] = long_sc.get("key_facts", [])
     out = normalize(d)
     out["hook_title"] = with_keyword(out["hook_title"], long_sc.get("topic_keyword") or ep.get("company_ko", ""))
+    if what_if:
+        _ensure_what_if(out, what_if)
     return out
+
+
+def _ensure_what_if(sc, wi):
+    """'그때 샀다면' 문장이 계산한 금액 그대로 들어갔는지 확인. 빠졌거나 숫자가 바뀌었으면 정해진 문장을 질문 앞에 넣음.
+    그 문장에 숫자 카드를 붙이고, 검수용 사실 목록에 계산 근거를 남김."""
+    segs = sc["segments"]
+    key = wi["won"].replace("약 ", "")
+    hit = next((i for i, s in enumerate(segs) if key in s["text"]), None)
+    if hit is None:
+        for s in segs:   # 다른 금액으로 바꿔 쓴 '100만 원어치' 문장은 지움
+            if "100만 원어치" in s["text"]:
+                segs.remove(s)
+                break
+        pos = len(segs) - 1 if segs and segs[-1]["text"].rstrip().endswith("?") else len(segs)
+        segs.insert(pos, {"text": wi["sentence"], "keywords": "stock market chart screen", "show_chart": False,
+                          "number": None})
+        hit = pos
+        print("  [그때 샀다면] 대본에 없거나 숫자가 달라서 정해진 문장으로 넣음")
+    for s in segs:
+        if s is not segs[hit] and s.get("number") and s["number"].get("label", "").endswith("100만 원 →"):
+            s["number"] = None
+    segs[hit]["number"] = wi["number"]
+    segs[hit]["show_chart"] = False
+    sc["key_facts"] = list(sc.get("key_facts") or []) + [wi["fact"]]

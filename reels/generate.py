@@ -217,7 +217,8 @@ def _history_scripts():
         ssc = None
         if _need_short():
             print("3) 60초 요약 대본")
-            ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG)
+            ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG,
+                                         what_if=market.what_if(ep.get("ticker"), ep.get("year")))
         print("4) 자막 맞춤법 검수")
         if config.HISTORY_LONG:
             lsc = script.proofread(lsc)
@@ -245,7 +246,8 @@ def _history_scripts():
     ssc = None
     if _need_short():
         print("3) 60초 요약 대본")
-        ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG)
+        ssc = history.condense_short(lsc, ep, has_long=config.HISTORY_LONG,
+                                         what_if=market.what_if(ep.get("ticker"), ep.get("year")))
     print("4) 자막 맞춤법 검수")
     if config.HISTORY_LONG:
         lsc = script.proofread(lsc)
