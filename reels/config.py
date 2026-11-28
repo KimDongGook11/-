@@ -59,12 +59,14 @@ YT_SLOTS = {
     "kr": env("YT_KR_TIME", "17:00"),            # 국내 증시 마감 브리핑 + 뉴스 정리
     "history": env("YT_HISTORY_TIME", "18:00"),  # 그때 그 결정 (주말)
     "re": env("YT_RE_TIME", "12:00"),            # 주간 부동산 (토요일)
+    "term": env("YT_TERM_TIME", "21:00"),        # 1분 경제 용어 (매일)
 }
 # 시리즈별 마무리 멘트 (예전 OUTRO_TEXT 변수는 '매일 아침' 문구라 쓰지 않음)
 OUTROS = {
     "us": env("US_OUTRO_TEXT", "매일 아침 7시 미국 증시 정리, 구독하고 내일 또 만나요!"),
     "news": env("NEWS_OUTRO_TEXT", "매일 낮 12시 경제 이슈 딱 하나, 구독하고 내일 또 만나요!"),
     "kr": env("KR_OUTRO_TEXT", "매일 오후 5시 국내 증시 정리, 구독하고 내일 또 만나요!"),
+    "term": env("TERM_OUTRO_TEXT", "매일 밤 9시 경제 용어 하나, 구독하고 내일 또 만나요!"),
     "re": env("RE_OUTRO_TEXT", "매주 토요일 낮 12시 부동산 정리, 구독하고 다음 주에 또 만나요!"),
 }
 OUTRO_TEXT = OUTROS["news"]
@@ -73,7 +75,7 @@ WEEKEND_HISTORY = env("WEEKEND_HISTORY", "true").lower() == "true"
 # 제작 전 주제 고르기 (2026-11-28 사용자 결정): 후보 2~3개를 텔레그램으로 보내고 고르면 제작.
 # 정해진 시간(분) 안에 안 고르면 1순위로 자동 진행. 끄려면 Variables에 TOPIC_PICK=false
 TOPIC_PICK = env("TOPIC_PICK", "true").lower() == "true"
-TOPIC_WAIT = {"us": 15, "kr": 15, "news": 40, "global": 40, "re": 40, "history": 40}
+TOPIC_WAIT = {"us": 15, "kr": 15, "news": 40, "global": 40, "re": 40, "history": 40, "term": 40}
 # 채널 핸들 (설명란 구독 링크용). 2026-11-21 핸들 변경 완료 → 기본값. 다르게 쓰려면 Variables에 CHANNEL_HANDLE
 CHANNEL_HANDLE = env("CHANNEL_HANDLE", "@econonepick")
 

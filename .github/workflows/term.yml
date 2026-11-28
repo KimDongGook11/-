@@ -1,0 +1,111 @@
+name: 1분 경제 용어 (밤 9시)
+
+on:
+  schedule:
+    - cron: "30 10 * * *"   # 매일 한국시간 19:30 제작 → 21:00 예약 공개
+  workflow_dispatch:
+    inputs:
+      auto:
+        description: "자동 실행(하루 1번만)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: reels-term
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+      DATA_GO_KR_TRADE_KEY: ${{ secrets.DATA_GO_KR_TRADE_KEY }}
+      DATA_GO_KR_APPLY_KEY: ${{ secrets.DATA_GO_KR_APPLY_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_CHANNEL_ID: ${{ vars.TELEGRAM_CHANNEL_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      YT_PRIVACY: ${{ vars.YT_PRIVACY }}
+      YT_SHORTS_TIME: ${{ vars.YT_SHORTS_TIME }}
+      OUTRO_TEXT: ${{ vars.OUTRO_TEXT }}
+      BRAND_NAME: ${{ vars.BRAND_NAME }}
+      TTS_VOICE: ${{ vars.TTS_VOICE }}
+      TTS_RATE: ${{ vars.TTS_RATE }}
+      GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+      TITLE_STYLE: ${{ vars.TITLE_STYLE }}
+      IG_AUTO_PUBLISH: ${{ vars.IG_AUTO_PUBLISH }}
+      BG_SPEED: ${{ vars.BG_SPEED }}
+      TTS_ENGINE: ${{ vars.TTS_ENGINE }}
+      TYPECAST_API_KEY: ${{ secrets.TYPECAST_API_KEY }}
+      MOTION_SERIES: ${{ vars.MOTION_SERIES }}
+      HISTORY_SHORT: ${{ vars.HISTORY_SHORT }}
+      TYPECAST_VOICE: ${{ vars.TYPECAST_VOICE }}
+      TYPECAST_VOICE_NEWS: ${{ vars.TYPECAST_VOICE_NEWS }}
+      TYPECAST_VOICE_HISTORY: ${{ vars.TYPECAST_VOICE_HISTORY }}
+      TYPECAST_MODEL: ${{ vars.TYPECAST_MODEL }}
+      TYPECAST_TEMPO: ${{ vars.TYPECAST_TEMPO }}
+      HISTORY_LONG: ${{ vars.HISTORY_LONG }}
+      YT_KR_TIME: ${{ vars.YT_KR_TIME }}
+      YT_HISTORY_TIME: ${{ vars.YT_HISTORY_TIME }}
+      KR_OUTRO_TEXT: ${{ vars.KR_OUTRO_TEXT }}
+      CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
+      TYPECAST_VOICE_KR: ${{ vars.TYPECAST_VOICE_KR }}
+      YT_US_TIME: ${{ vars.YT_US_TIME }}
+      YT_NEWS_TIME: ${{ vars.YT_NEWS_TIME }}
+      US_OUTRO_TEXT: ${{ vars.US_OUTRO_TEXT }}
+      NEWS_OUTRO_TEXT: ${{ vars.NEWS_OUTRO_TEXT }}
+      TYPECAST_VOICE_US: ${{ vars.TYPECAST_VOICE_US }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 모션 그래픽 준비 (Remotion)
+        timeout-minutes: 10
+        continue-on-error: true
+        run: cd motionlab && npm install --no-audit --no-fund --loglevel=error && npx remotion browser ensure >/dev/null && echo "모션 그래픽 준비 완료" || (rm -rf node_modules; echo "모션 준비 실패 → 기존 방식으로 제작")
+      - name: 프로그램 설치
+        timeout-minutes: 20
+        run: |
+          timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq || echo "패키지 목록 갱신이 5분 넘게 걸려 건너뜀(기존 목록으로 설치)"
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y -qq ffmpeg fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y -qq fonts-pretendard 2>/dev/null || true
+          if ! fc-list | grep -qi pretendard; then npm i --no-save --prefix /tmp/pf pretendard@1.3.9 >/dev/null 2>&1 && mkdir -p ~/.fonts && find /tmp/pf/node_modules/pretendard -path '*static*' -name 'Pretendard-*.otf' -exec cp {} ~/.fonts/ \; && fc-cache -f >/dev/null; fi
+          fc-list | grep -qi pretendard && echo "글꼴: Pretendard" || echo "글꼴: Noto (Pretendard 설치 실패)"
+          pip install -q -r requirements.txt
+          git config user.name "reels-bot"
+          git config user.email "reels-bot@users.noreply.github.com"
+      - name: 1분 경제 용어 생성 → 텔레그램 전송 → 2시간 버튼 대기
+        run: python -m reels.generate --series term --wait 120 ${{ (github.event_name == 'schedule' || inputs.auto == 'true') && '--once-per-day' || '' }}
+      - name: 상태 저장
+        if: always()
+        run: |
+          git add state
+          git diff --cached --quiet && exit 0
+          git commit -q -m "state: term $(date -u +%F)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+      - name: 버튼 감시 이어 가기 (대기 영상이 남아 있으면 승인 확인 작업 시작)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git pull -q --rebase || git rebase --abort || true
+          if python -m reels.approval --need-watch; then
+            gh api -X POST repos/${{ github.repository }}/actions/workflows/approval.yml/dispatches -f ref=main && echo "버튼 감시 작업을 이어서 시작했어요"
+          fi

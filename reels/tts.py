@@ -65,6 +65,7 @@ PILJAE = "tc_68257f68bc6e3c161ab5078d"
 DAY_VOICE = "서현"
 VOICE_BY_SERIES = {
     "news": lambda: config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
+    "term": lambda: config.env("TYPECAST_VOICE_TERM") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     "re": lambda: config.env("TYPECAST_VOICE_RE") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     "us": lambda: config.env("TYPECAST_VOICE_US") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),
     "kr": lambda: config.env("TYPECAST_VOICE_KR") or config.env("TYPECAST_VOICE_NEWS", DAY_VOICE),

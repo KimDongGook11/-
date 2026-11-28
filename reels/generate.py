@@ -181,6 +181,36 @@ def _news_script(focus="global"):
     return sc, sources, meta
 
 
+def _term_script():
+    """1분 경제 용어: 오늘 영상에 나온 용어 후보 3개 → 주제 고르기 → 위키백과 근거로 30~40초 대본."""
+    from . import term
+    print("1) 오늘 영상에서 용어 후보 찾기 (위키백과 근거 확인)")
+    cands = term.candidates(3)
+    if not cands:
+        raise RuntimeError("오늘 영상에서 근거 있는 경제 용어 후보를 찾지 못했습니다.")
+    c = 0
+    if config.TOPIC_PICK and len(cands) >= 2:
+        c = approval.ask_topic(term.SERIES_NAME, [{"title": x["term"], "detail": x["why"]} for x in cands],
+                               config.TOPIC_WAIT.get("term", 40))
+    pick = cands[c]
+    title, extract, url = pick["wiki"]
+    print(f"2) 대본 작성: {pick['term']} (위키백과 '{title}')")
+    sc = term.write(pick, config.BRAND_NAME)
+    mats = [{"title": f"위키백과: {title}", "source": "위키백과", "link": url, "summary": "", "body": extract}]
+    print("3) 팩트체크")
+    try:
+        sc, sc["factcheck"] = factcheck.run(sc, mats, skip_last=1)
+    except Exception as e:
+        print(f"  [팩트체크] 건너뜀: {e}")
+        sc["factcheck"] = None
+    outro = config.OUTROS.get("term", "")
+    sc = script.add_outro(sc, outro)
+    print("4) 자막 맞춤법 검수")
+    sc = script.proofread(sc)
+    meta = {"title_en": pick["term"], "link": url, "topic": pick["term"], "links": [url], "term": pick["term"]}
+    return sc, ["위키백과"], meta
+
+
 def _custom_episode():
     """jobs/history_custom.json 의 date(한국시간 YYYYMMDD)가 오늘이면 자동 선정 대신 그 에피소드·자료를 씀.
     이미 같은 날 그 에피소드를 만들었으면(episodes 기록) 다시 쓰지 않음."""
@@ -294,7 +324,7 @@ RERENDER = None   # --rerender: {"series", "script", "sources", "meta"} — 같�
 def make_reel(series="news", offline=False):
     """반환: 결과 dict. history면 res["long"]에 장편 정보가 들어감."""
     now = dt.datetime.now(KST)
-    rid = {"history": "h", "kr": "k", "us": "u", "talk": "t", "re": "r"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
+    rid = {"history": "h", "kr": "k", "us": "u", "talk": "t", "re": "r", "term": "w"}.get(series, "n") + now.strftime("%Y%m%d-%H%M%S")
     tts.set_series(series)   # 목소리: 원픽 서현, 그때 그 결정 필재
     work = config.WORK_DIR / rid
     if work.exists():
@@ -323,6 +353,16 @@ def make_reel(series="news", offline=False):
         info["range"] = (70, 110)   # 오늘의 원픽 = 약 1분 30초 (2026-11-17 사용자 결정)
         return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
                 "sources": sources, "caption": build_caption(sc, sources, series), "duration": round(dur, 1),
+                "qc": qc.check(out, info, sc, offline=offline), **meta}
+
+    if series == "term":   # ---- 1분 경제 용어: 세로 30~40초 ----
+        sc, sources, meta = (SAMPLE, ["위키백과"], {"title_en": "sample", "topic": "sample", "term": "샘플"}) if offline \
+            else _term_script()
+        print("영상 제작 (세로 쇼츠, 30~40초)")
+        dur, info = produce.short(sc, work / "short", out, sources, offline=offline)
+        info["range"] = (25, 60)
+        return {"id": rid, "series": series, "created_at": now.isoformat(), "video": str(out), "script": sc,
+                "sources": sources, "caption": build_caption(sc, sources, "history"), "duration": round(dur, 1),
                 "qc": qc.check(out, info, sc, offline=offline), **meta}
 
     if series == "talk":   # ---- 대담 특집: 진행 서현 + 패널 필재, 가로 약 5분 (유튜브 장편만) ----
@@ -479,6 +519,10 @@ def deliver(res, offline=False):
         eps.append({"date": res["id"], "company": ep.get("company", ""), "year": ep.get("year"),
                     "country_ko": ep.get("country_ko", ""), "episode_ko": ep.get("episode_ko", res.get("topic", ""))})
         save_state("episodes", eps[-200:])
+    elif series == "term":   # 다룬 용어는 따로 기록 (뉴스 중복 판단 기록에는 넣지 않음)
+        terms = load_state("terms", [])
+        terms.append({"date": res["id"], "term": res.get("term", res.get("topic", ""))})
+        save_state("terms", terms[-300:])
     else:
         log = load_state("history", [])
         log.append({"date": res["id"], "series": series, "kr": bool(res.get("kr")), "title_ko": res["script"]["hook_title"],
@@ -572,7 +616,7 @@ def _today():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--series", choices=["news", "us", "kr", "re", "history", "talk"], default="news",
+    ap.add_argument("--series", choices=["news", "us", "kr", "re", "term", "history", "talk"], default="news",
                     help="us=07:00 미국 증시 마감, news=12:00 오늘의 원픽, kr=17:00 국내 마감 브리핑, history=그때 그 결정")
     ap.add_argument("--offline", action="store_true", help="샘플 데이터로 렌더링만 테스트")
     ap.add_argument("--no-deliver", action="store_true", help="텔레그램 전송·상태 저장 생략")
