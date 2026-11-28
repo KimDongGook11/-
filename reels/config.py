@@ -70,6 +70,10 @@ OUTROS = {
 OUTRO_TEXT = OUTROS["news"]
 # 주말(토·일)에는 그때 그 결정을 하루 2편: 12:00(원픽 자리, daily.yml) + 18:00(history.yml). 끄려면 WEEKEND_HISTORY=false
 WEEKEND_HISTORY = env("WEEKEND_HISTORY", "true").lower() == "true"
+# 제작 전 주제 고르기 (2026-11-28 사용자 결정): 후보 2~3개를 텔레그램으로 보내고 고르면 제작.
+# 정해진 시간(분) 안에 안 고르면 1순위로 자동 진행. 끄려면 Variables에 TOPIC_PICK=false
+TOPIC_PICK = env("TOPIC_PICK", "true").lower() == "true"
+TOPIC_WAIT = {"us": 15, "kr": 15, "news": 40, "global": 40, "re": 40, "history": 40}
 # 채널 핸들 (설명란 구독 링크용). 2026-11-21 핸들 변경 완료 → 기본값. 다르게 쓰려면 Variables에 CHANNEL_HANDLE
 CHANNEL_HANDLE = env("CHANNEL_HANDLE", "@econonepick")
 

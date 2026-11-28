@@ -131,6 +131,13 @@ def _news_script(focus="global"):
         print("2) 오늘의 뉴스 선정")
         buzz = (tg_ideas + [c["title"] for c in cands if c.get("tg_signal")])[:15] or None
         idx, pick = script.pick_story(cands, history_log, focus=focus, market=mk["body"] if mk else "", buzz=buzz)
+        opts = pick.get("options") or []
+        if config.TOPIC_PICK and len(opts) >= 2:   # 후보 2~3개를 텔레그램으로 → 고른 주제로 (2026-11-28)
+            series = {"global": "news"}.get(focus, focus)
+            c = approval.ask_topic(pending.LABEL.get(series, series), [
+                {"title": o["title_ko"], "detail": " · ".join(x for x in (o.get("reason", ""), cands[o["pick"]]["source"]) if x)}
+                for o in opts], config.TOPIC_WAIT.get(focus, 30))
+            idx, pick = opts[c]["pick"], opts[c]
         main = cands[idx]
         print(f"   → {main['title']} ({main['source']}) / {pick.get('reason')}")
         mats = script.gather_materials(pool, main)
@@ -229,16 +236,27 @@ def _history_scripts():
     print("1) 에피소드 선정(지금 화제인 기업 우선) + 위키백과 근거 수집")
     heads = history.hot_headlines()
     print(f"  [화제] 최근 뉴스 제목 {len(heads)}개 참고")
-    for _ in range(3):
+    ready = []   # 위키백과 근거가 확보된 후보 (주제 고르기 켜져 있으면 3개까지 모아서 고르게 함)
+    want = 3 if config.TOPIC_PICK else 1
+    for _ in range(want + 2):
         ep = history.pick_episode(used + tried, heads)
+        tried.append(ep)
         print(f"   → {ep.get('company_ko')} {ep.get('year')}년: {ep.get('episode_ko')}"
               + (f"  (요즘 화제: {ep['hot_reason']})" if ep.get("hot_reason") else ""))
         material, links = history.gather(ep, limit=12000)
         if material:
-            break
-        tried.append(ep)
-    else:
+            ready.append((ep, material, links))
+            if len(ready) >= want:
+                break
+    if not ready:
         raise RuntimeError("위키백과에서 충분한 근거 자료를 찾지 못했습니다.")
+    c = 0
+    if len(ready) >= 2:
+        c = approval.ask_topic(history.SERIES_NAME, [
+            {"title": f"{e.get('company_ko', '')} {e.get('year', '')}년 — {e.get('episode_ko', '')}"[:70],
+             "detail": (f"요즘 화제: {e['hot_reason']}" if e.get("hot_reason") else "")} for e, _, _ in ready],
+            config.TOPIC_WAIT["history"])
+    ep, material, links = ready[c]
     print("2) 장편 대본(약 5분)" + ("" if config.HISTORY_LONG else " — 쇼츠 압축용 원고로만 사용"))
     lsc = history.write_long(ep, material, config.BRAND_NAME)
     if lsc.get("chart") is None and ep.get("ticker"):

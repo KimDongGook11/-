@@ -362,6 +362,12 @@ def handle(updates):
             if not _owner(cq["from"]["id"]):
                 continue
             action, _, rid = cq.get("data", "").partition(":")
+            if action == "topic":   # 제작 작업이 아닌 점검 작업이 받은 주제 버튼 → 기록해 두면 제작 작업이 읽어 감
+                token, _, idx = rid.partition(":")
+                save_state("topic_choice", {"token": token, "index": int(idx or 0)})
+                git_push_state("state: topic choice")
+                telegram.answer_callback(cq["id"], "선택했어요")
+                continue
             p = pending.find(rid)
             print(f"  [텔레그램] 버튼 {action} ({rid}) → {'대기 영상' if p else '만료'}")
             if not p:
@@ -512,8 +518,63 @@ def _sync():
 
 
 def _other_waiting():
+    tw = load_state("topic_wait", {}).get("until")
+    if tw and dt.datetime.fromisoformat(tw) > _now():   # 제작 작업이 주제 선택을 기다리는 중
+        return True
     return any(p.get("waiting_until") and dt.datetime.fromisoformat(p["waiting_until"]) > _now()
                for p in pending.all_items())
+
+
+NUM = ["1️⃣", "2️⃣", "3️⃣"]
+
+
+def ask_topic(label, options, minutes):
+    """제작 전 주제 고르기 (2026-11-28 사용자 결정). options: [{"title", "detail"}] 2~3개.
+    텔레그램 버튼으로 고르면 그 번호, 시간 안에 안 고르면 0(1순위). 텔레그램이 없거나 후보가 1개면 바로 0."""
+    if not telegram.enabled() or len(options) < 2 or minutes <= 0:
+        return 0
+    token = _now().strftime("%m%d%H%M%S")
+    body = "\n\n".join(f"{NUM[i]} {o['title']}" + (f"\n   {o['detail']}" if o.get("detail") else "")
+                         for i, o in enumerate(options[:3]))
+    try:
+        mid = telegram.send_message(f"🗳 [{label}] 오늘 주제를 골라 주세요\n\n{body}\n\n"
+                                    f"⏱ {minutes}분 안에 안 고르시면 1번으로 만들어요.",
+                                    buttons=[(f"{NUM[i]} 이걸로", f"topic:{token}:{i}") for i in range(len(options[:3]))])
+    except Exception as e:
+        print(f"  [주제 고르기] 전송 실패 → 1순위로 진행: {e}")
+        return 0
+    until = _now() + dt.timedelta(minutes=minutes)
+    save_state("topic_wait", {"until": until.isoformat(), "token": token})
+    git_push_state("state: topic wait")      # 30분 점검 작업이 버튼을 가로채지 않게
+    choice, how = None, "시간 초과"
+    try:
+        while _now() < until and choice is None:
+            left = (until - _now()).total_seconds()
+            ups = _fetch(timeout=int(max(1, min(30, left))))
+            rest = []
+            for u in ups:
+                d = (u.get("callback_query") or {}).get("data", "")
+                if d.startswith(f"topic:{token}:") and _owner(u["callback_query"]["from"]["id"]):
+                    choice, how = int(d.rsplit(":", 1)[1]), "선택"
+                    telegram.answer_callback(u["callback_query"]["id"], f"{choice + 1}번으로 만들게요")
+                elif not d.startswith("topic:"):
+                    rest.append(u)
+            if rest:   # 기다리는 동안 들어온 다른 버튼·명령(승인 등)도 처리
+                handle(rest)
+            if choice is None:
+                _sync()
+                saved = load_state("topic_choice", {})
+                if saved.get("token") == token:
+                    choice, how = int(saved["index"]), "선택"
+    finally:
+        save_state("topic_wait", {})
+    choice = choice if choice is not None and 0 <= choice < len(options) else 0
+    telegram.remove_buttons(mid)
+    telegram.send_message(f"✅ [{label}] {NUM[choice]} {options[choice]['title']}\n"
+                          + ("이 주제로 만들어요. 10~15분 뒤 초안이 와요." if how == "선택"
+                             else "시간 안에 고르지 않아서 1순위 주제로 만들어요. 10~15분 뒤 초안이 와요."))
+    print(f"  [주제 고르기] {how}: {choice + 1}번 {options[choice]['title']}")
+    return choice
 
 
 def _open_items(hours=48):

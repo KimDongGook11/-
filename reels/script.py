@@ -112,13 +112,26 @@ def pick_story(candidates, history, focus="global", market="", buzz=None):
 후보:
 {chr(10).join(lines)}
 
-JSON으로만 답해: {{"pick": 번호, "topic": "{'한국어' if focus in ('kr', 're') else '영어'}로 한 줄 주제 요약", "reason": "선정 이유 한 문장(한국어)",
- "kr": 한국 종목·코스피·환율과 직접 이어지면 true 아니면 false}}"""
+위 기준으로 1순위부터 3순위까지, 서로 다른 이슈 3개를 골라 (같은 사건을 다룬 후보는 하나만).
+JSON으로만 답해: {{"picks": [{{"pick": 번호, "title_ko": "사장님이 고를 때 볼 한국어 한 줄 제목(30자 안팎)",
+ "topic": "{'한국어' if focus in ('kr', 're') else '영어'}로 한 줄 주제 요약", "reason": "선정 이유 한 문장(한국어)",
+ "kr": 한국 종목·코스피·환율과 직접 이어지면 true 아니면 false}}, ...]}}"""
     res = llm.ask_json(prompt, temperature=0.3)
-    idx = int(res.get("pick", 0))
-    if not 0 <= idx < len(candidates):
-        idx = 0
-    return idx, res
+    raw = res.get("picks") if isinstance(res.get("picks"), list) else [res]
+    opts, seen = [], set()
+    for o in raw:
+        try:
+            i = int(o.get("pick", -1))
+        except (TypeError, ValueError):
+            continue
+        if 0 <= i < len(candidates) and i not in seen:
+            seen.add(i)
+            opts.append({**o, "pick": i, "title_ko": str(o.get("title_ko") or candidates[i]["title"])[:60]})
+    if not opts:
+        opts = [{"pick": 0, "topic": candidates[0]["title"], "reason": "", "title_ko": candidates[0]["title"][:60]}]
+    first = dict(opts[0])
+    first["options"] = opts[:3]
+    return first["pick"], first
 
 
 def _query(title):
